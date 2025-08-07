@@ -1,1 +1,172 @@
-@import "tailwindcss";
+
+/* src/styles.scss: Global styles with Tailwind import, custom vars, and utilities */
+
+@use "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #E5E7EB; /* gray-200, light grey for main sections */
+    --foreground: #111827; /* gray-900, dark gray for text (changed from blue-900 for better readability) */
+    --card: #94A3B8; /* slate-400, for headers, nav, cards, footer */
+    --card-foreground: #1e3a8a; /* blue-900 */
+    --primary: #3b82f6; /* blue-500, vibrant blue accent */
+    --primary-foreground: #ffffff; /* white */
+    --muted: #bfdbfe; /* blue-200 */
+    --muted-foreground: #1e3a8a; /* blue-900 (fixed from blue-400 for consistency) */
+    --destructive: #f97316; /* orange-500 (complement to blue) */
+    --destructive-foreground: #172554; /* blue-950 */
+    --border: #93c5fd; /* blue-300 */
+    --hover-bg: #DBEAFE; /* blue-100 for hover in light mode */
+  }
+  .dark {
+    --background: #64748B; /* slate-500, dark grey for main sections */
+    --foreground: #dbeafe; /* blue-100, light blue for text */
+    --card: #1f2937; /* gray-900, for headers, nav, cards, footer */
+    --card-foreground: #dbeafe; /* blue-100 */
+    --primary: #3b82f6; /* blue-500, vibrant blue accent */
+    --primary-foreground: #172554; /* blue-950 */
+    --muted: #2563eb; /* blue-600 */
+    --muted-foreground: #93c5fd; /* blue-300 */
+    --destructive: #f97316; /* orange-500 */
+    --destructive-foreground: #ffffff; /* white */
+    --border: #1d4ed8; /* blue-700 */
+    --hover-bg: #1E40AF; /* blue-800 for hover in dark mode */
+  }
+  html {
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  }
+  body {
+    margin: 0;
+    background-color: var(--background);
+  }
+  svg {
+    color: var(--card-foreground);  /* Fixed: Use foreground for better dark mode contrast */
+  }
+}
+
+@layer utilities {
+  /* Sidebar collapsed label */
+  .group:hover .group-hover\:opacity-100 {
+    opacity: 1;
+  }
+  /* Shadow custom */
+  .shadow-custom {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Stronger shadow for visibility */
+  }
+  /* Rounded md */
+  .rounded-md {
+    border-radius: 0.375rem;
+  }
+  /* SR only */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  /* Custom backgrounds/colors */
+  .bg-background {
+    background-color: var(--background);
+  }
+  .text-foreground {
+    color: var(--foreground);
+  }
+  .text-muted-foreground {
+    color: var(--muted-foreground);
+  }
+  .border-border {
+    border-color: var(--border);
+  }
+  .border-muted {
+    border-color: var(--muted);
+  }
+  .bg-card {
+    background-color: var(--card);
+  }
+  .text-primary {
+    color: var(--primary);  /* Fixed: --fprimary typo to --primary */
+  }
+  /* Hover utilities - updated to use new --hover-bg var for custom hover colors */
+  .hover\:bg-hover:hover {
+    background-color: var(--hover-bg);
+  }
+  .hover\:text-primary:hover {
+    color: var(--primary);
+  }
+  /* Dropdown overrides */
+  .dropdown {
+    background-color: var(--card); /* Avoid !important where possible for better cascade */
+    opacity: 1;
+    border-color: var(--border);
+    box-shadow: var(--shadow-custom);
+    --ring-color: var(--border);
+    --ring-opacity: 0.5; /* CSS var for ring opacity */
+  }
+  /* Amplify overrides with standard CSS (minimize !important; use specificity) */
+  [data-amplify-theme] {
+    --amplify-colors-brand-primary: var(--foreground);
+  }
+  .amplify-authenticator {
+    background-color: var(--card);
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    max-width: 32rem;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .amplify-tab {
+    color: var(--primary);
+    border-bottom: 2px solid var(--primary);
+    background-color: var(--muted);
+    padding: 0.5rem 1rem;
+  }
+  .amplify-input {
+    background-color: var(--muted);
+    color: var(--foreground);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    width: 100%;
+  }
+  .amplify-button {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    width: 100%;
+  }
+  .amplify-button:hover {
+    background-color: var(--hover-bg);
+  }
+  .amplify-label {
+    color: var(--muted-foreground);
+  }
+  .amplify-alert {
+    color: var(--destructive);
+    background-color: rgba(var(--destructive), 0.1);
+    border: 1px solid var(--destructive);
+  }
+  .amplify-button[data-variation="link"] {
+    display: block;
+    width: 87%;
+    margin-left: 2rem;
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 0.375rem;
+    padding: 0.5rem;
+    font-weight: 500;
+    font-size: 1rem;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  .amplify-button[data-variation="link"]:hover {
+    background-color: var(--hover-bg);
+  }
+}

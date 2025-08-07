@@ -34,36 +34,36 @@ export const routes: Routes = [
     children: [
       
       // Home dashboard lazy-loaded
-      { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
+      { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.Home) },
       
       // Profile page lazy-loaded
-      { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
+      { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.Profile) },
       
       // Messages variants (incoming/outgoing) using same component
-      { path: 'messages/incoming', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
-      { path: 'messages/outgoing', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
+      { path: 'messages/incoming', loadComponent: () => import('./features/messages/messages.component').then(m => m.Messages) },
+      { path: 'messages/outgoing', loadComponent: () => import('./features/messages/messages.component').then(m => m.Messages) },
       
       // Contacts variants (new/favorites/online) using same component
-      { path: 'contacts/new', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
-      { path: 'contacts/favorites', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
-      { path: 'contacts/online', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
+      { path: 'contacts/new', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
+      { path: 'contacts/favorites', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
+      { path: 'contacts/online', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
       
       // Timesheet variants (submitted/inprogress/approved) using same component
-      { path: 'timesheet/submitted', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.TimesheetComponent) },
-      { path: 'timesheet/inprogress', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.TimesheetComponent) },
-      { path: 'timesheet/approved', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.TimesheetComponent) },
+      { path: 'timesheet/submitted', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
+      { path: 'timesheet/inprogress', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
+      { path: 'timesheet/approved', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
       
       // Calendar page lazy-loaded
-      { path: 'calendar', loadComponent: () => import('./features/calendar/calendar.component').then(m => m.CalendarComponent) },
+      { path: 'calendar', loadComponent: () => import('./features/calendar/calendar.component').then(m => m.Calendar) },
       
       // Analytics page lazy-loaded
-      { path: 'analytics', loadComponent: () => import('./features/analytics/analytics.component').then(m => m.AnalyticsComponent) },
+      { path: 'analytics', loadComponent: () => import('./features/analytics/analytics.component').then(m => m.Analytics) },
       
       // Schedule page lazy-loaded
-      { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then(m => m.ScheduleComponent) },
+      { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then(m => m.Schedule) },
       
       // Settings page lazy-loaded
-      { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) },
+      { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.Settings) },
       
       // Logout route (reuses sign-in for simplicity; add logout logic in component)
       { path: 'logout', loadComponent: () => import('./features/auth/sign-in.component').then(m => m.SignInComponent) }

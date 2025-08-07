@@ -6,7 +6,8 @@ Entry point for the Angular application.
 Configures AWS Amplify Gen 2 before bootstrapping the standalone app.
 Handles error logging during bootstrap.
 */
-
+// Import Zone.js
+import 'zone.js';
 // Imports 
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app';

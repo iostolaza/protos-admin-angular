@@ -1,5 +1,5 @@
 
-<!-- Sidebar wrapper matching lannodev: dynamic width, toggle, logo, menu. -->
+<!-- src/app/layouts/sidebar/sidebar.html: Sidebar wrapper matching lannodev: dynamic width, toggle, logo, menu. -->
 <!-- Tailwind transitions; hidden mobile. -->
 <!-- References: lannodev repo https://github.com/lannodev/angular-tailwind/blob/main/src/app/modules/layout/components/sidebar/sidebar.component.html -->
 <!-- Angular docs: https://angular.dev/guide/standalone-components (v20) -->
@@ -22,7 +22,7 @@
             (click)="toggleSidebar()"
             class="bg-primary flex cursor-pointer items-center justify-center rounded-sm p-2 focus:outline-hidden focus:ring-1"
           >
-            <svg-icon [src]="getIconPath('logo')"></svg-icon>
+            <svg-icon [src]="getIconPath('cube')"></svg-icon>  <!-- Assumes 'logo' key in service -->
           </a>
           <b class="text-foreground ps-2 ml-1 grow text-sm font-bold">
             Protos Admin

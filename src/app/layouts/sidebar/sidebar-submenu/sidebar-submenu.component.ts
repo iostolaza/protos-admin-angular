@@ -4,7 +4,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { SubMenuItem } from '../../../core/models/menu.model';
 import { MenuService } from '../../../core/services/menu.service';
-import { ICONS, getIconPath } from '../../../icons-registry'; // <-- adjust path
+import { ICONS, getIconPath } from '../../../core/services/icon-preloader.service';  
 
 @Component({
   selector: 'app-sidebar-submenu',

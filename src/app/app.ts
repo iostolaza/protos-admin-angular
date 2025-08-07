@@ -19,7 +19,7 @@ import { IconPreloaderService } from './core/services/icon-preloader.service';
   standalone: true,
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.scss' 
+  styleUrl: './app.component.css' 
 })
 export class AppComponent {
   // Constructor: Inject and preload icons

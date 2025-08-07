@@ -15,7 +15,6 @@ import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideAngularSvgIcon } from 'angular-svg-icon';
 import { provideHttpClient } from '@angular/common/http';
-import { provideAmplifyAuthenticator } from '@aws-amplify/ui-angular';
 
 // Import routes
 import { routes } from './app.routes';
@@ -36,8 +35,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     
     // SVG icon provider (dynamic loading)
-    provideAngularSvgIcon(),
-
-    provideAmplifyAuthenticator()
+    provideAngularSvgIcon()
   ]
 };
