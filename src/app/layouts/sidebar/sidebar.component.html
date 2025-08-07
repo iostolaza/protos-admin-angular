@@ -1,1 +1,48 @@
-<p>sidebar works!</p>
+
+<!-- Sidebar wrapper matching lannodev: dynamic width, toggle, logo, menu. -->
+<!-- Tailwind transitions; hidden mobile. -->
+<!-- References: lannodev repo https://github.com/lannodev/angular-tailwind/blob/main/src/app/modules/layout/components/sidebar/sidebar.component.html -->
+<!-- Angular docs: https://angular.dev/guide/standalone-components (v20) -->
+<!-- Tailwind docs: https://tailwindcss.com/docs/upgrade-guide (v4.0) -->
+
+<!-- Sidebar wrapper: dynamic width, toggle, logo, menu -->
+<nav
+  [ngClass]="menuService.showSideBar ? 'w-[210px] xl:w-[280px]' : 'w-[70px]'"
+  class="bg-card hidden h-full flex-col justify-between pt-3 transition-all duration-300 lg:flex fixed"
+>
+  <div class="overflow-hidden">
+    <!-- Logo and Toggle -->
+    <div
+      [ngClass]="menuService.showSideBar ? 'justify-between' : 'justify-center'"
+      class="mx-4 mb-2 flex h-9 items-center"
+    >
+      @if (menuService.showSideBar) {
+        <div class="flex items-center">
+          <a
+            (click)="toggleSidebar()"
+            class="bg-primary flex cursor-pointer items-center justify-center rounded-sm p-2 focus:outline-hidden focus:ring-1"
+          >
+            <svg-icon [src]="getIconPath('logo')"></svg-icon>
+          </a>
+          <b class="text-foreground ps-2 ml-1 grow text-sm font-bold">
+            Protos Admin
+          </b>
+        </div>
+      }
+      <button
+        (click)="toggleSidebar()"
+        class="text-card hover:text-muted-foreground flex items-center justify-center rounded-md p-2 transition-all duration-200 focus:outline-hidden"
+        [ngClass]="{ 'rotate-180': !menuService.showSideBar }"
+      >
+        <svg-icon [src]="getIconPath('arrow-long-left')" [svgClass]="'w-6 h-6 '"></svg-icon>
+      </button>
+    </div>
+
+    <!-- Menu Items -->
+    <div
+      class="scrollbar-thumb--sm scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-card h-full overflow-auto px-4"
+    >
+      <app-sidebar-menu></app-sidebar-menu>
+    </div>
+  </div>
+</nav>

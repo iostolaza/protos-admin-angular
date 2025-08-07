@@ -1,1 +1,20 @@
-<p>main-layout works!</p>
+<!-- src/app/layouts/main-layout/main-layout.component.html -->
+
+<div class="flex h-screen flex-col">
+  <!-- Top Menu -->
+  <app-top-menu></app-top-menu>
+
+  <!-- Main Content with Sidebar and Router Outlet -->
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Sidebar -->
+    <app-sidebar></app-sidebar>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto p-4 bg-background">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <app-footer></app-footer>
+</div>

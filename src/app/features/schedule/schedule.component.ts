@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-schedule',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './schedule.component.html',
-  styleUrl: './schedule.component.scss'
+  styleUrl: './schedule.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ScheduleComponent {
-
-}
+export class Schedule {}

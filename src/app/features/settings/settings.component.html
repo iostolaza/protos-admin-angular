@@ -1,1 +1,12 @@
-<p>settings works!</p>
+<!-- src/app/features/settings/settings.component.html: Updated template with LayoutService -->
+<div class="p-6 max-w-md mx-auto bg-card rounded-md shadow-md">
+  <h2 class="text-xl font-semibold mb-4">App Settings</h2>
+  <div class="flex items-center gap-4">
+    <label class="text-sm font-medium">Theme Mode:</label>
+    <button
+      class="px-3 py-1 rounded border border-border"
+      (click)="toggleThemeMode()">
+      Toggle to {{ layoutService.isDarkMode() ? 'Light' : 'Dark' }} Mode
+    </button>
+  </div>
+</div>

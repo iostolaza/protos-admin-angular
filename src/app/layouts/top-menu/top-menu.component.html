@@ -1,1 +1,22 @@
-<p>top-menu works!</p>
+<!-- src/app/layouts/top-menu/top-menu.component.html: Top navigation bar with mobile button, logo, profile (icons removed) -->
+<div class="bg-card relative">
+  <div class="mx-auto px-5">
+    <div class="flex items-center justify-between py-3.5 md:justify-start">
+      <!-- Title at top left -->
+      <div class="text-foreground text-lg font-bold sm:order-2 ltr:md:mr-10 rtl:md:ml-10">
+        Protos-Admin
+      </div>
+      <!-- Logo -->
+      <div class="flex items-center justify-start gap-3 sm:order-2 ltr:md:mr-10 rtl:md:ml-10 lg:hidden">
+        <a class="bg-primary flex items-center justify-center rounded-sm p-2 focus:outline-hidden focus:ring-1">
+          Logo <!-- Placeholder for logo icon -->
+        </a>
+        <b class="text-foreground hidden text-sm font-bold sm:block">Protos-Admin</b>
+      </div>
+      <!-- Profile Menu -->
+      <div class="items-center justify-end sm:order-4 md:flex md:flex-1 lg:w-0">
+        <app-profile-menu></app-profile-menu>
+      </div>
+    </div>
+  </div>
+</div>
