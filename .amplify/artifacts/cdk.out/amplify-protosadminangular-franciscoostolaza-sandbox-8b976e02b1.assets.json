@@ -1,0 +1,34 @@
+{
+  "version": "45.0.0",
+  "files": {
+    "be81af079b7c5847a7ea22bd11c5441eeed82a3341c67d6b0aa386df859c0bfe": {
+      "displayName": "auth Nested Stack Template",
+      "source": {
+        "path": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1auth676C897D.nested.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "be81af079b7c5847a7ea22bd11c5441eeed82a3341c67d6b0aa386df859c0bfe.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "f35949fa23ecf3046ccb99e710fd6206f09ece8374e9830dd6c9d8a8edfe9674": {
+      "displayName": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1 Template",
+      "source": {
+        "path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "f35949fa23ecf3046ccb99e710fd6206f09ece8374e9830dd6c9d8a8edfe9674.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
