@@ -1,5 +1,3 @@
-
-<!-- src/app/layouts/top-menu/mobile-menu/mobile-menu.html: Mobile menu overlay (icons removed) -->
 <div
   class="fixed inset-x-0 top-0 z-20 p-4 bg-card transition-all duration-200 md:hidden"
   [class]="layout.showMobileMenu() ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'"
@@ -7,8 +5,8 @@
   <div class="rounded-lg shadow-lg p-4">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-semibold text-foreground">Menu</h2>
-      <button (click)="layout.toggleMobileMenu()" class="focus:outline-none">
-        X <!-- Placeholder for close icon -->
+      <button (click)="layout.toggleMobileMenu()" class="focus:outline-none p-2 rounded-md hover:bg-muted">
+        <svg-icon [src]="getIconPath('x')" svgClass="w-5 h-5"></svg-icon>
       </button>
     </div>
     <ul class="space-y-2">
@@ -18,8 +16,9 @@
             [routerLink]="link.path"
             (click)="layout.toggleMobileMenu()"
             routerLinkActive="bg-muted text-primary"
-            class="flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-md hover:bg-muted hover:text-primary"
+            class="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md hover:bg-muted hover:text-primary"
           >
+            <svg-icon [src]="getIconPath(link.icon)" svgClass="w-4 h-4"></svg-icon>
             <span>{{ link.label }}</span>
           </a>
         </li>

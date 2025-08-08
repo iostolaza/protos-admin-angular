@@ -1,8 +1,5 @@
-<!-- Top-level menu with groups, items, tooltips, matching lannodev. -->
-<!-- References: lannodev repo https://github.com/lannodev/angular-tailwind/blob/main/src/app/modules/layout/components/sidebar/sidebar-menu/sidebar-menu.component.html -->
-<!-- Tailwind v4: hover:bg-card/50, focus:outline-hidden -->
-
-<!-- Top-level menu with groups, items, tooltips -->
+<!-- src/app/layouts/sidebar/sidebar-menu/sidebar-menu.component.html -->
+ 
 @for (menu of menuService.pagesMenu(); track menu.group) {
   @if (menuService.showSideBar) {
     <div class="mx-1 flex items-center justify-between py-3">
@@ -24,7 +21,9 @@
         >
           <!-- Icon -->
           <div [ngClass]="item.active && !menuService.showSideBar ? 'text-primary' : 'text-muted-foreground/50'">
-            <svg-icon [src]="menuIcon(item.icon)" [svgClass]="'h-5 w-5'"></svg-icon>
+            @if (item.icon) {
+              <svg-icon [src]="getIconPath(item.icon)" [svgClass]="'h-5 w-5'"></svg-icon>
+            }
           </div>
 
           <!-- Condition -->

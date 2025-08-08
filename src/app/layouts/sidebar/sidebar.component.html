@@ -1,10 +1,3 @@
-
-<!-- src/app/layouts/sidebar/sidebar.html: Sidebar wrapper matching lannodev: dynamic width, toggle, logo, menu. -->
-<!-- Tailwind transitions; hidden mobile. -->
-<!-- References: lannodev repo https://github.com/lannodev/angular-tailwind/blob/main/src/app/modules/layout/components/sidebar/sidebar.component.html -->
-<!-- Angular docs: https://angular.dev/guide/standalone-components (v20) -->
-<!-- Tailwind docs: https://tailwindcss.com/docs/upgrade-guide (v4.0) -->
-
 <!-- Sidebar wrapper: dynamic width, toggle, logo, menu -->
 <nav
   [ngClass]="menuService.showSideBar ? 'w-[210px] xl:w-[280px]' : 'w-[70px]'"
@@ -22,7 +15,7 @@
             (click)="toggleSidebar()"
             class="bg-primary flex cursor-pointer items-center justify-center rounded-sm p-2 focus:outline-hidden focus:ring-1"
           >
-            <svg-icon [src]="getIconPath('cube')"></svg-icon>  <!-- Assumes 'logo' key in service -->
+            <svg-icon [src]="getIconPath('cube')"></svg-icon>
           </a>
           <b class="text-foreground ps-2 ml-1 grow text-sm font-bold">
             Protos Admin
@@ -34,7 +27,7 @@
         class="text-card hover:text-muted-foreground flex items-center justify-center rounded-md p-2 transition-all duration-200 focus:outline-hidden"
         [ngClass]="{ 'rotate-180': !menuService.showSideBar }"
       >
-        <svg-icon [src]="getIconPath('arrow-long-left')" [svgClass]="'w-6 h-6 '"></svg-icon>
+        <svg-icon [src]="getIconPath('arrow-long-left')" [svgClass]="'w-6 h-6'"></svg-icon>
       </button>
     </div>
 

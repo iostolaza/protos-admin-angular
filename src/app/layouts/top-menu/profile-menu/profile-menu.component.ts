@@ -1,23 +1,18 @@
-// Profile menu component with dropdown, matching typical dashboard patterns.
-// Standalone, OnPush, uses signals for state.
-// References:
-// - Angular docs: https://angular.dev/guide/signals (v20.1.0)
-// - Angular animations: https://angular.dev/guide/animations/reusable (v20.1.0)
-// - Fixed NG998103 by importing CommonModule (includes NgIf: https://angular.dev/api/common/CommonModule)
-// - Tailwind CSS for styling (v4.x: https://tailwindcss.com/docs)
-// - Angular change detection: https://angular.dev/guide/components/change-detection (v20.1.0)
-
 import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { MenuService } from '../../../core/services/menu.service';  // For logout if needed
+import { MenuService } from '../../../core/services/menu.service';
+import { AngularSvgIconModule } from 'angular-svg-icon';
+import { getIconPath } from '../../../core/services/icon-preloader.service';
+
+type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; route?: string; action?: 'logout' };
 
 @Component({
   selector: 'app-profile-menu',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage],
+  imports: [CommonModule, NgOptimizedImage, AngularSvgIconModule],
   templateUrl: './profile-menu.component.html',
   animations: [
     trigger('openClose', [
@@ -33,18 +28,18 @@ export class ProfileMenuComponent {
   private router = inject(Router);
   private menuService = inject(MenuService);
 
+  getIconPath = getIconPath;
+
   isOpen = signal(false);
-  profileMenu = signal([
-    { title: 'Profile', route: '/main-layout/profile' },
-    { title: 'Settings', route: '/main-layout/settings' },
-    { title: 'Logout', action: 'logout' },
+  profileMenu = signal<ProfileItem[]>([
+    { title: 'Profile',  icon: 'user-circle', route: '/main-layout/profile' },
+    { title: 'Settings', icon: 'cog',         route: '/main-layout/settings' },
+    { title: 'Logout',   icon: 'logout',      action: 'logout' }
   ]);
 
-  toggleMenu() {
-    this.isOpen.update((v) => !v);
-  }
+  toggleMenu() { this.isOpen.update((v) => !v); }
 
-  onMenuItemClick(item: { title: string; route?: string; action?: string }) {
+  onMenuItemClick(item: ProfileItem) {
     if (item.route) {
       this.router.navigate([item.route]);
     } else if (item.action === 'logout') {

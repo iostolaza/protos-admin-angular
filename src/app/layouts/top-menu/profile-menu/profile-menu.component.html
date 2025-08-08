@@ -1,9 +1,10 @@
 
-<!-- src/app/layouts/top-menu/profile-menu/profile-menu.html: Profile dropdown menu with button and animated content -->
+<!-- src/app/layouts/top-menu/profile-menu/profile-menu.html -->
+ 
 <button (click)="toggleMenu()" class="bg-card relative flex rounded-full text-sm" type="button">
   <img ngSrc="assets/profile/profile-female.jpg" width="36" height="36" alt="Profile Image" />
 </button>
-<!-- Dropdown with ngIf for proper hide/show and animations on enter/leave -->
+
 @if (isOpen()) {
   <div 
     class="dropdown bg-background shadow-custom border-muted absolute z-20 mt-2 w-60 origin-top-right transform rounded-md border border-dashed py-4 ring-1 transition focus:outline-none ltr:right-0 rtl:left-0"
@@ -25,7 +26,8 @@
         <li
           (click)="onMenuItemClick(item)"
           class="text-muted-foreground hover:bg-hover hover:text-primary inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs font-semibold">
-          {{ item.title }}
+          <svg-icon [src]="getIconPath(item.icon)" svgClass="w-4 h-4"></svg-icon>
+          <span>{{ item.title }}</span>
         </li>
       }
     </ul>

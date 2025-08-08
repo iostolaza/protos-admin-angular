@@ -1,21 +1,26 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LayoutService } from '../../../core/services/layout.service';  // Correct relative path
+import { LayoutService } from '../../../core/services/layout.service';
+import { AngularSvgIconModule } from 'angular-svg-icon';
+import { getIconPath, IconName } from '../../../core/services/icon-preloader.service';
 
 @Component({
   selector: 'app-mobile-menu',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, AngularSvgIconModule],
   templateUrl: './mobile-menu.component.html'
 })
 export class MobileMenu {
-  constructor(public layout: LayoutService) {} // Inject LayoutService as public for template access
-  
-  navLinks = [ // Define navLinks as component property; replace with actual data or service
-    { path: '/dashboard', icon: 'assets/icons/home.svg', label: 'Dashboard' },
-    // Add more links as needed
+  constructor(public layout: LayoutService) {}
+
+  // expose helper for template
+  getIconPath = getIconPath;
+
+  // IMPORTANT: Use IconName (keys of the ICONS map), not string
+  navLinks: Array<{ path: string; icon: IconName; label: string }> = [
+    { path: '/main-layout/home',     icon: 'chart-pie',   label: 'Home' },
+    { path: '/main-layout/profile',  icon: 'user-circle', label: 'Profile' },
+    { path: '/main-layout/settings', icon: 'cog',         label: 'Settings' }
   ];
 }
-
-

@@ -1,25 +1,18 @@
-// src/app/core/models/menu.model.ts
-
 /*
-Description: 
-TypeScript interfaces for menu structure in sidebar navigation.
-Label made required for type safety in templates and trackBy functions.
-References:
-- TypeScript interfaces for menu structure.
-- Changed label to required for type safety in trackBy and templates (fixes TS2322).
+Models for sidebar menu structure; icon is a typed IconName.
 */
 
-// SubMenuItem interface
+import type { IconName } from '../services/icon-preloader.service';
+
 export interface SubMenuItem {
-  label: string;  // Made required to avoid undefined errors
+  label: string;
   route: string | null;
-  icon?: string;
+  icon?: IconName;
   children?: SubMenuItem[];
   active?: boolean;
   expanded?: boolean;
 }
 
-// MenuItem interface
 export interface MenuItem {
   group: string;
   separator?: boolean;

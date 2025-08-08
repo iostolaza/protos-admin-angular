@@ -1,10 +1,4 @@
-
-<!-- src/app/layouts/sidebar/sidebar-submenu/sidebar-submenu.html: Recursive submenu with animation, matching lannodev. -->
-<!-- Heroicons plus/minus (outline). -->
-<!-- References: lannodev repo https://github.com/lannodev/angular-tailwind/blob/main/src/app/modules/layout/components/sidebar/sidebar-submenu/sidebar-submenu.component.html -->
-<!-- Added active indicator dot; logout special case -->
-
-<!-- Recursive submenu with animation, matching lannodev. -->
+<!-- Recursive submenu with animation -->
 <div
   class="max-h-0 overflow-hidden pt-1 transition-all duration-500 ltr:pl-4 rtl:pr-4"
   [ngClass]="{ hidden: !menuService.showSideBar, 'max-h-screen': submenu.expanded }"
@@ -44,8 +38,7 @@
             @if (menuService.isActive(sub.route)) {
               <span
                 class="size-1.5 bg-primary absolute flex translate-y-3.5 items-center rounded-full ltr:-translate-x-[11.5px] rtl:translate-x-[11.5px]"
-              >
-              </span>
+              ></span>
             }
           </ng-template>
 

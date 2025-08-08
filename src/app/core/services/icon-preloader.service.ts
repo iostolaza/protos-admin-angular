@@ -1,27 +1,21 @@
-// src/app/core/services/icon-preloader.service.ts
-
 /*
-Description: 
-Service to preload SVG icons using angular-svg-icon.
-Loads Heroicons from assets for performance (cached DOM).
-Exports IconName type, ICONS map, getIconPath for type-safe usage.
-Consolidated from icons-registry.ts for single source of truth.
-References:
-- angular-svg-icon docs: https://www.npmjs.com/package/angular-svg-icon (preloading)
-- Angular types: https://angular.dev/guide/typescript-configuration (union types)
-- Community: https://stackoverflow.com/questions/57234220/module-has-no-exported-member-error-in-angular-module (export fixes)
+Service: icon-preloader.service.ts
+- Single source of truth for icon file paths (ICONS map)
+- Type-safe IconName from map keys
+- getIconPath(name) to resolve icon URLs
+- Optional preloadIcons() to warm the cache via angular-svg-icon
+
+Docs:
+- angular-svg-icon registry & caching: https://www.npmjs.com/package/angular-svg-icon
+- APP initializer: https://angular.dev/api/core/provideAppInitializer
 */
 
-// Imports
 import { Injectable } from '@angular/core';
 import { SvgIconRegistryService } from 'angular-svg-icon';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, map } from 'rxjs';
 
-// Type-safe icon names (union from keys)
-export type IconName = keyof typeof ICONS;
-
-// Map of names to paths (consolidated; matches your assets/heroicons)
+// Central, typed map of icons → file paths
 export const ICONS = {
   'arrow-long-left': 'assets/icons/heroicons/outline/arrow-long-left.svg',
   'arrow-long-right': 'assets/icons/heroicons/outline/arrow-long-right.svg',
@@ -61,34 +55,36 @@ export const ICONS = {
   'chevron-double-left': 'assets/icons/heroicons/solid/chevron-double-left.svg',
   'chevron-right': 'assets/icons/heroicons/solid/chevron-right.svg',
   'play': 'assets/icons/heroicons/solid/play.svg',
-  // Add non-heroicons if needed, e.g., 'logo': 'assets/icons/logo.svg'
 } as const;
 
-// Function to get path by name
+export type IconName = keyof typeof ICONS;
+
 export function getIconPath(name: IconName): string {
   return ICONS[name];
 }
 
-// Internal paths array (derived from ICONS values for consistency)
-const ICON_PATHS = Object.values(ICONS);
-
-// Injectable service
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class IconPreloaderService {
   constructor(
     private iconRegistry: SvgIconRegistryService,
     private http: HttpClient
   ) {}
 
-  // Preload all icons on init
+  /**
+   * Preload all icons once (optional)
+   * angular-svg-icon caches by URL; preloading reduces initial flashes.
+   */
   preloadIcons() {
-    const iconRequests = ICON_PATHS.map(path =>
+    const entries = Object.entries(ICONS) as [IconName, string][];
+    const reqs = entries.map(([key, path]) =>
       this.http.get(path, { responseType: 'text' }).pipe(
-        map(svg => this.iconRegistry.addSvg(path.split('/').pop()!.replace('.svg', ''), svg))
+        map(svgText => {
+          // registry index by *URL*; we still use [src]="getIconPath(key)" in templates
+          this.iconRegistry.addSvg(path, svgText);
+          return key;
+        })
       )
     );
-    return forkJoin(iconRequests);
+    return forkJoin(reqs);
   }
 }
