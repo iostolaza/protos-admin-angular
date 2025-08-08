@@ -1,16 +1,11 @@
-// amplify/backend.ts
-
-/*
-Description: 
-Defines the backend configuration for AWS Amplify Gen 2.
-Imports and includes the auth resource modularly.
-*/
-
-// Imports
 import { defineBackend } from '@aws-amplify/backend';
-import { auth } from './auth/resource';  // Modular import for auth
+import { auth } from './auth/resource';
+import { data } from './data/resource';
 
-// Define and export backend with auth
+/**
+ * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
+ */
 defineBackend({
   auth,
+  data,
 });

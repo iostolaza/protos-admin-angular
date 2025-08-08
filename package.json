@@ -1,6 +1,8 @@
 {
   "name": "protos-admin-angular",
   "version": "0.0.0",
+  "private": true,
+  "packageManager": "npm@10.8.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -12,13 +14,10 @@
     "overrides": [
       {
         "files": "*.html",
-        "options": {
-          "parser": "angular"
-        }
+        "options": { "parser": "angular" }
       }
     ]
   },
-  "private": true,
   "dependencies": {
     "@angular/common": "^20.1.0",
     "@angular/compiler": "^20.1.0",
@@ -34,7 +33,7 @@
   },
   "devDependencies": {
     "@angular/build": "^20.1.0",
-    "@angular/cli": "^18.0.7",
+    "@angular/cli": "^20.1.5",
     "@angular/compiler-cli": "^20.1.0",
     "@aws-amplify/backend": "^1.16.1",
     "@aws-amplify/backend-cli": "^1.8.0",
