@@ -2,6 +2,7 @@
 /* src/styles.scss: Global styles with Tailwind import, custom vars, and utilities */
 
 @use "tailwindcss";
+@import '@fontsource/inter/variable.css';
 
 @layer base {
   :root {

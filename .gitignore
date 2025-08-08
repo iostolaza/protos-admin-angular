@@ -44,10 +44,11 @@ Thumbs.db
 # Environment variables (ignore to prevent leaking secrets)
 /.env
 *.env
+/projectdocument
 
 # AWS Amplify Gen2 (ignore generated/local configs; commit amplify/ source code)
 .amplify
 amplify_outputs*
 amplifyconfiguration*
 
-# amplify
+
