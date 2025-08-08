@@ -15,13 +15,9 @@
     }
   },
   "include": [
-    "**/*.ts"
+    "**/*.ts" 
   ],
   "exclude": [
-    "node_modules",
-    "../node_modules",
-    ".amplify/**",
-    "../.amplify/**",
-    "**/*.d.ts"
+    "node_modules" 
   ]
 }
