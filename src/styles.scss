@@ -1,8 +1,13 @@
-
 /* src/styles.scss: Global styles with Tailwind import, custom vars, and utilities */
 
+/* Tailwind v4 import (no @tailwind directives needed in v4) */
+// @import "tailwindcss";
 @use "tailwindcss";
-@import '@fontsource/inter/variable.css';
+
+/* Inter Variable font (Fontsource variable package) */
+// @import "@fontsource-variable/inter"; /* Defaults to wght axis for variable font (per Fontsource latest) */
+@use "@fontsource-variable/inter"; /* Defaults to wght axis for variable font (per Fontsource latest) */
+
 
 @layer base {
   :root {
@@ -18,6 +23,7 @@
     --destructive-foreground: #172554; /* blue-950 */
     --border: #93c5fd; /* blue-300 */
     --hover-bg: #DBEAFE; /* blue-100 for hover in light mode */
+    --font-sans: "InterVariable", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
   .dark {
     --background: #64748B; /* slate-500, dark grey for main sections */
@@ -34,7 +40,7 @@
     --hover-bg: #1E40AF; /* blue-800 for hover in dark mode */
   }
   html {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+    font-family: var(--font-sans);
   }
   body {
     margin: 0;
@@ -50,14 +56,17 @@
   .group:hover .group-hover\:opacity-100 {
     opacity: 1;
   }
+
   /* Shadow custom */
   .shadow-custom {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Stronger shadow for visibility */
   }
+
   /* Rounded md */
   .rounded-md {
     border-radius: 0.375rem;
   }
+
   /* SR only */
   .sr-only {
     position: absolute;
@@ -70,35 +79,20 @@
     white-space: nowrap;
     border-width: 0;
   }
+
   /* Custom backgrounds/colors */
-  .bg-background {
-    background-color: var(--background);
-  }
-  .text-foreground {
-    color: var(--foreground);
-  }
-  .text-muted-foreground {
-    color: var(--muted-foreground);
-  }
-  .border-border {
-    border-color: var(--border);
-  }
-  .border-muted {
-    border-color: var(--muted);
-  }
-  .bg-card {
-    background-color: var(--card);
-  }
-  .text-primary {
-    color: var(--primary);  /* Fixed: --fprimary typo to --primary */
-  }
+  .bg-background { background-color: var(--background); }
+  .text-foreground { color: var(--foreground); }
+  .text-muted-foreground { color: var(--muted-foreground); }
+  .border-border { border-color: var(--border); }
+  .border-muted { border-color: var(--muted); }
+  .bg-card { background-color: var(--card); }
+  .text-primary { color: var(--primary); }  /* Fixed: --fprimary typo to --primary */
+
   /* Hover utilities - updated to use new --hover-bg var for custom hover colors */
-  .hover\:bg-hover:hover {
-    background-color: var(--hover-bg);
-  }
-  .hover\:text-primary:hover {
-    color: var(--primary);
-  }
+  .hover\:bg-hover:hover { background-color: var(--hover-bg); }
+  .hover\:text-primary:hover { color: var(--primary); }
+
   /* Dropdown overrides */
   .dropdown {
     background-color: var(--card); /* Avoid !important where possible for better cascade */
@@ -108,10 +102,12 @@
     --ring-color: var(--border);
     --ring-opacity: 0.5; /* CSS var for ring opacity */
   }
+
   /* Amplify overrides with standard CSS (minimize !important; use specificity) */
   [data-amplify-theme] {
     --amplify-colors-brand-primary: var(--foreground);
   }
+
   .amplify-authenticator {
     background-color: var(--card);
     border-radius: 0.5rem;
@@ -122,12 +118,14 @@
     width: 100%;
     margin: 0 auto;
   }
+
   .amplify-tab {
     color: var(--primary);
     border-bottom: 2px solid var(--primary);
     background-color: var(--muted);
     padding: 0.5rem 1rem;
   }
+
   .amplify-input {
     background-color: var(--muted);
     color: var(--foreground);
@@ -136,6 +134,7 @@
     padding: 0.5rem;
     width: 100%;
   }
+
   .amplify-button {
     background-color: var(--primary);
     color: var(--primary-foreground);
@@ -146,14 +145,16 @@
   .amplify-button:hover {
     background-color: var(--hover-bg);
   }
-  .amplify-label {
-    color: var(--muted-foreground);
-  }
+
+  .amplify-label { color: var(--muted-foreground); }
+
   .amplify-alert {
     color: var(--destructive);
-    background-color: rgba(var(--destructive), 0.1);
+    /* Use a valid color with alpha; --destructive is a hex, so rgba(var(--...)) won't parse */
+    background-color: #f973161a;
     border: 1px solid var(--destructive);
   }
+
   .amplify-button[data-variation="link"] {
     display: block;
     width: 87%;
