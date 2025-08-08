@@ -1,5 +1,3 @@
-<!-- src/app/layouts/sidebar/sidebar-menu/sidebar-menu.component.html -->
- 
 @for (menu of menuService.pagesMenu(); track menu.group) {
   @if (menuService.showSideBar) {
     <div class="mx-1 flex items-center justify-between py-3">
@@ -33,20 +31,30 @@
           >
           </ng-container>
 
-          <!-- Workaround:: Enable routerLink -->
+          <!-- Workaround:: Enable routerLink OR logout action -->
           <ng-template #parentMenu let-item="item">
-            <div
-              routerLink="{{ item.route }}"
-              class="text-muted-foreground hover:text-primary flex h-[36px] cursor-pointer items-center justify-start rounded-sm"
-            >
-              <a
-                [ngClass]="{ hidden: !menuService.showSideBar }"
-                routerLinkActive="text-primary"
-                class="truncate text-xs font-semibold tracking-wide focus:outline-hidden"
+  
+            @if (item.route === '/logout') {
+              <button
+                (click)="$event.stopPropagation(); menuService.logout()"
+                class="hover:bg-card inline-flex h-[36px] w-full items-center justify-start rounded-sm px-2 text-xs font-semibold"
               >
                 {{ item.label }}
-              </a>
-            </div>
+              </button>
+            } @else {
+              <div
+                routerLink="{{ item.route }}"
+                class="text-muted-foreground hover:text-primary flex h-[36px] cursor-pointer items-center justify-start rounded-sm"
+              >
+                <a
+                  [ngClass]="{ hidden: !menuService.showSideBar }"
+                  routerLinkActive="text-primary"
+                  class="truncate text-xs font-semibold tracking-wide focus:outline-hidden"
+                >
+                  {{ item.label }}
+                </a>
+              </div>
+            }
           </ng-template>
 
           <!-- Workaround:: Disable routerLink -->

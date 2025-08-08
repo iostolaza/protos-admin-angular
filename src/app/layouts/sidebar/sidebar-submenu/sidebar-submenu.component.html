@@ -29,7 +29,7 @@
               </a>
             } @else {
               <button
-                (click)="menuService.logout()"
+                (click)="$event.stopPropagation(); menuService.logout()"
                 class="hover:bg-card inline-block w-full rounded-lg px-4 py-2 text-xs"
               >
                 {{ sub.label }}
