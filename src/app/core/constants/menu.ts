@@ -11,10 +11,10 @@ export const Menu = {
       group: 'Main',
       separator: true,
       items: [
-        { label: 'Home',     icon: 'chart-pie',   route: '/main-layout/home' },
+        { label: 'Home',     icon: 'home',   route: '/main-layout/home' },
         { label: 'Profile',  icon: 'user-circle', route: '/main-layout/profile' },
         {
-          label: 'Messages', icon: 'bell',        route: null,
+          label: 'Messages', icon: 'inbox-stack',        route: null,
           children: [
             { label: 'Incoming',  route: '/main-layout/messages/incoming' },
             { label: 'Outgoing',  route: '/main-layout/messages/outgoing' }
@@ -34,10 +34,10 @@ export const Menu = {
       group: 'Productivity',
       separator: true,
       items: [
-        { label: 'Timesheet',  icon: 'folder',     route: '/main-layout/timesheet' },
-         { label: 'Analytics',  icon: 'chart-pie',  route: '/main-layout/analytics' },
+        { label: 'Timesheet',  icon: 'clock',     route: '/main-layout/timesheet' },
+         { label: 'Analytics',  icon: 'chart-bar',  route: '/main-layout/analytics' },
         {
-          label: 'Schedule',   icon: 'download',   route: null,
+          label: 'Schedule',   icon: 'calendar-date-range',   route: null,
           children: [
             { label: 'Calendar', route: '/main-layout/schedule/calendar' }
           ],
@@ -50,7 +50,7 @@ export const Menu = {
       separator: false,
       items: [
         { label: 'Settings', icon: 'cog',         route: '/main-layout/settings' },
-        { label: 'Logout',   icon: 'lock-closed', route: '/logout' }
+        { label: 'Logout',   icon: 'logout', route: '/logout' }
       ],
     }
   ] as MenuItem[],
