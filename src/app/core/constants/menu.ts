@@ -9,7 +9,7 @@ export const Menu = {
   pages: [
     {
       group: 'Main',
-      separator: false,
+      separator: true,
       items: [
         { label: 'Home',     icon: 'chart-pie',   route: '/main-layout/home' },
         { label: 'Profile',  icon: 'user-circle', route: '/main-layout/profile' },
@@ -35,13 +35,14 @@ export const Menu = {
       separator: true,
       items: [
         { label: 'Timesheet',  icon: 'folder',     route: '/main-layout/timesheet' },
+         { label: 'Analytics',  icon: 'chart-pie',  route: '/main-layout/analytics' },
         {
           label: 'Schedule',   icon: 'download',   route: null,
           children: [
             { label: 'Calendar', route: '/main-layout/schedule/calendar' }
           ],
         },
-        { label: 'Analytics',  icon: 'chart-pie',  route: '/main-layout/analytics' }
+       
       ],
     },
     {
