@@ -1,4 +1,16 @@
-<!-- src/app/features/profile/profile.component.html: Placeholder with centered large title -->
-<div class="flex items-center justify-center h-screen" style="font-size: 2rem; font-weight: bold; text-align: center;">
-  Profile Feature In Progress - Check Back Later
+<!-- Scrolling main with cards; responsive grid -->
+<div class="p-6 overflow-y-auto h-screen">
+  <h1 class="text-2xl font-bold mb-6">Account Profile</h1>
+  @if (loading()) {
+    <p>Loading...</p>
+  } @else {
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <app-personal-info-card></app-personal-info-card>
+      <app-address-card></app-address-card>
+      <app-contact-prefs-card></app-contact-prefs-card>
+      <app-payment-card></app-payment-card>
+      <app-emergency-contact-card></app-emergency-contact-card>
+      <app-vehicle-card></app-vehicle-card>
+    </div>
+  }
 </div>

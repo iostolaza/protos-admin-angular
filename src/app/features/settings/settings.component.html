@@ -1,12 +1,93 @@
-<!-- src/app/features/settings/settings.component.html: Updated template with LayoutService -->
-<div class="p-6 max-w-md mx-auto bg-card rounded-md shadow-md">
-  <h2 class="text-xl font-semibold mb-4">App Settings</h2>
-  <div class="flex items-center gap-4">
-    <label class="text-sm font-medium">Theme Mode:</label>
+<div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Theme Mode -->
+  <div class="bg-card p-6 rounded-lg shadow-md">
+    <h2 class="text-lg font-semibold mb-4">Theme Mode</h2>
     <button
-      class="px-3 py-1 rounded border border-border"
-      (click)="toggleThemeMode()">
-      Toggle to {{ layoutService.isDarkMode() ? 'Light' : 'Dark' }} Mode
+      (click)="themeService.toggleThemeMode()"
+      class="px-4 py-2 bg-primary text-white rounded"
+    >
+      Toggle to {{ themeService.theme().mode === 'dark' ? 'Light' : 'Dark' }}
     </button>
+  </div>
+
+  <!-- Theme Color -->
+  <div class="bg-card p-6 rounded-lg shadow-md">
+    <h2 class="text-lg font-semibold mb-4">Theme Color</h2>
+    <div class="grid grid-cols-3 gap-2">
+      @for (color of themeService.allowedColors; track color.name) {
+        <button
+          (click)="themeService.toggleThemeColor(color.name)"
+          class="p-2 rounded transition-all duration-200"
+          [style.backgroundColor]="color.code"
+          [class.ring-2]="themeService.theme().color === color.name"
+          [class.ring-offset-2]="themeService.theme().color === color.name"
+          [class.ring-black]="themeService.theme().color === color.name"
+        >
+          {{ color.name }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Theme Direction -->
+  <div class="bg-card p-6 rounded-lg shadow-md">
+    <h2 class="text-lg font-semibold mb-4">Theme Direction</h2>
+    <div class="grid grid-cols-2 gap-2">
+      @for (dir of themeService.allowedDirections; track dir) {
+        <button
+          (click)="themeService.setDirection(dir)"
+          class="p-2 rounded bg-gray-300"
+          [class.bg-primary]="themeService.theme().direction === dir"
+          [class.text-white]="themeService.theme().direction === dir"
+        >
+          {{ dir.toUpperCase() }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Security -->
+  <div class="bg-card p-6 rounded-lg shadow-md">
+    <h2 class="text-lg font-semibold mb-4">Security</h2>
+    <form [formGroup]="passwordForm" (ngSubmit)="savePassword()">
+      <div class="mb-4">
+        <label class="block text-sm">Current Password</label>
+        <input formControlName="current" type="password" class="w-full p-2 border rounded" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm">New Password</label>
+        <input formControlName="new" type="password" class="w-full p-2 border rounded" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm">Confirm</label>
+        <input formControlName="confirm" type="password" class="w-full p-2 border rounded" />
+        @if (passwordForm.hasError('mismatch')) {
+          <p class="text-red-500 text-sm">Passwords don't match</p>
+        }
+      </div>
+      <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Save</button>
+    </form>
+    <div class="mt-4">
+      <label class="block text-sm">2FA</label>
+      <input type="checkbox" /> Enable (mock)
+    </div>
+  </div>
+
+  <!-- Timezone -->
+  <div class="bg-card p-6 rounded-lg shadow-md">
+    <h2 class="text-lg font-semibold mb-4">Timezone</h2>
+    <select (change)="setTimezone($event)" class="w-full p-2 border rounded">
+      <option>UTC</option>
+      <option>PST</option>
+    </select>
+  </div>
+
+  <!-- Language -->
+  <div class="bg-card p-6 rounded-lg shadow-md">
+    <h2 class="text-lg font-semibold mb-4">Language</h2>
+    <select (change)="setLanguage($event)" class="w-full p-2 border rounded">
+      <option>English</option>
+      <option>Spanish</option>
+    </select>
   </div>
 </div>

@@ -1,17 +1,48 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any unauthenticated user can "create", "read", "update", 
-and "delete" any "Todo" records.
-=========================================================================*/
 const schema = a.schema({
-  Todo: a
+  User: a
     .model({
-      content: a.string(),
+      firstName: a.string().required(),
+      lastName: a.string().required(),
+      username: a.string().required(),
+      email: a.email().required(),
+      accessLevel: a.string().required(),
+      address: a.customType({
+        line1: a.string().required(),
+        city: a.string().required(),
+        state: a.string().required(),
+        zip: a.string().required(),
+        country: a.string().required(),
+      }),
+      contactPrefs: a.customType({
+        email: a.boolean(),
+        push: a.boolean(),
+      }),
+      emergencyContact: a.customType({
+        name: a.string().required(),
+        phone: a.string().required(),
+        email: a.email().required(),
+        address: a.string().required(),
+      }),
+      vehicle: a.customType({
+        make: a.string(),
+        model: a.string(),
+        color: a.string(),
+        license: a.string(),
+        year: a.string(),
+      }),
+      profileImageKey: a.string(),
+      paymentMethods: a.hasMany('PaymentMethod', 'userId'),
     })
-    .authorization((allow) => [allow.guest()]),
+    .authorization(allow => [allow.owner()]),
+  PaymentMethod: a
+    .model({
+      userId: a.id().required(),
+      type: a.string(),
+      name: a.string(),
+    })
+    .authorization(allow => [allow.owner()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -19,35 +50,6 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: 'identityPool',
+    defaultAuthorizationMode: 'userPool',
   },
 });
-
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
-
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>

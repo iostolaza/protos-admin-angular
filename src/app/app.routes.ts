@@ -63,7 +63,7 @@ export const routes: Routes = [
       { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then(m => m.Schedule) },
       
       // Settings page lazy-loaded
-      { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.Settings) },
+      { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) },
       
       // Logout route (reuses sign-in for simplicity; add logout logic in component)
       { path: 'logout', loadComponent: () => import('./features/auth/sign-in.component').then(m => m.SignInComponent) }
