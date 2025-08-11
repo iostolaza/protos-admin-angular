@@ -49,7 +49,7 @@ import { UserService, User } from '../../core/services/user.service';
             </div>
           </div>
           <div class="mt-4 flex justify-end gap-2">
-            <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+            <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Save</button>
           </div>
         </form>

@@ -1,38 +1,38 @@
 /* src/styles.scss: Global styles with Tailwind import, custom vars, and utilities */
 
 /* Tailwind v4 import (no @tailwind directives needed in v4) */
-// @import "tailwindcss";
 @use "tailwindcss";
 
 /* Inter Variable font (Fontsource variable package) */
-// @import "@fontsource-variable/inter"; /* Defaults to wght axis for variable font (per Fontsource latest) */
 @use "@fontsource-variable/inter"; /* Defaults to wght axis for variable font (per Fontsource latest) */
-
-
 
 @layer base {
   :root {
-    --background: #E5E7EB; /* gray-200, light grey for main sections */
-    --foreground: #111827; /* gray-900, dark gray for text (changed from blue-900 for better readability) */
-    --card: #94A3B8; /* slate-400, for headers, nav, cards, footer */
+    --background: #E5E7EB; /* gray-200, light grey for main content */
+    --foreground: #111827; /* gray-900, dark gray for text */
+    --card: #CBD5E1; /* slate-300, distinct shade for sidebar/top-menu/cards/footer */
     --card-foreground: #1e3a8a; /* blue-900 */
     --primary: #3b82f6; /* blue-500, vibrant blue accent */
     --primary-foreground: #ffffff; /* white */
+    --secondary: #D1D5DB; /* gray-300, for secondary buttons/actions */
+    --secondary-foreground: #111827; /* gray-900, dark text on secondary */
     --muted: #bfdbfe; /* blue-200 */
-    --muted-foreground: #1e3a8a; /* blue-900 (fixed from blue-400 for consistency) */
-    --destructive: #f97316; /* orange-500 (complement to blue) */
+    --muted-foreground: #1e3a8a; /* blue-900 */
+    --destructive: #f97316; /* orange-500 */
     --destructive-foreground: #172554; /* blue-950 */
     --border: #93c5fd; /* blue-300 */
     --hover-bg: #DBEAFE; /* blue-100 for hover in light mode */
     --font-sans: "InterVariable", system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
   }
   .dark {
-    --background: #64748B; /* slate-500, dark grey for main sections */
+    --background: #64748B; /* slate-500, dark grey for main content */
     --foreground: #dbeafe; /* blue-100, light blue for text */
-    --card: #1f2937; /* gray-900, for headers, nav, cards, footer */
+    --card: #374151; /* gray-700, distinct shade for sidebar/top-menu/cards/footer */
     --card-foreground: #dbeafe; /* blue-100 */
     --primary: #3b82f6; /* blue-500, vibrant blue accent */
     --primary-foreground: #172554; /* blue-950 */
+    --secondary: #4B5563; /* gray-600, for secondary buttons/actions */
+    --secondary-foreground: #F9FAFB; /* gray-50, light text on secondary */
     --muted: #2563eb; /* blue-600 */
     --muted-foreground: #93c5fd; /* blue-300 */
     --destructive: #f97316; /* orange-500 */
@@ -91,7 +91,11 @@
   .border-border { border-color: var(--border); }
   .border-muted { border-color: var(--muted); }
   .bg-card { background-color: var(--card); }
-  .text-primary { color: var(--primary); }  /* Fixed: --fprimary typo to --primary */
+  .text-primary { color: var(--primary); }
+
+  /* Added: Secondary utilities */
+  .bg-secondary { background-color: var(--secondary); }
+  .text-secondary-foreground { color: var(--secondary-foreground); }
 
   /* Hover utilities - updated to use new --hover-bg var for custom hover colors */
   .hover\:bg-hover:hover { background-color: var(--hover-bg); }
@@ -107,8 +111,8 @@
     --ring-opacity: 0.5; /* CSS var for ring opacity */
   }
 
-/* ================================
-   2. AMPLIFY AUTHENTICATOR OVERRIDES
-   ================================ */
+  /* ================================
+     2. AMPLIFY AUTHENTICATOR OVERRIDES
+     ================================ */
 
 }

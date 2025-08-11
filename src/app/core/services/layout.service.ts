@@ -2,21 +2,22 @@
 
 /*
 Description: 
-Consolidated service for managing layout states like sidebar collapse, dark mode, and mobile menu.
+Consolidated service for managing layout states like sidebar visibility, dark mode, and mobile menu.
 Uses signals for reactive state management and media queries for initial dark mode.
-Merged from ThemeService for clean architecture.
+Renamed sidebarCollapsed to showSideBar for consistency with MenuService usage.
+References:
+- Angular signals: https://angular.dev/guide/signals (v20.1.0)
+- Media queries: https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries (prefers-color-scheme)
 */
 
-// Imports
 import { Injectable, signal, effect } from '@angular/core';
 
-// Injectable service
 @Injectable({
   providedIn: 'root',
 })
 export class LayoutService {
   // Signals for layout states
-  sidebarCollapsed = signal(false);
+  showSideBar = signal(true);  // Renamed from sidebarCollapsed (inverse logic: true = shown/expanded)
   isDarkMode = signal(false);
   showMobileMenu = signal(false);
 
@@ -35,9 +36,9 @@ export class LayoutService {
     });
   }
 
-  // Toggle sidebar collapse
+  // Toggle sidebar visibility
   toggleSidebar() {
-    this.sidebarCollapsed.update(value => !value);
+    this.showSideBar.update(value => !value);
   }
 
   // Toggle dark mode

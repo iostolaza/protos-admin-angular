@@ -1,20 +1,25 @@
 <!-- src/app/layouts/main-layout/main-layout.component.html -->
 
-<div class="flex h-screen flex-col">
-  <!-- Top Menu -->
-  <app-top-menu></app-top-menu>
+<div class="flex h-screen flex-col overflow-hidden">
+  <!-- Top Menu (full-width, bg-card for distinction) -->
+  <app-top-menu class="bg-card"></app-top-menu>
 
-  <!-- Main Content with Sidebar and Router Outlet -->
+  <!-- Row for Sidebar and Main (flex-1 to grow) -->
   <div class="flex flex-1 overflow-hidden">
-    <!-- Sidebar -->
-    <app-sidebar></app-sidebar>
+    <!-- Sidebar (bg-card, transition for collapse) -->
+    <app-sidebar class="bg-card transition-all duration-300" [ngClass]="{'w-[280px]': menuService.showSideBar, 'w-[70px]': !menuService.showSideBar}"></app-sidebar>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 overflow-y-auto p-4 bg-background">
-      <router-outlet></router-outlet>
+    <!-- Main Content Area (bg-background for distinction, flex-1 grow) -->
+    <main
+      id="main-content"
+      class="flex-1 overflow-y-auto bg-background scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted"
+    >
+      <div class="mx-auto px-4 py-4 sm:px-8 lg:container">
+        <router-outlet></router-outlet>
+      </div>
     </main>
   </div>
 
-  <!-- Footer -->
-  <app-footer></app-footer>
+  <!-- Footer (bg-card, full-width below row) -->
+  <app-footer class="bg-card"></app-footer>
 </div>
