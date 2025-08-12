@@ -1,29 +1,27 @@
 
 // src/app/app.ts
 
-/*
-Description: 
-Root component of the application. 
-Serves as entry for routing via RouterOutlet.
-Preloads icons on init.
-*/
+// Root component of the application.
+// Serves as entry for routing via RouterOutlet.
+// Preloads icons on init.
 
-// Imports
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { IconPreloaderService } from './core/services/icon-preloader.service';
+import { ThemeService } from './core/services/theme.service';
 
-// Standalone component
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [RouterOutlet],
   templateUrl: './app.html',
-  styleUrl: './app.component.css' 
+  styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  // Constructor: Inject and preload icons
-  constructor(private iconPreloader: IconPreloaderService) {
+  private iconPreloader = inject(IconPreloaderService);
+  private themeService = inject(ThemeService); // Inject to initialize service and load theme via constructor
+
+  constructor() {
     this.iconPreloader.preloadIcons().subscribe();
   }
 }

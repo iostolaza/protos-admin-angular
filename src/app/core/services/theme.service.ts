@@ -1,5 +1,3 @@
-/* Theme service as edited. */
-
 import { Injectable, signal, effect } from '@angular/core';
 
 export interface Theme {
@@ -26,8 +24,8 @@ export class ThemeService {
 
   private setConfig() {
     localStorage.setItem('theme', JSON.stringify(this.theme()));
-    document.querySelector('html')!.className = this.theme().mode;
-    document.querySelector('html')!.setAttribute('data-theme', this.theme().color);
+    document.documentElement.className = this.theme().mode;
+    document.documentElement.setAttribute('data-theme', this.theme().color);
   }
 
   public get isDark(): boolean {

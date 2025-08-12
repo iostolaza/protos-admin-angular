@@ -1,6 +1,3 @@
-
-/* Layout service, unchanged. */
-
 import { Injectable, signal, effect } from '@angular/core';
 
 @Injectable({

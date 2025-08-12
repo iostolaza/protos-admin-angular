@@ -1,15 +1,3 @@
-/*
-Service: icon-preloader.service.ts
-- Single source of truth for icon file paths (ICONS map)
-- Type-safe IconName from map keys
-- getIconPath(name) to resolve icon URLs
-- Optional preloadIcons() to warm the cache via angular-svg-icon
-
-Docs:
-- angular-svg-icon registry & caching: https://www.npmjs.com/package/angular-svg-icon
-- APP initializer: https://angular.dev/api/core/provideAppInitializer
-*/
-
 import { Injectable } from '@angular/core';
 import { SvgIconRegistryService } from 'angular-svg-icon';
 import { HttpClient } from '@angular/common/http';

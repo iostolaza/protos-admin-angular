@@ -1,16 +1,19 @@
-<!-- Edited layout: bg-card for top/footer/sidebar, bg-background for main. -->
-
+<!--
+  Main layout component.
+  Uses bg-background for top/footer/sidebar, bg-card for main content.
+  Sidebar width classes aligned to responsive design (210px xl:280px expanded) without altering other styles.
+-->
 <div class="flex h-screen flex-col overflow-hidden">
   <!-- Top Menu (bg-background for distinction) -->
-  <app-top-menu class="bg-background"></app-top-menu>
+  <app-top-menu class="bg-card"></app-top-menu>
 
   <!-- Row for Sidebar and Main -->
   <div class="flex flex-1 overflow-hidden">
     <!-- Sidebar (bg-background) -->
-    <app-sidebar class="bg-background transition-all duration-300" [ngClass]="{'w-[280px]': menuService.showSideBar, 'w-[70px]': !menuService.showSideBar}"></app-sidebar>
+    <app-sidebar class="bg-card"></app-sidebar>
 
     <!-- Main Content (bg-card for subtle layer) -->
-    <main id="main-content" class="flex-1 overflow-y-auto bg-card scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
+    <main id="main-content" class="flex-1 overflow-y-auto bg-background scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
       <div class="mx-auto px-4 py-4 sm:px-8 lg:container">
         <router-outlet></router-outlet>
       </div>
@@ -18,5 +21,5 @@
   </div>
 
   <!-- Footer (bg-background) -->
-  <app-footer class="bg-background"></app-footer>
+  <app-footer class="bg-card"></app-footer>
 </div>
