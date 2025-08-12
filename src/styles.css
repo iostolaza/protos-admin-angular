@@ -177,6 +177,13 @@
   [type='radio']:focus {
     box-shadow: 0 0 0 2px var(--primary);
   }
+  /* New: General reset/override for heroicon colors to currentColor (controls via parent text- classes) */
+  svg-icon svg [stroke] {
+    stroke: currentColor !important;
+  }
+  svg-icon svg [fill]:not([fill="none"]) {
+    fill: currentColor !important;
+  }
 }
 
 @layer utilities {

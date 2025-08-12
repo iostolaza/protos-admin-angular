@@ -1,6 +1,4 @@
-
 <!-- Edited sidebar menu: text-muted-foreground, active text-primary, bg-background. -->
-
 @for (menu of menuService.pagesMenu(); track menu.group) {
   @if (menuService.showSideBar) {
     <div class="mx-1 flex items-center justify-between py-3">
@@ -15,7 +13,7 @@
         <div (click)="toggleMenu(item)" [ngClass]="{'hover:bg-primary/10': !menuService.showSideBar && item.active, 'hover:bg-muted/50': !menuService.showSideBar}" class="text-muted-foreground hover:text-foreground group relative flex grow items-center gap-4 rounded-lg px-2">
           <div [ngClass]="item.active && !menuService.showSideBar ? 'text-primary' : 'text-muted-foreground/50'">
             @if (item.icon) {
-              <svg-icon [src]="getIconPath(item.icon)" [svgClass]="'h-5 w-5'"></svg-icon>
+              <svg-icon [src]="getIconPath(item.icon)" svgClass="h-5 w-5"></svg-icon>
             }
           </div>
           <ng-container [ngTemplateOutlet]="item.children ? childMenu : parentMenu" [ngTemplateOutletContext]="{ item: item }"></ng-container>

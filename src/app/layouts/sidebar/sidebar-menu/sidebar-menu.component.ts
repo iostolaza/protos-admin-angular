@@ -30,4 +30,3 @@ export class SidebarMenuComponent {
     this.menuService.toggleMenu(subMenu);
   }
 }
-
