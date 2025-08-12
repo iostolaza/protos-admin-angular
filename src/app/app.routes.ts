@@ -47,20 +47,21 @@ export const routes: Routes = [
       { path: 'contacts/new', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
       { path: 'contacts/favorites', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
       { path: 'contacts/online', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
+
+         // Analytics page lazy-loaded
+      { path: 'analytics', loadComponent: () => import('./features/analytics/analytics.component').then(m => m.Analytics) },
       
       // Timesheet variants (submitted/inprogress/approved) using same component
       { path: 'timesheet/submitted', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
-      { path: 'timesheet/inprogress', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
+      { path: 'timesheet/pending', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
       { path: 'timesheet/approved', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
-      
+  
+     
       // Calendar page lazy-loaded
-      { path: 'calendar', loadComponent: () => import('./features/calendar/calendar.component').then(m => m.Calendar) },
+      { path: 'schedule/calendar', loadComponent: () => import('./features/calendar/calendar.component').then(m => m.Calendar) },
       
-      // Analytics page lazy-loaded
-      { path: 'analytics', loadComponent: () => import('./features/analytics/analytics.component').then(m => m.Analytics) },
-      
-      // Schedule page lazy-loaded
-      { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then(m => m.Schedule) },
+      // // Schedule page lazy-loaded
+      // { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then(m => m.Schedule) },
       
       // Settings page lazy-loaded
       { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) },

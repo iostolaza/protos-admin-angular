@@ -31,10 +31,18 @@ export const Menu = {
       group: 'Productivity',
       separator: true,
       items: [
-        { label: 'Timesheet', icon: 'clock', route: '/main-layout/timesheet' },
+
         { label: 'Analytics', icon: 'chart-bar', route: '/main-layout/analytics' },
+        { 
+          label: 'Timesheet', icon: 'clock', route: null,
+          children: [
+            { label: 'submitted', route: '/main-layout/timesheet/submitted' },
+            { label: 'pending', route: '/main-layout/timesheet/pending' },
+            { label: 'approved', route: '/main-layout/timesheet/approved' }
+          ],
+        },     
         {
-          label: 'Schedule', icon: 'calendar-days', route: null,
+          label: 'Schedule', icon: 'calendar-date-range', route: null,
           children: [
             { label: 'Calendar', route: '/main-layout/schedule/calendar' }
           ],
