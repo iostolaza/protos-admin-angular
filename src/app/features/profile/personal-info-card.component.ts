@@ -1,11 +1,6 @@
-/*
- * PersonalInfoCardComponent: Editable card for personal info with image upload.
- * Uses reactive form, subscribes to service.
- * Mocked image handling: Uses FileReader for local data URL preview; stores data URL in profileImageKey for mock persistence.
- * References:
- * - FileReader docs: https://developer.mozilla.org/en-US/docs/Web/API/FileReader (standard API for local file preview)
- * - Angular file upload mock: https://stackoverflow.com/questions/47936183/angular-file-upload (common pattern for local preview without backend)
- */
+
+/* Edited personal info card: Semantic classes, image upload. */
+
 import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -16,46 +11,46 @@ import { UserService, User } from '../../core/services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card p-6 rounded-lg shadow-md">
-      <h2 class="text-lg font-semibold mb-4">Personal Information</h2>
+    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom">
+      <h2 class="text-lg font-semibold mb-4 text-foreground">Personal Information</h2>
       <div class="mb-4">
         <img [src]="profileImageUrl || 'default-avatar.png'" alt="Profile" class="w-20 h-20 rounded-full" aria-label="Profile image">
         @if (editMode()) {
-          <input type="file" (change)="uploadImage($event)" accept="image/*" aria-label="Upload profile image">
+          <input type="file" (change)="uploadImage($event)" accept="image/*" aria-label="Upload profile image" class="mt-2">
         }
       </div>
       @if (editMode()) {
         <form [formGroup]="form" (ngSubmit)="save()">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm">First Name</label>
-              <input formControlName="firstName" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">First Name</label>
+              <input formControlName="firstName" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div>
-              <label class="block text-sm">Last Name</label>
-              <input formControlName="lastName" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">Last Name</label>
+              <input formControlName="lastName" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div>
-              <label class="block text-sm">Username</label>
-              <input formControlName="username" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">Username</label>
+              <input formControlName="username" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div>
-              <label class="block text-sm">Email</label>
-              <input formControlName="email" type="email" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">Email</label>
+              <input formControlName="email" type="email" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div class="col-span-2">
-              <label class="block text-sm">Access Level</label>
-              <input formControlName="accessLevel" [disabled]="true" class="w-full p-2 border rounded bg-gray-100" />
+              <label class="block text-sm text-muted-foreground">Access Level</label>
+              <input formControlName="accessLevel" [disabled]="true" class="w-full p-2 border border-border rounded bg-muted text-foreground" />
             </div>
           </div>
           <div class="mt-4 flex justify-end gap-2">
-            <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Save</button>
+            <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
           </div>
         </form>
       } @else {
         @if (user) {
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-2 gap-4 text-foreground">
             <div><strong>First Name:</strong> {{ user.firstName }}</div>
             <div><strong>Last Name:</strong> {{ user.lastName }}</div>
             <div><strong>Username:</strong> {{ user.username }}</div>
@@ -63,7 +58,7 @@ import { UserService, User } from '../../core/services/user.service';
             <div class="col-span-2"><strong>Access Level:</strong> {{ user.accessLevel }}</div>
           </div>
         }
-        <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-white rounded">Edit</button>
+        <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
       }
     </div>
   `,

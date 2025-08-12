@@ -1,25 +1,22 @@
-<!-- src/app/layouts/main-layout/main-layout.component.html -->
+<!-- Edited layout: bg-card for top/footer/sidebar, bg-background for main. -->
 
 <div class="flex h-screen flex-col overflow-hidden">
-  <!-- Top Menu (full-width, bg-card for distinction) -->
-  <app-top-menu class="bg-card"></app-top-menu>
+  <!-- Top Menu (bg-background for distinction) -->
+  <app-top-menu class="bg-background"></app-top-menu>
 
-  <!-- Row for Sidebar and Main (flex-1 to grow) -->
+  <!-- Row for Sidebar and Main -->
   <div class="flex flex-1 overflow-hidden">
-    <!-- Sidebar (bg-card, transition for collapse) -->
-    <app-sidebar class="bg-card transition-all duration-300" [ngClass]="{'w-[280px]': menuService.showSideBar, 'w-[70px]': !menuService.showSideBar}"></app-sidebar>
+    <!-- Sidebar (bg-background) -->
+    <app-sidebar class="bg-background transition-all duration-300" [ngClass]="{'w-[280px]': menuService.showSideBar, 'w-[70px]': !menuService.showSideBar}"></app-sidebar>
 
-    <!-- Main Content Area (bg-background for distinction, flex-1 grow) -->
-    <main
-      id="main-content"
-      class="flex-1 overflow-y-auto bg-background scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted"
-    >
+    <!-- Main Content (bg-card for subtle layer) -->
+    <main id="main-content" class="flex-1 overflow-y-auto bg-card scrollbar-thumb-rounded scrollbar-track-rounded scrollbar-thin scrollbar-track-transparent scrollbar-thumb-muted">
       <div class="mx-auto px-4 py-4 sm:px-8 lg:container">
         <router-outlet></router-outlet>
       </div>
     </main>
   </div>
 
-  <!-- Footer (bg-card, full-width below row) -->
-  <app-footer class="bg-card"></app-footer>
+  <!-- Footer (bg-background) -->
+  <app-footer class="bg-background"></app-footer>
 </div>

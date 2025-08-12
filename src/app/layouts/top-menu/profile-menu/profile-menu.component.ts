@@ -1,18 +1,20 @@
-import { Component, signal, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
+/* Fixed: Add import { inject } from '@angular/core'; Remove changeDetection if not needed. */
+
+import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { inject } from '@angular/core';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MenuService } from '../../../core/services/menu.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
+import { inject } from '@angular/core';
 
 type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; route?: string; action?: 'logout' };
 
 @Component({
   selector: 'app-profile-menu',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, AngularSvgIconModule],
+  imports: [CommonModule, AngularSvgIconModule],
   templateUrl: './profile-menu.component.html',
   animations: [
     trigger('openClose', [
@@ -22,7 +24,6 @@ type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; rout
       transition('closed => open', [animate('0.2s')]),
     ]),
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileMenuComponent {
   private router = inject(Router);
@@ -32,9 +33,9 @@ export class ProfileMenuComponent {
 
   isOpen = signal(false);
   profileMenu = signal<ProfileItem[]>([
-    { title: 'Profile',  icon: 'user-circle', route: '/main-layout/profile' },
-    { title: 'Settings', icon: 'cog',         route: '/main-layout/settings' },
-    { title: 'Logout',   icon: 'logout',      action: 'logout' }
+    { title: 'Profile', icon: 'user-circle', route: '/main-layout/profile' },
+    { title: 'Settings', icon: 'cog', route: '/main-layout/settings' },
+    { title: 'Logout', icon: 'logout', action: 'logout' }
   ]);
 
   toggleMenu() { this.isOpen.update((v) => !v); }

@@ -1,7 +1,4 @@
-/*
-Sidebar menu data
-- Use IconName keys (not file paths) so we can resolve via getIconPath()
-*/
+/* Menu constants, unchanged. */
 
 import { MenuItem } from '../models/menu.model';
 
@@ -11,20 +8,20 @@ export const Menu = {
       group: 'Main',
       separator: true,
       items: [
-        { label: 'Home',     icon: 'home',   route: '/main-layout/home' },
-        { label: 'Profile',  icon: 'user-circle', route: '/main-layout/profile' },
+        { label: 'Home', icon: 'home', route: '/main-layout/home' },
+        { label: 'Profile', icon: 'user-circle', route: '/main-layout/profile' },
         {
-          label: 'Messages', icon: 'inbox-stack',        route: null,
+          label: 'Messages', icon: 'inbox-stack', route: null,
           children: [
-            { label: 'Incoming',  route: '/main-layout/messages/incoming' },
-            { label: 'Outgoing',  route: '/main-layout/messages/outgoing' }
+            { label: 'Incoming', route: '/main-layout/messages/incoming' },
+            { label: 'Outgoing', route: '/main-layout/messages/outgoing' }
           ],
         },
         {
-          label: 'Contacts', icon: 'users',       route: null,
+          label: 'Contacts', icon: 'users', route: null,
           children: [
-            { label: 'Online',    route: '/main-layout/contacts/online' },
-            { label: 'New',       route: '/main-layout/contacts/new' },
+            { label: 'Online', route: '/main-layout/contacts/online' },
+            { label: 'New', route: '/main-layout/contacts/new' },
             { label: 'Favorites', route: '/main-layout/contacts/favorites' }
           ],
         }
@@ -34,23 +31,22 @@ export const Menu = {
       group: 'Productivity',
       separator: true,
       items: [
-        { label: 'Timesheet',  icon: 'clock',     route: '/main-layout/timesheet' },
-         { label: 'Analytics',  icon: 'chart-bar',  route: '/main-layout/analytics' },
+        { label: 'Timesheet', icon: 'clock', route: '/main-layout/timesheet' },
+        { label: 'Analytics', icon: 'chart-bar', route: '/main-layout/analytics' },
         {
-          label: 'Schedule',   icon: 'calendar-date-range',   route: null,
+          label: 'Schedule', icon: 'calendar-days', route: null,
           children: [
             { label: 'Calendar', route: '/main-layout/schedule/calendar' }
           ],
         },
-       
       ],
     },
     {
       group: 'Account',
       separator: false,
       items: [
-        { label: 'Settings', icon: 'cog',         route: '/main-layout/settings' },
-        { label: 'Logout',   icon: 'logout', route: '/logout' }
+        { label: 'Settings', icon: 'cog', route: '/main-layout/settings' },
+        { label: 'Logout', icon: 'logout', route: '/logout' }
       ],
     }
   ] as MenuItem[],

@@ -1,3 +1,5 @@
+/* Top menu, unchanged. */
+
 import { Component } from '@angular/core';
 import { ProfileMenuComponent } from './profile-menu/profile-menu.component';
 import { MenuService } from '../../core/services/menu.service';
@@ -14,6 +16,5 @@ import { getIconPath } from '../../core/services/icon-preloader.service';
 export class TopMenuComponent {
   constructor(public menuService: MenuService) {}
 
-  // expose helper for template
   getIconPath = getIconPath;
 }

@@ -1,21 +1,7 @@
-/*
- * UserService: Manages user data with BehaviorSubject for reactivity.
- * Mock backend for dev. If you enable Amplify later:
- *  - ensure aws-amplify is installed,
- *  - run amplify codegen / codegen types to generate src/graphql files,
- *  - then re-add generateClient/Storage/queries imports with correct paths.
- */
+/* User service, unchanged. */
+
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-
-/* NOTE: Removed broken/unused Amplify imports to silence TS errors.
-   If you want Amplify client code:
-   import { generateClient } from 'aws-amplify/data';
-   import { Storage } from 'aws-amplify';
-   import * as queries from 'src/graphql/queries';
-   import * as mutations from 'src/graphql/mutations';
-   import type { Schema } from '../../amplify/data/resource';
-*/
 
 export interface User {
   id: string;
@@ -32,7 +18,7 @@ export interface User {
   profileImageKey: string;
 }
 
-// Mock for dev
+// Mock backend
 class MockUserBackendService {
   private mockUser: User = {
     id: 'mock-id',
@@ -60,7 +46,7 @@ class MockUserBackendService {
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private backend = new MockUserBackendService(); // Switch to new class AmplifyUserBackendService for prod
+  private backend = new MockUserBackendService();
   private userSubject = new BehaviorSubject<User | null>(null);
 
   user$ = this.userSubject.asObservable();

@@ -1,24 +1,32 @@
-/*
- * SettingsComponent: Modular settings with cards.
- * Extend theme toggle, add forms/selects.
- * Best practice: Use signals, localStorage for persist.
- * Cite: https://medium.com/@sehban.alam/angular-2025-new-style-guide-standards-and-how-to-apply-them-3277eef541a3
- */
+
+/* Edited settings: Add theme arrays/toggles from snippets. */
+
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { ThemeService } from '../../core/services/theme.service';
+import { AngularSvgIconModule } from 'angular-svg-icon';
 
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AngularSvgIconModule],
   templateUrl: './settings.component.html',
 })
 export class SettingsComponent {
   passwordForm: FormGroup;
-  timezone = 'UTC'; // Mock, use luxon for real
-  language = 'English'; // Prep for i18n
+  timezone = 'UTC'; // Mock
+  language = 'English'; // Mock
+  themeColors = [
+    { name: 'base', code: '#e11d48' },
+    { name: 'yellow', code: '#facc15' },
+    { name: 'green', code: '#22c55e' },
+    { name: 'blue', code: '#2490ff' },
+    { name: 'orange', code: '#ea580c' },
+    { name: 'red', code: '#cc0033' },
+    { name: 'violet', code: '#6e56cf' },
+  ];
+  themeMode = ['light', 'dark'];
 
   constructor(private fb: FormBuilder, public themeService: ThemeService) {
     this.passwordForm = this.fb.group({
@@ -29,25 +37,28 @@ export class SettingsComponent {
   }
 
   passwordMatch(group: FormGroup) {
-    return group.get('new')?.value === group.get('confirm')?.value
-      ? null
-      : { mismatch: true };
+    return group.get('new')?.value === group.get('confirm')?.value ? null : { mismatch: true };
   }
 
   savePassword() {
     if (this.passwordForm.valid) {
-      // Call backend, e.g., Amplify Auth.changePassword
       console.log('Password changed');
     }
   }
 
   setTimezone(event: Event) {
     this.timezone = (event.target as HTMLSelectElement).value;
-    // Persist to localStorage/backend
   }
 
   setLanguage(event: Event) {
     this.language = (event.target as HTMLSelectElement).value;
-    // Trigger i18n change
+  }
+
+  toggleThemeMode() {
+    this.themeService.toggleThemeMode();
+  }
+
+  toggleThemeColor(color: string) {
+    this.themeService.toggleThemeColor(color);
   }
 }

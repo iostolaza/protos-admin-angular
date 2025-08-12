@@ -1,7 +1,6 @@
-/*
- * EmergencyContactCardComponent: Editable card for emergency contact.
- * Uses reactive form, subscribes to service.
- */
+
+/* Edited emergency contact card. */
+
 import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -12,41 +11,41 @@ import { UserService, User } from '../../core/services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card p-6 rounded-lg shadow-md">
-      <h2 class="text-lg font-semibold mb-4">Emergency Contact</h2>
+    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom">
+      <h2 class="text-lg font-semibold mb-4 text-foreground">Emergency Contact</h2>
       @if (editMode()) {
         <form [formGroup]="form" (ngSubmit)="save()">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm">Name</label>
-              <input formControlName="name" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">Name</label>
+              <input formControlName="name" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div>
-              <label class="block text-sm">Phone</label>
-              <input formControlName="phone" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">Phone</label>
+              <input formControlName="phone" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div>
-              <label class="block text-sm">Email</label>
-              <input formControlName="email" type="email" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">Email</label>
+              <input formControlName="email" type="email" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div class="col-span-2">
-              <label class="block text-sm">Address</label>
-              <input formControlName="address" class="w-full p-2 border rounded" />
+              <label class="block text-sm text-muted-foreground">Address</label>
+              <input formControlName="address" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
           </div>
           <div class="mt-4 flex justify-end gap-2">
-            <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-            <button type="submit" class="px-4 py-2 bg-primary text-white rounded">Save</button>
+            <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
           </div>
         </form>
-      } @else { 
-        <div class="grid grid-cols-2 gap-4">
+      } @else {
+        <div class="grid grid-cols-2 gap-4 text-foreground">
           <div><strong>Name:</strong> {{ user?.emergencyContact?.name }}</div>
           <div><strong>Phone:</strong> {{ user?.emergencyContact?.phone }}</div>
           <div><strong>Email:</strong> {{ user?.emergencyContact?.email }}</div>
           <div class="col-span-2"><strong>Address:</strong> {{ user?.emergencyContact?.address }}</div>
         </div>
-        <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-white rounded">Edit</button>
+        <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
       }
     </div>
   `,

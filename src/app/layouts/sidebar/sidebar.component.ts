@@ -1,5 +1,7 @@
+
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { CommonModule } from '@angular/common'; // Added for *ngIf
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { MenuService } from '../../core/services/menu.service';
 import { SidebarMenuComponent } from './sidebar-menu/sidebar-menu.component';
@@ -8,7 +10,7 @@ import { ICONS, getIconPath } from '../../core/services/icon-preloader.service';
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [NgClass, AngularSvgIconModule, SidebarMenuComponent],
+  imports: [NgClass, CommonModule, AngularSvgIconModule, SidebarMenuComponent],
   templateUrl: './sidebar.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

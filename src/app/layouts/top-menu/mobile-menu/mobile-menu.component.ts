@@ -11,16 +11,14 @@ import { getIconPath, IconName } from '../../../core/services/icon-preloader.ser
   imports: [CommonModule, RouterLink, RouterLinkActive, AngularSvgIconModule],
   templateUrl: './mobile-menu.component.html'
 })
-export class MobileMenu {
+export class MobileMenuComponent {
   constructor(public layout: LayoutService) {}
 
-  // expose helper for template
   getIconPath = getIconPath;
 
-  // IMPORTANT: Use IconName (keys of the ICONS map), not string
   navLinks: Array<{ path: string; icon: IconName; label: string }> = [
-    { path: '/main-layout/home',     icon: 'chart-pie',   label: 'Home' },
-    { path: '/main-layout/profile',  icon: 'user-circle', label: 'Profile' },
-    { path: '/main-layout/settings', icon: 'cog',         label: 'Settings' }
+    { path: '/main-layout/home', icon: 'chart-pie', label: 'Home' },
+    { path: '/main-layout/profile', icon: 'user-circle', label: 'Profile' },
+    { path: '/main-layout/settings', icon: 'cog', label: 'Settings' }
   ];
 }

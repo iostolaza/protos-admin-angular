@@ -1,35 +1,29 @@
 
-<!-- src/app/layouts/top-menu/profile-menu/profile-menu.html -->
- 
-<button (click)="toggleMenu()" class="bg-card relative flex rounded-full text-sm" type="button">
-  <img ngSrc="assets/profile/profile-female.jpg" width="36" height="36" alt="Profile Image" />
-</button>
+<!-- Profile menu without theme sections (moved to settings). -->
 
-@if (isOpen()) {
-  <div 
-    class="dropdown bg-background shadow-custom border-muted absolute z-20 mt-2 w-60 origin-top-right transform rounded-md border border-dashed py-4 ring-1 transition focus:outline-none ltr:right-0 rtl:left-0"
-    [@openClose]>
+<div class="relative ml-3">
+  <button (click)="toggleMenu()" class="bg-background relative flex rounded-full text-sm" type="button">
+    <span class="sr-only">Open user menu</span>
+    <img class="size-9 shrink-0 rounded-md" src="assets/profile/profile-female.jpg" alt="Profile Image" />
+  </button>
+  <div [@openClose]="isOpen() ? 'open' : 'closed'" class="bg-background shadow-custom border-muted absolute z-20 mt-2 w-60 origin-top-right transform rounded-md border border-dashed py-4 ring-1 ring-transparent transition focus:outline-hidden ltr:right-0 rtl:left-0">
     <div class="flex items-center px-4 pb-4">
       <div class="w-10 shrink-0">
-        <img ngSrc="assets/profile/profile-female.jpg" width="36" height="36" alt="Profile Image" />
+        <img class="rounded-md" src="assets/profile/profile-female.jpg" alt="Profile Image" />
       </div>
       <div class="text-foreground overflow-hidden px-2 text-sm font-semibold">
         Proto Admin
-        <p class="text-muted-foreground truncate text-ellipsis text-xs font-semibold">me&#64;example.com</p>
+        <p class="text-muted-foreground truncate text-ellipsis text-xs font-semibold">me@example.com</p>
       </div>
     </div>
-
     <div class="border-border border-b border-dashed"></div>
-
     <ul class="my-2 mx-2 flex flex-col">
-      @for (item of profileMenu(); track item.title) {
-        <li
-          (click)="onMenuItemClick(item)"
-          class="text-muted-foreground hover:bg-hover hover:text-primary inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs font-semibold">
-          <svg-icon [src]="getIconPath(item.icon)" svgClass="w-4 h-4"></svg-icon>
-          <span>{{ item.title }}</span>
+      @for (item of profileMenu(); track $index) {
+        <li (click)="onMenuItemClick(item)" class="text-muted-foreground hover:bg-muted hover:text-primary inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs font-semibold">
+          <svg-icon [src]="getIconPath(item.icon)" [svgClass]="'h-5 w-5 text-muted-foreground/50'"> </svg-icon>
+          {{ item.title }}
         </li>
       }
     </ul>
   </div>
-}
+</div>
