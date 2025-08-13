@@ -1,18 +1,18 @@
 
 /* Edited contact prefs card. */
 
-import { Component, signal } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { UserService, User } from '../../core/services/user.service';
+import { UserService, UserProfile } from '../../core/services/user.service';
 
 @Component({
   selector: 'app-contact-prefs-card',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom">
-      <h2 class="text-lg font-semibold mb-4 text-foreground">Contact Preferences</h2>
+    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
+      <h2 class="text-xl font-bold mb-4 text-primary">Contact Preferences</h2>
       @if (editMode()) {
         <form [formGroup]="form" (ngSubmit)="save()">
           <div class="grid grid-cols-2 gap-4">
@@ -32,8 +32,8 @@ import { UserService, User } from '../../core/services/user.service';
         </form>
       } @else if (user) {
         <div class="grid grid-cols-2 gap-4 text-foreground">
-          <div><strong>Email:</strong> {{ user.contactPrefs.email ? 'Enabled' : 'Disabled' }}</div>
-          <div><strong>Push Notifications:</strong> {{ user.contactPrefs.push ? 'Enabled' : 'Disabled' }}</div>
+          <div><strong class="text-muted-foreground">Email:</strong> <span class="text-foreground">{{ user.contactPrefs.email ? 'Enabled' : 'Disabled' }}</span></div>
+          <div><strong class="text-muted-foreground">Push Notifications:</strong> <span class="text-foreground">{{ user.contactPrefs.push ? 'Enabled' : 'Disabled' }}</span></div>
         </div>
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
       }
@@ -43,28 +43,29 @@ import { UserService, User } from '../../core/services/user.service';
 export class ContactPrefsCardComponent {
   editMode = signal(false);
   form: FormGroup;
-  user: User | null = null;
+  user: UserProfile | null = null;
 
-  constructor(private fb: FormBuilder, private userService: UserService) {
-    this.form = this.fb.group({
-      email: [false],
-      push: [false],
-    });
-    this.userService.user$.subscribe(u => {
-      this.user = u;
-      this.form.patchValue(u?.contactPrefs || {});
-    });
-  }
+constructor(private fb: FormBuilder, private userService: UserService) {
+  this.form = this.fb.group({
+    email: [false],
+    push: [false],
+  });
+  effect(() => {
+    const u = this.userService.user$();
+    this.user = u;
+    this.form.patchValue(u?.contactPrefs || {});
+  });
+}
 
   toggleEdit() {
     this.editMode.update(m => !m);
   }
 
-  save() {
+  async save() {
     if (this.form.valid && this.user) {
       const updatedPrefs = { ...this.user.contactPrefs, ...this.form.value };
       const updated = { ...this.user, contactPrefs: updatedPrefs };
-      this.userService.save(updated);
+      await this.userService.save(updated);
       this.toggleEdit();
     }
   }

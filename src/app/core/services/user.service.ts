@@ -1,9 +1,15 @@
-/* User service, unchanged. */
+// src/app/core/services/user.service.ts
+import { Injectable, signal } from '@angular/core';
+import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { getUrl, uploadData } from 'aws-amplify/storage';
+import { Schema } from '../../../../amplify/data/resource';
+const client = generateClient<Schema>();
 
-import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+// Explicit type alias to unify model references across operations
+type UserModel = Schema["User"]["type"];
 
-export interface User {
+export interface UserProfile {
   id: string;
   firstName: string;
   lastName: string;
@@ -12,52 +18,149 @@ export interface User {
   accessLevel: string;
   address: { line1: string; city: string; state: string; zip: string; country: string };
   contactPrefs: { email: boolean; push: boolean };
-  paymentMethods: Array<{ id: string; type: string; name: string }>;
   emergencyContact: { name: string; phone: string; email: string; address: string };
   vehicle: { make: string; model: string; color: string; license: string; year: string };
   profileImageKey: string;
-}
-
-// Mock backend
-class MockUserBackendService {
-  private mockUser: User = {
-    id: 'mock-id',
-    firstName: 'Ismael',
-    lastName: 'Ostolaza',
-    username: 'iostolaza87',
-    email: 'i.ostolaza87@gmail.com',
-    accessLevel: 'Admin',
-    address: { line1: '727 S. Mansfield Avenue, Unit 8', city: 'Los Angeles', state: 'CA', zip: '90036', country: 'United States' },
-    contactPrefs: { email: true, push: true },
-    paymentMethods: [{ id: '1', type: 'Bank', name: 'Personal Checking Account Number 1881' }, { id: '2', type: 'Card', name: 'Visa ****3617' }],
-    emergencyContact: { name: 'Laura Bravo (Aunt)', phone: '(415) 516-2761', email: 'laura.bravo77@gmail.com', address: '3101 Barmouth Dr Antioch CA 94509' },
-    vehicle: { make: 'Tesla', model: 'Y', color: 'Grey', license: '21PH60', year: '2023' },
-    profileImageKey: '',
-  };
-
-  async loadUser(): Promise<User> {
-    return this.mockUser;
-  }
-
-  async saveUser(user: User): Promise<void> {
-    this.mockUser = user;
-  }
+  profileImageUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private backend = new MockUserBackendService();
-  private userSubject = new BehaviorSubject<User | null>(null);
-
-  user$ = this.userSubject.asObservable();
+  user$ = signal<UserProfile | null>(null);
 
   async load() {
-    const user = await this.backend.loadUser();
-    this.userSubject.next(user);
+    try {
+      const { username } = await getCurrentUser();
+      const usersResp = await client.models.User.list();
+      let userModel: UserModel | null = usersResp.data[0] || null;
+      if (!userModel) {
+        const createResp = await client.models.User.create({
+          username,
+          email: username,
+          accessLevel: 'User',
+          firstName: '',
+          lastName: '',
+          address: { line1: '', city: '', state: '', zip: '', country: '' },
+          contactPrefs: { email: false, push: false },
+          emergencyContact: { name: '', phone: '', email: '', address: '' },
+          vehicle: { make: '', model: '', color: '', license: '', year: '' },
+          profileImageKey: '',
+        });
+        if (createResp.errors) {
+          throw new Error(`User creation failed: ${createResp.errors.map(e => e.message).join(', ')}`);
+        }
+        userModel = createResp.data;
+        if (userModel === null) {
+          throw new Error('User creation returned null data despite no errors.');
+        }
+      }
+      const fullUser: UserProfile = {
+        id: userModel.id,
+        firstName: userModel.firstName ?? '',
+        lastName: userModel.lastName ?? '',
+        username: userModel.username ?? '',
+        email: userModel.email ?? '',
+        accessLevel: userModel.accessLevel ?? '',
+        address: {
+          line1: userModel.address?.line1 ?? '',
+          city: userModel.address?.city ?? '',
+          state: userModel.address?.state ?? '',
+          zip: userModel.address?.zip ?? '',
+          country: userModel.address?.country ?? '',
+        },
+        contactPrefs: {
+          email: userModel.contactPrefs?.email ?? false,
+          push: userModel.contactPrefs?.push ?? false,
+        },
+        emergencyContact: {
+          name: userModel.emergencyContact?.name ?? '',
+          phone: userModel.emergencyContact?.phone ?? '',
+          email: userModel.emergencyContact?.email ?? '',
+          address: userModel.emergencyContact?.address ?? '',
+        },
+        vehicle: {
+          make: userModel.vehicle?.make ?? '',
+          model: userModel.vehicle?.model ?? '',
+          color: userModel.vehicle?.color ?? '',
+          license: userModel.vehicle?.license ?? '',
+          year: userModel.vehicle?.year ?? '',
+        },
+        profileImageKey: userModel.profileImageKey ?? '',
+      };
+      if (fullUser.profileImageKey) {
+        const { url } = await getUrl({
+          path: fullUser.profileImageKey,
+          options: { expiresIn: 3600 },
+        });
+        fullUser.profileImageUrl = url.toString();
+      }
+      this.user$.set(fullUser);
+    } catch (error) {
+      console.error('Load user error:', error);
+    }
   }
 
-  async save(user: User) {
-    await this.backend.saveUser(user);
-    this.userSubject.next(user);
+  async save(updatedUser: UserProfile) {
+    try {
+      const { id, firstName, lastName, username, email, accessLevel, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
+      await client.models.User.update({
+        id,
+        firstName,
+        lastName,
+        username,
+        email,
+        accessLevel,
+        address,
+        contactPrefs,
+        emergencyContact,
+        vehicle,
+        profileImageKey,
+      });
+      await this.load(); // Refresh after save
+    } catch (error) {
+      console.error('Save user error:', error);
+    }
+  }
+
+  async getPaymentMethods() {
+    const userId = this.user$()?.id;
+    if (userId) {
+      const resp = await client.models.PaymentMethod.list({
+        filter: { userId: { eq: userId } },
+      });
+      return resp.data.map(pm => ({
+        id: pm.id,
+        type: pm.type ?? '',
+        name: pm.name ?? '',
+      }));
+    }
+    return [];
+  }
+
+  async addPaymentMethod(type: string, name: string) {
+    const userId = this.user$()?.id;
+    if (userId) {
+      await client.models.PaymentMethod.create({ userId, type, name });
+    }
+  }
+
+  async updatePaymentMethod(id: string, type: string, name: string) {
+    await client.models.PaymentMethod.update({ id, type, name });
+  }
+
+  async deletePaymentMethod(id: string) {
+    await client.models.PaymentMethod.delete({ id });
+  }
+
+  async uploadProfileImage(file: File): Promise<string | null> {
+    try {
+      const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/profile.jpg`;
+      const uploadTask = uploadData({ path, data: file });
+      const { path: uploadedPath } = await uploadTask.result;
+      return uploadedPath;
+    } catch (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
   }
 }

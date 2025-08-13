@@ -25,7 +25,12 @@ export class Profile implements OnInit {
 
   constructor(private userService: UserService) {}
 
-  ngOnInit() {
-    this.userService.load().then(() => this.loading.set(false));
-  }
+  async ngOnInit() {
+  await this.userService.load();
+  this.loading.set(false);
+}
+
+  // ngOnInit() {
+  //   this.userService.load().then(() => this.loading.set(false));
+  // }
 }

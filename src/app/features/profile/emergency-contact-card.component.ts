@@ -1,18 +1,18 @@
 
 /* Edited emergency contact card. */
 
-import { Component, signal } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { UserService, User } from '../../core/services/user.service';
+import { UserService, UserProfile } from '../../core/services/user.service';
 
 @Component({
   selector: 'app-emergency-contact-card',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom">
-      <h2 class="text-lg font-semibold mb-4 text-foreground">Emergency Contact</h2>
+    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
+      <h2 class="text-xl font-bold mb-4 text-primary">Emergency Contact</h2>
       @if (editMode()) {
         <form [formGroup]="form" (ngSubmit)="save()">
           <div class="grid grid-cols-2 gap-4">
@@ -40,10 +40,10 @@ import { UserService, User } from '../../core/services/user.service';
         </form>
       } @else {
         <div class="grid grid-cols-2 gap-4 text-foreground">
-          <div><strong>Name:</strong> {{ user?.emergencyContact?.name }}</div>
-          <div><strong>Phone:</strong> {{ user?.emergencyContact?.phone }}</div>
-          <div><strong>Email:</strong> {{ user?.emergencyContact?.email }}</div>
-          <div class="col-span-2"><strong>Address:</strong> {{ user?.emergencyContact?.address }}</div>
+          <div><strong class="text-muted-foreground">Name:</strong> <span class="text-foreground">{{ user?.emergencyContact?.name }}</span></div>
+          <div><strong class="text-muted-foreground">Phone:</strong> <span class="text-foreground">{{ user?.emergencyContact?.phone }}</span></div>
+          <div><strong class="text-muted-foreground">Email:</strong> <span class="text-foreground">{{ user?.emergencyContact?.email }}</span></div>
+          <div class="col-span-2"><strong class="text-muted-foreground">Address:</strong> <span class="text-foreground">{{ user?.emergencyContact?.address }}</span></div>
         </div>
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
       }
@@ -53,30 +53,31 @@ import { UserService, User } from '../../core/services/user.service';
 export class EmergencyContactCardComponent {
   editMode = signal(false);
   form: FormGroup;
-  user: User | null = null;
+  user: UserProfile | null = null;
 
-  constructor(private fb: FormBuilder, private userService: UserService) {
-    this.form = this.fb.group({
-      name: ['', Validators.required],
-      phone: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      address: ['', Validators.required],
-    });
-    this.userService.user$.subscribe(u => {
-      this.user = u;
-      this.form.patchValue(u?.emergencyContact || {});
-    });
-  }
+constructor(private fb: FormBuilder, private userService: UserService) {
+  this.form = this.fb.group({
+    name: ['', Validators.required],
+    phone: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    address: ['', Validators.required],
+  });
+  effect(() => {
+    const u = this.userService.user$();
+    this.user = u;
+    this.form.patchValue(u?.emergencyContact || {});
+  });
+}
 
   toggleEdit() {
     this.editMode.update(m => !m);
   }
 
-  save() {
+  async save() {
     if (this.form.valid && this.user) {
       const updatedContact = { ...this.user.emergencyContact, ...this.form.value };
       const updated = { ...this.user, emergencyContact: updatedContact };
-      this.userService.save(updated);
+      await this.userService.save(updated);
       this.toggleEdit();
     }
   }

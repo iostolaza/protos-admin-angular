@@ -1,18 +1,18 @@
 
 /* Edited personal info card: Semantic classes, image upload. */
 
-import { Component, signal } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { UserService, User } from '../../core/services/user.service';
+import { UserService, UserProfile } from '../../core/services/user.service';
 
 @Component({
   selector: 'app-personal-info-card',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom">
-      <h2 class="text-lg font-semibold mb-4 text-foreground">Personal Information</h2>
+    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
+      <h2 class="text-xl font-bold mb-4 text-primary">Personal Information</h2>
       <div class="mb-4">
         <img [src]="profileImageUrl || 'default-avatar.png'" alt="Profile" class="w-20 h-20 rounded-full" aria-label="Profile image">
         @if (editMode()) {
@@ -51,11 +51,11 @@ import { UserService, User } from '../../core/services/user.service';
       } @else {
         @if (user) {
           <div class="grid grid-cols-2 gap-4 text-foreground">
-            <div><strong>First Name:</strong> {{ user.firstName }}</div>
-            <div><strong>Last Name:</strong> {{ user.lastName }}</div>
-            <div><strong>Username:</strong> {{ user.username }}</div>
-            <div><strong>Email:</strong> {{ user.email }}</div>
-            <div class="col-span-2"><strong>Access Level:</strong> {{ user.accessLevel }}</div>
+            <div><strong class="text-muted-foreground">First Name:</strong> <span class="text-foreground">{{ user.firstName }}</span></div>
+            <div><strong class="text-muted-foreground">Last Name:</strong> <span class="text-foreground">{{ user.lastName }}</span></div>
+            <div><strong class="text-muted-foreground">Username:</strong> <span class="text-foreground">{{ user.username }}</span></div>
+            <div><strong class="text-muted-foreground">Email:</strong> <span class="text-foreground">{{ user.email }}</span></div>
+            <div class="col-span-2"><strong class="text-muted-foreground">Access Level:</strong> <span class="text-foreground">{{ user.accessLevel }}</span></div>
           </div>
         }
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
@@ -66,24 +66,24 @@ import { UserService, User } from '../../core/services/user.service';
 export class PersonalInfoCardComponent {
   editMode = signal(false);
   form: FormGroup;
-  user: User | null = null;
+  user: UserProfile | null = null;
   profileImageUrl: string | null = null;
 
-  constructor(private fb: FormBuilder, private userService: UserService) {
-    this.form = this.fb.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      username: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      accessLevel: [{ value: '', disabled: true }],
-    });
-    this.userService.user$.subscribe(u => {
-      this.user = u;
-      this.form.patchValue(u || {});
-      this.profileImageUrl = u?.profileImageKey || 'default-avatar.png';
-    });
-  }
-
+constructor(private fb: FormBuilder, private userService: UserService) {
+  this.form = this.fb.group({
+    firstName: ['', Validators.required],
+    lastName: ['', Validators.required],
+    username: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    accessLevel: [{ value: '', disabled: true }],
+  });
+  effect(() => {
+    const u = this.userService.user$();
+    this.user = u;
+    this.form.patchValue(u || {});
+    this.profileImageUrl = u?.profileImageUrl || 'default-avatar.png';
+  });
+}
   toggleEdit() {
     this.editMode.update(m => !m);
   }
@@ -91,7 +91,7 @@ export class PersonalInfoCardComponent {
   async save() {
     if (this.form.valid && this.user) {
       const updated = { ...this.user, ...this.form.getRawValue() };
-      this.userService.save(updated);
+      await this.userService.save(updated);
       this.toggleEdit();
     }
   }
@@ -99,15 +99,11 @@ export class PersonalInfoCardComponent {
   async uploadImage(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file && this.user) {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = (e) => reject(e);
-        reader.readAsDataURL(file);
-      });
-      const updated = { ...this.user, profileImageKey: dataUrl };
-      await this.userService.save(updated);
-      this.profileImageUrl = dataUrl;
+      const key = await this.userService.uploadProfileImage(file);
+      if (key) {
+        const updated = { ...this.user, profileImageKey: key };
+        await this.userService.save(updated);
+      }
     }
   }
 }
