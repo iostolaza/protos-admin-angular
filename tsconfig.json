@@ -14,7 +14,12 @@
     "module": "ES2022",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@angular/animations/browser": [
+        "./node_modules/@angular/animations/fesm2022/browser.mjs"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
