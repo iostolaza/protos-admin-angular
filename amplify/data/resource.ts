@@ -41,6 +41,7 @@ const schema = a.schema({
       userId: a.id().required(),
       type: a.string(),
       name: a.string(),
+      user: a.belongsTo('User', 'userId'), 
     })
     .authorization(allow => [allow.owner()]),
 });

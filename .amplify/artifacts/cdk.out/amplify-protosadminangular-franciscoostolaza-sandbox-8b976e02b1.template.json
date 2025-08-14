@@ -43,6 +43,14 @@
     "amplifyApiModelSchemaS3Uri",
     "awsAppsyncAdditionalAuthenticationTypes"
    ]
+  },
+  "AWS::Amplify::Storage": {
+   "version": "1",
+   "stackOutputs": [
+    "buckets",
+    "storageRegion",
+    "bucketName"
+   ]
   }
  },
  "Outputs": {
@@ -153,7 +161,7 @@
    }
   },
   "awsAppsyncAuthenticationType": {
-   "Value": "AWS_IAM"
+   "Value": "AMAZON_COGNITO_USER_POOLS"
   },
   "awsAppsyncRegion": {
    "Value": {
@@ -198,7 +206,41 @@
    }
   },
   "awsAppsyncAdditionalAuthenticationTypes": {
-   "Value": "AMAZON_COGNITO_USER_POOLS"
+   "Value": "AWS_IAM"
+  },
+  "storageRegion": {
+   "Value": {
+    "Ref": "AWS::Region"
+   }
+  },
+  "bucketName": {
+   "Value": {
+    "Fn::GetAtt": [
+     "storage0EC3F24A",
+     "Outputs.amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1storageprofileImagesBucketA41E504ARef"
+    ]
+   }
+  },
+  "buckets": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "[\"{\\\"name\\\":\\\"profileImages\\\",\\\"bucketName\\\":\\\"",
+      {
+       "Fn::GetAtt": [
+        "storage0EC3F24A",
+        "Outputs.amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1storageprofileImagesBucketA41E504ARef"
+       ]
+      },
+      "\\\",\\\"storageRegion\\\":\\\"",
+      {
+       "Ref": "AWS::Region"
+      },
+      "\\\",\\\"paths\\\":{\\\"profile/${cognito-identity.amazonaws.com:sub}/*\\\":{\\\"entityidentity\\\":[\\\"get\\\",\\\"list\\\",\\\"write\\\",\\\"delete\\\"]}}}\"]"
+     ]
+    ]
+   }
   }
  },
  "Resources": {
@@ -231,7 +273,7 @@
        {
         "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
        },
-       "/f156e0553cb666b1203c3e0b4fa5429e77f7189b3587fd32a89443a515770f1a.json"
+       "/901e3fda151352b7f56348fc2335703dddbfef749d7d2287230b52562026a0af.json"
       ]
      ]
     }
@@ -299,7 +341,7 @@
        {
         "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
        },
-       "/2a5af17a81e24adf4c2695cc65d43e22a55dd02a61167f67a93884ce11f52b0f.json"
+       "/3703a5dcce6a5bceb0e2ea4cce07a870210dfb4af551c11fd5227ac2fba429bf.json"
       ]
      ]
     }
@@ -312,10 +354,60 @@
     "aws:asset:property": "TemplateURL"
    }
   },
+  "storage0EC3F24A": {
+   "Type": "AWS::CloudFormation::Stack",
+   "Properties": {
+    "Parameters": {
+     "referencetoamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1authNestedStackauthNestedStackResource9C0B495BOutputsamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1authamplifyAuthauthenticatedUserRole1D8C52A9Ref": {
+      "Fn::GetAtt": [
+       "auth179371D7",
+       "Outputs.amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1authamplifyAuthauthenticatedUserRole1D8C52A9Ref"
+      ]
+     }
+    },
+    "Tags": [
+     {
+      "Key": "amplify:deployment-type",
+      "Value": "sandbox"
+     },
+     {
+      "Key": "created-by",
+      "Value": "amplify"
+     }
+    ],
+    "TemplateURL": {
+     "Fn::Join": [
+      "",
+      [
+       "https://s3.",
+       {
+        "Ref": "AWS::Region"
+       },
+       ".",
+       {
+        "Ref": "AWS::URLSuffix"
+       },
+       "/",
+       {
+        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+       },
+       "/39018507e0e3f459b566cced3e4f6509e5c253c4c2dbedb79a3a4deac02560fc.json"
+      ]
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/storage.NestedStack/storage.NestedStackResource",
+    "aws:asset:path": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1storage2EBA1550.nested.template.json",
+    "aws:asset:property": "TemplateURL"
+   }
+  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzIw0TNQTCwv1k1OydbNyUzSqw4uSUzO1nFOy/MvLSkoLQGxwEK1Onn5Kal6WcX6ZUYGeoaWeiaKWcWZmbpFpXklmbmpekEQGgDnfM3dVAAAAA=="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzI00DNQTCwv1k1OydbNyUzSqw4uSUzO1nFOy/MvLSkoLQGxwEK1Onn5Kal6WcX6ZUYGeoaWeiaKWcWZmbpFpXklmbmpekEQGgDA35LAVAAAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/CDKMetadata/Default"

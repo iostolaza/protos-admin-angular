@@ -1,7 +1,9 @@
+
 // src/app/core/services/user.service.ts
+
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/api';
-import { getCurrentUser } from 'aws-amplify/auth';
+import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { getUrl, uploadData } from 'aws-amplify/storage';
 import { Schema } from '../../../../amplify/data/resource';
 const client = generateClient<Schema>();
@@ -30,96 +32,77 @@ export class UserService {
 
   async load() {
     try {
-      const { username } = await getCurrentUser();
-      const usersResp = await client.models.User.list();
-      let userModel: UserModel | null = usersResp.data[0] || null;
-      if (!userModel) {
-        const createResp = await client.models.User.create({
-          username,
-          email: username,
-          accessLevel: 'User',
-          firstName: '',
-          lastName: '',
-          address: { line1: '', city: '', state: '', zip: '', country: '' },
-          contactPrefs: { email: false, push: false },
-          emergencyContact: { name: '', phone: '', email: '', address: '' },
-          vehicle: { make: '', model: '', color: '', license: '', year: '' },
-          profileImageKey: '',
-        });
-        if (createResp.errors) {
-          throw new Error(`User creation failed: ${createResp.errors.map(e => e.message).join(', ')}`);
-        }
-        userModel = createResp.data;
-        if (userModel === null) {
-          throw new Error('User creation returned null data despite no errors.');
-        }
-      }
-      const fullUser: UserProfile = {
-        id: userModel.id,
-        firstName: userModel.firstName ?? '',
-        lastName: userModel.lastName ?? '',
-        username: userModel.username ?? '',
-        email: userModel.email ?? '',
-        accessLevel: userModel.accessLevel ?? '',
-        address: {
-          line1: userModel.address?.line1 ?? '',
-          city: userModel.address?.city ?? '',
-          state: userModel.address?.state ?? '',
-          zip: userModel.address?.zip ?? '',
-          country: userModel.address?.country ?? '',
-        },
-        contactPrefs: {
-          email: userModel.contactPrefs?.email ?? false,
-          push: userModel.contactPrefs?.push ?? false,
-        },
-        emergencyContact: {
-          name: userModel.emergencyContact?.name ?? '',
-          phone: userModel.emergencyContact?.phone ?? '',
-          email: userModel.emergencyContact?.email ?? '',
-          address: userModel.emergencyContact?.address ?? '',
-        },
-        vehicle: {
-          make: userModel.vehicle?.make ?? '',
-          model: userModel.vehicle?.model ?? '',
-          color: userModel.vehicle?.color ?? '',
-          license: userModel.vehicle?.license ?? '',
-          year: userModel.vehicle?.year ?? '',
-        },
-        profileImageKey: userModel.profileImageKey ?? '',
-      };
-      if (fullUser.profileImageKey) {
-        const { url } = await getUrl({
-          path: fullUser.profileImageKey,
-          options: { expiresIn: 3600 },
-        });
-        fullUser.profileImageUrl = url.toString();
-      }
-      this.user$.set(fullUser);
-    } catch (error) {
-      console.error('Load user error:', error);
+  const { username: sub } = await getCurrentUser(); // username is Cognito sub (UUID)
+  console.log('Current authenticated user sub (ID/username):', sub);
+
+  const session = await fetchAuthSession();
+  const tokenSub = session.tokens?.idToken?.payload.sub;
+  console.log('Token sub (should match):', tokenSub);
+
+  const attributes = await fetchUserAttributes();
+  const email = attributes.email ?? '';
+  console.log('User email from attributes:', email);
+
+  const usersResp = await client.models.User.list();
+  console.log('Listed User models (should be 1 for current owner):', usersResp.data);
+
+  let userModel: UserModel | null = usersResp.data[0] || null;
+  if (!userModel) {
+    const createResp = await client.models.User.create({
+        username: email.split('@')[0] || 'defaultUser', 
+        email, 
+        accessLevel: 'User',
+        firstName: 'First Name', 
+        lastName: 'Last Name', 
+        address: { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
+        contactPrefs: { email: false, push: false },
+        emergencyContact: { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' }, 
+        vehicle: { make: '', model: '', color: '', license: '', year: '' },
+        profileImageKey: '',
+      });
+    if (createResp.errors) {
+      throw new Error(`User creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+    }
+    userModel = createResp.data;
+    console.log('Created new User model:', userModel);
+    if (userModel === null) {
+      throw new Error('User creation returned null data despite no errors.');
     }
   }
 
+} catch (error) {
+  console.error('Load user error:', error);
+  this.user$.set(null);
+  throw error; 
+}
+}
+
   async save(updatedUser: UserProfile) {
-    try {
-      const { id, firstName, lastName, username, email, accessLevel, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
-      await client.models.User.update({
-        id,
-        firstName,
-        lastName,
-        username,
-        email,
-        accessLevel,
-        address,
-        contactPrefs,
-        emergencyContact,
-        vehicle,
-        profileImageKey,
-      });
-      await this.load(); // Refresh after save
-    } catch (error) {
-      console.error('Save user error:', error);
-    }
+ try {
+  console.log('Saving updated User:', updatedUser);
+  const { id, firstName, lastName, username, email, accessLevel, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
+  const updateResp = await client.models.User.update({
+    id,
+    firstName,
+    lastName,
+    username,
+    email,
+    accessLevel,
+    address,
+    contactPrefs,
+    emergencyContact,
+    vehicle,
+    profileImageKey,
+  });
+  if (updateResp.errors) {
+    throw new Error(`User update failed: ${updateResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+  }
+  console.log('Update response:', updateResp.data);
+  await this.load(); // Refresh after save
+} catch (error) {
+  console.error('Save user error:', error);
+  throw error;
+}
   }
 
   async getPaymentMethods() {
@@ -137,20 +120,34 @@ export class UserService {
     return [];
   }
 
-  async addPaymentMethod(type: string, name: string) {
-    const userId = this.user$()?.id;
-    if (userId) {
-      await client.models.PaymentMethod.create({ userId, type, name });
+async addPaymentMethod(type: string, name: string) {
+  const userId = this.user$()?.id;
+  if (userId) {
+    console.log('Adding payment method with:', { userId, type, name });
+    const createResp = await client.models.PaymentMethod.create({ userId, type, name });
+    if (createResp.errors) {
+      throw new Error(`Payment create failed: ${createResp.errors.map(e => e.message).join(', ')}`);
     }
+    console.log('Added payment method:', createResp.data);
   }
+}
 
-  async updatePaymentMethod(id: string, type: string, name: string) {
-    await client.models.PaymentMethod.update({ id, type, name });
+async updatePaymentMethod(id: string, type: string, name: string) {
+  console.log('Updating payment method:', { id, type, name });
+  const updateResp = await client.models.PaymentMethod.update({ id, type, name });
+  if (updateResp.errors) {
+    throw new Error(`Payment update failed: ${updateResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
   }
-
-  async deletePaymentMethod(id: string) {
-    await client.models.PaymentMethod.delete({ id });
+  console.log('Updated payment method:', updateResp.data);
+}
+async deletePaymentMethod(id: string) {
+  console.log('Deleting payment method:', id);
+  const deleteResp = await client.models.PaymentMethod.delete({ id });
+  if (deleteResp.errors) {
+    throw new Error(`Payment delete failed: ${deleteResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
   }
+  console.log('Deleted payment method:', deleteResp.data);
+}
 
   async uploadProfileImage(file: File): Promise<string | null> {
     try {

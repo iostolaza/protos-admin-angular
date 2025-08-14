@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "us-west-1_MVxwlZ9Sr",
+    "user_pool_id": "us-west-1_8wc5eQRBW",
     "aws_region": "us-west-1",
-    "user_pool_client_id": "oaoakggeivpln2v4insjbhfok",
-    "identity_pool_id": "us-west-1:5a8412aa-2609-4d5e-a816-87253ffde857",
+    "user_pool_client_id": "5ea0rq5tkkhr3j4de0r0eqo949",
+    "identity_pool_id": "us-west-1:494bbaef-029d-4e29-9bd0-80b1f35b014b",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -26,17 +26,17 @@
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://l3w75paw5vbdxkahxclw2ala7i.appsync-api.us-west-1.amazonaws.com/graphql",
+    "url": "https://k4yq5rxwurbq3gotczvoexu4ya.appsync-api.us-west-1.amazonaws.com/graphql",
     "aws_region": "us-west-1",
-    "default_authorization_type": "AWS_IAM",
+    "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
-      "AMAZON_COGNITO_USER_POOLS"
+      "AWS_IAM"
     ],
     "model_introspection": {
       "version": 1,
       "models": {
-        "Todo": {
-          "name": "Todo",
+        "User": {
+          "name": "User",
           "fields": {
             "id": {
               "name": "id",
@@ -45,12 +45,99 @@
               "isRequired": true,
               "attributes": []
             },
-            "content": {
-              "name": "content",
+            "firstName": {
+              "name": "firstName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "lastName": {
+              "name": "lastName",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "username": {
+              "name": "username",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "email": {
+              "name": "email",
+              "isArray": false,
+              "type": "AWSEmail",
+              "isRequired": true,
+              "attributes": []
+            },
+            "accessLevel": {
+              "name": "accessLevel",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "address": {
+              "name": "address",
+              "isArray": false,
+              "type": {
+                "nonModel": "UserAddress"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "contactPrefs": {
+              "name": "contactPrefs",
+              "isArray": false,
+              "type": {
+                "nonModel": "UserContactPrefs"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "emergencyContact": {
+              "name": "emergencyContact",
+              "isArray": false,
+              "type": {
+                "nonModel": "UserEmergencyContact"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "vehicle": {
+              "name": "vehicle",
+              "isArray": false,
+              "type": {
+                "nonModel": "UserVehicle"
+              },
+              "isRequired": false,
+              "attributes": []
+            },
+            "profileImageKey": {
+              "name": "profileImageKey",
               "isArray": false,
               "type": "String",
               "isRequired": false,
               "attributes": []
+            },
+            "paymentMethods": {
+              "name": "paymentMethods",
+              "isArray": true,
+              "type": {
+                "model": "PaymentMethod"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "isArrayNullable": true,
+              "association": {
+                "connectionType": "HAS_MANY",
+                "associatedWith": [
+                  "userId"
+                ]
+              }
             },
             "createdAt": {
               "name": "createdAt",
@@ -70,7 +157,7 @@
             }
           },
           "syncable": true,
-          "pluralName": "Todos",
+          "pluralName": "Users",
           "attributes": [
             {
               "type": "model",
@@ -81,8 +168,106 @@
               "properties": {
                 "rules": [
                   {
-                    "allow": "public",
-                    "provider": "iam",
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
+                    "operations": [
+                      "create",
+                      "update",
+                      "delete",
+                      "read"
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "primaryKeyInfo": {
+            "isCustomPrimaryKey": false,
+            "primaryKeyFieldName": "id",
+            "sortKeyFieldNames": []
+          }
+        },
+        "PaymentMethod": {
+          "name": "PaymentMethod",
+          "fields": {
+            "id": {
+              "name": "id",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "userId": {
+              "name": "userId",
+              "isArray": false,
+              "type": "ID",
+              "isRequired": true,
+              "attributes": []
+            },
+            "type": {
+              "name": "type",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "user": {
+              "name": "user",
+              "isArray": false,
+              "type": {
+                "model": "User"
+              },
+              "isRequired": false,
+              "attributes": [],
+              "association": {
+                "connectionType": "BELONGS_TO",
+                "targetNames": [
+                  "userId"
+                ]
+              }
+            },
+            "createdAt": {
+              "name": "createdAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            },
+            "updatedAt": {
+              "name": "updatedAt",
+              "isArray": false,
+              "type": "AWSDateTime",
+              "isRequired": false,
+              "attributes": [],
+              "isReadOnly": true
+            }
+          },
+          "syncable": true,
+          "pluralName": "PaymentMethods",
+          "attributes": [
+            {
+              "type": "model",
+              "properties": {}
+            },
+            {
+              "type": "auth",
+              "properties": {
+                "rules": [
+                  {
+                    "provider": "userPools",
+                    "ownerField": "owner",
+                    "allow": "owner",
+                    "identityClaim": "cognito:username",
                     "operations": [
                       "create",
                       "update",
@@ -102,8 +287,162 @@
         }
       },
       "enums": {},
-      "nonModels": {}
+      "nonModels": {
+        "UserAddress": {
+          "name": "UserAddress",
+          "fields": {
+            "line1": {
+              "name": "line1",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "city": {
+              "name": "city",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "state": {
+              "name": "state",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "zip": {
+              "name": "zip",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "country": {
+              "name": "country",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "UserContactPrefs": {
+          "name": "UserContactPrefs",
+          "fields": {
+            "email": {
+              "name": "email",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            },
+            "push": {
+              "name": "push",
+              "isArray": false,
+              "type": "Boolean",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        },
+        "UserEmergencyContact": {
+          "name": "UserEmergencyContact",
+          "fields": {
+            "name": {
+              "name": "name",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "phone": {
+              "name": "phone",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            },
+            "email": {
+              "name": "email",
+              "isArray": false,
+              "type": "AWSEmail",
+              "isRequired": true,
+              "attributes": []
+            },
+            "address": {
+              "name": "address",
+              "isArray": false,
+              "type": "String",
+              "isRequired": true,
+              "attributes": []
+            }
+          }
+        },
+        "UserVehicle": {
+          "name": "UserVehicle",
+          "fields": {
+            "make": {
+              "name": "make",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "model": {
+              "name": "model",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "color": {
+              "name": "color",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "license": {
+              "name": "license",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "year": {
+              "name": "year",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            }
+          }
+        }
+      }
     }
+  },
+  "storage": {
+    "aws_region": "us-west-1",
+    "bucket_name": "amplify-protosadminangula-profileimagesbucket03812-cpomsn2w06jj",
+    "buckets": [
+      {
+        "name": "profileImages",
+        "bucket_name": "amplify-protosadminangula-profileimagesbucket03812-cpomsn2w06jj",
+        "aws_region": "us-west-1",
+        "paths": {
+          "profile/${cognito-identity.amazonaws.com:sub}/*": {
+            "entityidentity": [
+              "get",
+              "list",
+              "write",
+              "delete"
+            ]
+          }
+        }
+      }
+    ]
   },
   "version": "1.4"
 }
