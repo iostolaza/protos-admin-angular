@@ -15,11 +15,13 @@
       "prefix": "app",
       "architect": {
         "build": {
-          "builder": "@angular/build:application",
+          "builder": "@angular-devkit/build-angular:browser",
           "options": {
-            "browser": "src/main.ts",
+            "outputPath": "dist/protos-admin-angular",
+            "index": "src/index.html",
+            "main": "src/main.ts",
+            "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
-            "inlineStyleLanguage": "css",
             "assets": [
               "src/assets",
               {
@@ -35,10 +37,10 @@
             "styles": [
               "src/styles.css"
             ],
-            "polyfills": [
-              "zone.js",
-              "@angular/localize/init"
-            ]
+            "scripts": [],
+            "vendorChunk": true,
+            "extractLicenses": false,
+            "namedChunks": true
           },
           "configurations": {
             "production": {
@@ -54,18 +56,26 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "namedChunks": false,
+              "extractLicenses": true,
+              "vendorChunk": false
             },
             "development": {
               "optimization": false,
-              "extractLicenses": false,
               "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular/build:dev-server",
+          "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
               "buildTarget": "protos-admin-angular:build:production"
@@ -77,19 +87,18 @@
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
-          "builder": "@angular/build:extract-i18n"
+          "builder": "@angular-devkit/build-angular:extract-i18n",
+          "options": {
+            "buildTarget": "protos-admin-angular:build"
+          }
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "main": "src/test.ts",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing",
-              "@angular/localize/init"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.spec.json",
-            "inlineStyleLanguage": "css",
+            "karmaConfig": "karma.conf.js",
             "assets": [
               "src/assets",
               {
@@ -100,7 +109,8 @@
             ],
             "styles": [
               "src/styles.css"
-            ]
+            ],
+            "scripts": []
           }
         }
       }
