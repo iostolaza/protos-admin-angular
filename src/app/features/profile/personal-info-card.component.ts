@@ -14,7 +14,7 @@ import { UserService, UserProfile } from '../../core/services/user.service';
     <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
       <h2 class="text-xl font-bold mb-4 text-primary">Personal Information</h2>
       <div class="mb-4">
-        <img [src]="profileImageUrl || 'default-avatar.png'" alt="Profile" class="w-20 h-20 rounded-full" aria-label="Profile image">
+          <img [src]="profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile" class="w-20 h-20 rounded-full" aria-label="Profile image">
         @if (editMode()) {
           <input type="file" (change)="uploadImage($event)" accept="image/*" aria-label="Upload profile image" class="mt-2">
         }
@@ -40,7 +40,7 @@ import { UserService, UserProfile } from '../../core/services/user.service';
             </div>
             <div class="col-span-2">
               <label class="block text-sm text-muted-foreground">Access Level</label>
-              <input formControlName="accessLevel" [disabled]="true" class="w-full p-2 border border-border rounded bg-muted text-foreground" />
+              <input formControlName="accessLevel" class="w-full p-2 border border-border rounded bg-muted text-foreground" />
             </div>
           </div>
           <div class="mt-4 flex justify-end gap-2">
@@ -81,7 +81,7 @@ constructor(private fb: FormBuilder, private userService: UserService) {
     const u = this.userService.user$();
     this.user = u;
     this.form.patchValue(u || {});
-    this.profileImageUrl = u?.profileImageUrl || 'default-avatar.png';
+    this.profileImageUrl = u?.profileImageUrl || '/assets/profile/avatar-default.svg';
   });
 }
   toggleEdit() {

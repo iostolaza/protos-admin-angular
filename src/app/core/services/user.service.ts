@@ -69,6 +69,47 @@ export class UserService {
       throw new Error('User creation returned null data despite no errors.');
     }
   }
+  if (userModel) {
+  const profile: UserProfile = {
+    id: userModel.id,
+    firstName: userModel.firstName,
+    lastName: userModel.lastName,
+    username: userModel.username,
+    email: userModel.email,
+    accessLevel: userModel.accessLevel,
+    address: userModel.address ?? { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
+    contactPrefs: {
+      email: userModel.contactPrefs?.email ?? false,
+      push: userModel.contactPrefs?.push ?? false
+    },
+    emergencyContact: userModel.emergencyContact ?? { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
+    vehicle: {
+      make: userModel.vehicle?.make ?? '',
+      model: userModel.vehicle?.model ?? '',
+      color: userModel.vehicle?.color ?? '',
+      license: userModel.vehicle?.license ?? '',
+      year: userModel.vehicle?.year ?? ''
+    },
+    profileImageKey: userModel.profileImageKey ?? '',
+  };
+
+  if (profile.profileImageKey) {
+    try {
+      const { url } = await getUrl({
+        path: profile.profileImageKey,
+        options: { expiresIn: 3600 }, // 1 hour expiration for security
+      });
+      profile.profileImageUrl = url.toString();
+    } catch (err) {
+      console.error('Error getting image URL:', err);
+      profile.profileImageUrl = 'src/assets/profile/avatar-default.svg'; // Fallback
+    }
+  } else {
+    profile.profileImageUrl = 'src/assets/profile/avatar-default.svg';
+  }
+
+  this.user$.set(profile);
+}
 
 } catch (error) {
   console.error('Load user error:', error);
