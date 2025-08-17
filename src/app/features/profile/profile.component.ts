@@ -30,7 +30,4 @@ export class Profile implements OnInit {
   this.loading.set(false);
 }
 
-  // ngOnInit() {
-  //   this.userService.load().then(() => this.loading.set(false));
-  // }
 }

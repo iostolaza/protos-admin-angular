@@ -4,17 +4,16 @@
 <div class="relative ml-3">
   <button (click)="toggleMenu()" class="bg-background relative flex rounded-full text-sm" type="button">
     <span class="sr-only">Open user menu</span>
-    <!-- <img class="size-9 shrink-0 rounded-md" src="assets/profile/profile-female.jpg" alt="Profile Image" /> -->
-    <img class="size-9 shrink-0 rounded-md" src="/assets/profile/profile-female.jpg" alt="Profile Image" />
+    <img class="size-9 shrink-0 rounded-md" [src]="user()?.profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile Image" aria-label="User profile image" />
   </button>
   <div [@openClose]="isOpen() ? 'open' : 'closed'" class="bg-background shadow-custom border-muted absolute z-20 mt-2 w-60 origin-top-right transform rounded-md border border-dashed py-4 ring-1 ring-transparent transition focus:outline-hidden ltr:right-0 rtl:left-0">
     <div class="flex items-center px-4 pb-4">
       <div class="w-10 shrink-0">
-        <img class="rounded-md" src="/assets/profile/profile-female.jpg" alt="Profile Image" />
+         <img class="rounded-md" [src]="user()?.profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile Image" aria-label="User profile image" />
       </div>
       <div class="text-foreground overflow-hidden px-2 text-sm font-semibold">
-        Proto Admin
-        <p class="text-muted-foreground truncate text-ellipsis text-xs font-semibold">me@example.com</p>
+        {{ fullName() }}
+        <p class="text-muted-foreground truncate text-ellipsis text-xs font-semibold">{{ user()?.email || 'email@example.com' }}</p>
       </div>
     </div>
     <div class="border-border border-b border-dashed"></div>

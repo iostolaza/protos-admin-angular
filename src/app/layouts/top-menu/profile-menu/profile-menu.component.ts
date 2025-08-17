@@ -1,13 +1,15 @@
 /* Fixed: Add import { inject } from '@angular/core'; Remove changeDetection if not needed. */
 
-import { Component, signal } from '@angular/core';
+
+import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { MenuService } from '../../../core/services/menu.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
-import { inject } from '@angular/core';
+import { UserService } from '../../../core/services/user.service';
+
 
 type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; route?: string; action?: 'logout' };
 
@@ -25,9 +27,16 @@ type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; rout
     ]),
   ],
 })
-export class ProfileMenuComponent {
+export class ProfileMenuComponent implements OnInit {
   private router = inject(Router);
   private menuService = inject(MenuService);
+
+  private userService = inject(UserService);
+  user = this.userService.user$;
+  fullName = computed(() => {
+    const u = this.user();
+    return u ? `${u.firstName} ${u.lastName}`.trim() || u.username || 'User' : 'User';
+  });
 
   getIconPath = getIconPath;
 
@@ -48,4 +57,11 @@ export class ProfileMenuComponent {
     }
     this.isOpen.set(false);
   }
+  
+  ngOnInit() {
+    if (!this.user()) {
+      this.userService.load().catch(err => console.warn('Failed to load user profile:', err));
+    }
+  }
+
 }
