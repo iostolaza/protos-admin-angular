@@ -11,7 +11,7 @@ import { UserService, UserProfile } from '../../core/services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
+    <div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
       <h2 class="text-xl font-bold mb-4 text-primary">Vehicle Information</h2>
       @if (editMode()) {
         <form [formGroup]="form" (ngSubmit)="save()">
@@ -44,13 +44,13 @@ import { UserService, UserProfile } from '../../core/services/user.service';
         </form>
       } @else {
         <div class="grid grid-cols-2 gap-4 text-foreground">
-          <div><strong class="text-muted-foreground">Make:</strong> <span class="text-foreground">{{ user?.vehicle?.make }}</span></div>
-          <div><strong class="text-muted-foreground">Model:</strong> <span class="text-foreground">{{ user?.vehicle?.model }}</span></div>
-          <div><strong class="text-muted-foreground">Color:</strong> <span class="text-foreground">{{ user?.vehicle?.color }}</span></div>
-          <div><strong class="text-muted-foreground">License Number:</strong> <span class="text-foreground">{{ user?.vehicle?.license }}</span></div>
-          <div><strong class="text-muted-foreground">Year:</strong> <span class="text-foreground">{{ user?.vehicle?.year }}</span></div>
+          <div><strong class="text-muted-foreground">Make: </strong> <span class="text-foreground">{{ user?.vehicle?.make }}</span></div>
+          <div><strong class="text-muted-foreground">Model: </strong> <span class="text-foreground">{{ user?.vehicle?.model }}</span></div>
+          <div><strong class="text-muted-foreground">Color: </strong> <span class="text-foreground">{{ user?.vehicle?.color }}</span></div>
+          <div><strong class="text-muted-foreground">License Number: </strong> <span class="text-foreground">{{ user?.vehicle?.license }}</span></div>
+          <div><strong class="text-muted-foreground">Year: </strong> <span class="text-foreground">{{ user?.vehicle?.year }}</span></div>
         </div>
-        <div class="mt-4 flex justify-end">
+        <div class="mt-4 flex justify-start">
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
         </div>
       }

@@ -12,13 +12,13 @@ import { UserService, UserProfile } from '../../core/services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
+    <div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
       <h2 class="text-xl font-bold mb-4 text-primary">Address</h2>
       @if (editMode()) {
         <form [formGroup]="form" (ngSubmit)="save()">
           <div class="grid grid-cols-2 gap-4">
             <div class="col-span-2">
-              <label class="block text-sm text-muted-foreground">Address Line 1</label>
+              <label class="block text-sm text-muted-foreground">Address</label>
               <input formControlName="line1" class="w-full p-2 border border-border rounded bg-background text-foreground" />
             </div>
             <div>
@@ -47,13 +47,13 @@ import { UserService, UserProfile } from '../../core/services/user.service';
         @if (user) {
           <div class="grid grid-cols-2 gap-4 text-foreground">
             <div class="col-span-2"><strong class="text-muted-foreground">Address Line 1:</strong> <span class="text-foreground">{{ user.address.line1 }}</span></div>
-            <div><strong class="text-muted-foreground">City:</strong> <span class="text-foreground">{{ user.address.city }}</span></div>
-            <div><strong class="text-muted-foreground">State:</strong> <span class="text-foreground">{{ user.address.state }}</span></div>
-            <div><strong class="text-muted-foreground">ZIP Code:</strong> <span class="text-foreground">{{ user.address.zip }}</span></div>
-            <div><strong class="text-muted-foreground">Country:</strong> <span class="text-foreground">{{ user.address.country }}</span></div>
+            <div><strong class="text-muted-foreground">City: </strong> <span class="text-foreground">{{ user.address.city }}</span></div>
+            <div><strong class="text-muted-foreground">State: </strong> <span class="text-foreground">{{ user.address.state }}</span></div>
+            <div><strong class="text-muted-foreground">ZIP Code: </strong> <span class="text-foreground">{{ user.address.zip }}</span></div>
+            <div><strong class="text-muted-foreground">Country: </strong> <span class="text-foreground">{{ user.address.country }}</span></div>
           </div>
         }
-        <div class="mt-4 flex justify-end">
+        <div class="mt-4 flex justify-start">
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
       </div>
       }

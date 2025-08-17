@@ -11,7 +11,7 @@ import { UserService, UserProfile } from '../../core/services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
+    <div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
       <h2 class="text-xl font-bold mb-4 text-primary">Contact Preferences</h2>
       @if (editMode()) {
         <form [formGroup]="form" (ngSubmit)="save()">
@@ -32,10 +32,10 @@ import { UserService, UserProfile } from '../../core/services/user.service';
         </form>
       } @else if (user) {
         <div class="grid grid-cols-2 gap-4 text-foreground">
-          <div><strong class="text-muted-foreground">Email:</strong> <span class="text-foreground">{{ user.contactPrefs.email ? 'Enabled' : 'Disabled' }}</span></div>
-          <div><strong class="text-muted-foreground">Push Notifications:</strong> <span class="text-foreground">{{ user.contactPrefs.push ? 'Enabled' : 'Disabled' }}</span></div>
+          <div><strong class="text-muted-foreground">Email: </strong> <span class="text-foreground">{{ user.contactPrefs.email ? 'Enabled' : 'Disabled' }}</span></div>
+          <div><strong class="text-muted-foreground">Push Notifications: </strong> <span class="text-foreground">{{ user.contactPrefs.push ? 'Enabled' : 'Disabled' }}</span></div>
         </div>
-        <div class="mt-4 flex justify-end">
+        <div class="mt-4 flex justify-start">
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
         </div>
       }

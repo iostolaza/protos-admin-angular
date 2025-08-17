@@ -11,7 +11,7 @@ import { UserService, UserProfile } from '../../core/services/user.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="bg-card text-card-foreground p-6 rounded-lg shadow-custom border border-border flex flex-col h-full">
+    <div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
       <h2 class="text-xl font-bold mb-4 text-primary">Personal Information</h2>
       <div class="mb-4">
           <img [src]="profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile" class="w-20 h-20 rounded-full" aria-label="Profile image">
@@ -51,14 +51,14 @@ import { UserService, UserProfile } from '../../core/services/user.service';
       } @else {
         @if (user) {
           <div class="grid grid-cols-2 gap-4 text-foreground">
-            <div><strong class="text-muted-foreground">First Name:</strong> <span class="text-foreground">{{ user.firstName }}</span></div>
-            <div><strong class="text-muted-foreground">Last Name:</strong> <span class="text-foreground">{{ user.lastName }}</span></div>
-            <div><strong class="text-muted-foreground">Username:</strong> <span class="text-foreground">{{ user.username }}</span></div>
-            <div><strong class="text-muted-foreground">Email:</strong> <span class="text-foreground">{{ user.email }}</span></div>
-            <div class="col-span-2"><strong class="text-muted-foreground">Access Level:</strong> <span class="text-foreground">{{ user.accessLevel }}</span></div>
+            <div><strong class="text-muted-foreground">First Name: </strong> <span class="text-foreground">{{ user.firstName }}</span></div>
+            <div><strong class="text-muted-foreground">Last Name: </strong> <span class="text-foreground">{{ user.lastName }}</span></div>
+            <div><strong class="text-muted-foreground">Username: </strong> <span class="text-foreground">{{ user.username }}</span></div>
+            <div><strong class="text-muted-foreground">Email: </strong> <span class="text-foreground">{{ user.email }}</span></div>
+            <div class="col-span-2"><strong class="text-muted-foreground">Access Level: </strong> <span class="text-foreground">{{ user.accessLevel }}</span></div>
           </div>
         }
-        <div class="mt-4 flex justify-end">
+        <div class="mt-4 flex justify-start">
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
         </div>
       }
