@@ -1,12 +1,12 @@
 <!-- src/app/features/profile/profile.component.html -->
 <!-- Profile: Two-per-row cards, fixed-height scroll -->
-<div class="px-10 sm:px-50 py-6 overflow-y-auto h-screen bg-background">
-  <h1 class="text-2xl font-bold mb-6 text-foreground">User Profile</h1>
+<div class="px-15 sm:px-15 py-6 overflow-y-auto h-screen bg-background">
+  <h1 class="text-2xl font-bold mb-8 text-foreground">User Profile</h1>
 
   @if (loading()) {
     <p class="text-muted-foreground">Loading...</p>
   } @else {
-    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-background equal-row-grid">
+    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6 bg-background equal-row-grid">
       <!-- Full-width top card (no change needed) -->
       <app-personal-info-card class="col-span-full"></app-personal-info-card>
 

@@ -45,7 +45,9 @@ import { UserService, UserProfile } from '../../core/services/user.service';
           <div><strong class="text-muted-foreground">Email:</strong> <span class="text-foreground">{{ user?.emergencyContact?.email }}</span></div>
           <div class="col-span-2"><strong class="text-muted-foreground">Address:</strong> <span class="text-foreground">{{ user?.emergencyContact?.address }}</span></div>
         </div>
+        <div class="mt-4 flex justify-end">
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
+       </div>
       }
     </div>
   `,

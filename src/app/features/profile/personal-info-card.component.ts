@@ -58,7 +58,9 @@ import { UserService, UserProfile } from '../../core/services/user.service';
             <div class="col-span-2"><strong class="text-muted-foreground">Access Level:</strong> <span class="text-foreground">{{ user.accessLevel }}</span></div>
           </div>
         }
+        <div class="mt-4 flex justify-end">
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
+        </div>
       }
     </div>
   `,
@@ -75,7 +77,7 @@ constructor(private fb: FormBuilder, private userService: UserService) {
     lastName: ['', Validators.required],
     username: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    accessLevel: [{ value: '', disabled: true }],
+    accessLevel: [''],
   });
   effect(() => {
     const u = this.userService.user$();

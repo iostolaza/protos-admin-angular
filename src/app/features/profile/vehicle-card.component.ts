@@ -50,7 +50,9 @@ import { UserService, UserProfile } from '../../core/services/user.service';
           <div><strong class="text-muted-foreground">License Number:</strong> <span class="text-foreground">{{ user?.vehicle?.license }}</span></div>
           <div><strong class="text-muted-foreground">Year:</strong> <span class="text-foreground">{{ user?.vehicle?.year }}</span></div>
         </div>
+        <div class="mt-4 flex justify-end">
         <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
+        </div>
       }
     </div>
   `,

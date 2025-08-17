@@ -190,15 +190,17 @@ async deletePaymentMethod(id: string) {
   console.log('Deleted payment method:', deleteResp.data);
 }
 
-  async uploadProfileImage(file: File): Promise<string | null> {
-    try {
-      const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/profile.jpg`;
-      const uploadTask = uploadData({ path, data: file });
-      const { path: uploadedPath } = await uploadTask.result;
-      return uploadedPath;
-    } catch (error) {
-      console.error('Upload error:', error);
-      return null;
-    }
+async uploadProfileImage(file: File): Promise<string | null> {
+  try {
+    const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/profile.jpg`;
+    console.log('Uploading to path:', path({})); // Debug
+    const uploadTask = uploadData({ path, data: file });
+    const { path: uploadedPath } = await uploadTask.result;
+    console.log('Upload success, key:', uploadedPath);
+    return uploadedPath;
+  } catch (error) {
+    console.error('Upload error:', error);
+    return null;
   }
+}
 }
