@@ -4,12 +4,12 @@
 <div class="relative ml-3">
   <button (click)="toggleMenu()" class="bg-background relative flex rounded-full text-sm" type="button">
     <span class="sr-only">Open user menu</span>
-    <img class="size-9 shrink-0 rounded-md" [src]="user()?.profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile Image" aria-label="User profile image" />
+    <img class="size-9 shrink-0 rounded-full" [src]="user()?.profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile Image" aria-label="User profile image" />
   </button>
   <div [@openClose]="isOpen() ? 'open' : 'closed'" class="bg-background shadow-custom border-muted absolute z-20 mt-2 w-60 origin-top-right transform rounded-md border border-dashed py-4 ring-1 ring-transparent transition focus:outline-hidden ltr:right-0 rtl:left-0">
     <div class="flex items-center px-4 pb-4">
       <div class="w-10 shrink-0">
-         <img class="rounded-md" [src]="user()?.profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile Image" aria-label="User profile image" />
+         <img class="rounded-full" [src]="user()?.profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile Image" aria-label="User profile image" />
       </div>
       <div class="text-foreground overflow-hidden px-2 text-sm font-semibold">
         {{ fullName() }}
@@ -19,7 +19,7 @@
     <div class="border-border border-b border-dashed"></div>
     <ul class="my-2 mx-2 flex flex-col">
       @for (item of profileMenu(); track $index) {
-        <li (click)="onMenuItemClick(item)" class="text-muted-foreground hover:bg-muted hover:text-primary inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-xs font-semibold">
+        <li (click)="onMenuItemClick(item)" class="text-muted-foreground hover:bg-muted hover:text-primary inline-flex cursor-pointer items-center gap-2 rounded-full px-2 py-2 text-xs font-semibold">
           <svg-icon [src]="getIconPath(item.icon)" [svgClass]="'h-5 w-5 text-muted-foreground/50'"> </svg-icon>
           {{ item.title }}
         </li>
