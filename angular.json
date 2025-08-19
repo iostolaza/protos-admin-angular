@@ -36,8 +36,7 @@
               }
             ],
             "styles": [
-              "src/custom-theme.scss",
-              "src/styles.css"
+              "src/styles.css" 
             ],
             "scripts": [],
             "extractLicenses": false,
@@ -109,7 +108,7 @@
               }
             ],
             "styles": [
-              "src/styles.css"
+              "src/styles.css" 
             ],
             "scripts": []
           }

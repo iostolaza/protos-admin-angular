@@ -4,31 +4,25 @@
 
 /* Example conversion without @apply */
 .chat-bubble {
-  padding: 0.75rem;
-  border-radius: 1rem;
-  max-width: 60%;
-  word-break: break-word;
+  @apply p-3 rounded-lg max-w-[60%] break-words;
 }
 
 .received {
-  background-color: #4b5563; /* gray-700 */
-  color: white;
+  @apply bg-[#4b5563] text-white;  // Keep hex if preferred, or use gray-700 from config
 }
 
 .sent {
-  background-color: #3b82f6; /* blue-500 */
-  color: white;
+  @apply bg-[#3b82f6] text-white;
 }
 
 mat-sidenav-container,
 mat-sidenav,
 mat-sidenav-content {
-  background-color: #111827; /* gray-900 */
+  @apply bg-[#111827];
 }
 
 mat-toolbar {
-  background-color: #1f2937; /* gray-800 */
+  @apply bg-[#1f2937];
 }
 
 /* Messages Component Styles */
-
