@@ -34,6 +34,8 @@ const schema = a.schema({
       }),
       profileImageKey: a.string(),
       paymentMethods: a.hasMany('PaymentMethod', 'userId'),
+      channels: a.hasMany('UserChannel', 'userId'),
+      messages: a.hasMany('Message', 'senderId'),
     })
     .authorization(allow => [allow.owner()]),
   PaymentMethod: a
@@ -50,7 +52,7 @@ const schema = a.schema({
     .model({
       name: a.string(), // Optional name for group channels; for 1:1, could derive from members
       users: a.hasMany('UserChannel', 'channelId'), // Many-to-many with users
-      messages: a.hasMany('Message', 'channelId'), // One-to-many with messages
+      messages: a.hasMany('Message', 'channelId'),
     })
     .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]), // Allow authenticated users; refine with custom logic for member-only access
   Message: a
