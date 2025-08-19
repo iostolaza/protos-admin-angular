@@ -8,8 +8,8 @@ Handles error logging during bootstrap.
 */
 // Import Zone.js
 import 'zone.js';
+
 // Imports 
-import "@fontsource-variable/inter";
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app';
 import { appConfig } from './app/app.config';
