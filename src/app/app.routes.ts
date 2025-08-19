@@ -40,6 +40,7 @@ export const routes: Routes = [
       { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.Profile) },
       
       // Messages variants (incoming/outgoing) using same component
+      { path: 'messages', redirectTo: 'messages/incoming', pathMatch: 'full' },
       { path: 'messages/incoming', loadComponent: () => import('./features/messages/messages.component').then(m => m.Messages) },
       { path: 'messages/outgoing', loadComponent: () => import('./features/messages/messages.component').then(m => m.Messages) },
       

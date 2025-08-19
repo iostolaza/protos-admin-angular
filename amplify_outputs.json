@@ -1,9 +1,9 @@
 {
   "auth": {
-    "user_pool_id": "us-west-1_8wc5eQRBW",
+    "user_pool_id": "us-west-1_wE34iGlXJ",
     "aws_region": "us-west-1",
-    "user_pool_client_id": "5ea0rq5tkkhr3j4de0r0eqo949",
-    "identity_pool_id": "us-west-1:494bbaef-029d-4e29-9bd0-80b1f35b014b",
+    "user_pool_client_id": "2jep5hpd831v0sn2r9efsl16mf",
+    "identity_pool_id": "us-west-1:6cc2be2a-a61e-4573-936c-f5f2c862e202",
     "mfa_methods": [],
     "standard_required_attributes": [
       "email"
@@ -26,7 +26,7 @@
     "unauthenticated_identities_enabled": true
   },
   "data": {
-    "url": "https://k4yq5rxwurbq3gotczvoexu4ya.appsync-api.us-west-1.amazonaws.com/graphql",
+    "url": "https://mjmoupafnbedxddokm7oaai4tq.appsync-api.us-west-1.amazonaws.com/graphql",
     "aws_region": "us-west-1",
     "default_authorization_type": "AMAZON_COGNITO_USER_POOLS",
     "authorization_types": [
@@ -425,11 +425,11 @@
   },
   "storage": {
     "aws_region": "us-west-1",
-    "bucket_name": "amplify-protosadminangula-profileimagesbucket03812-cpomsn2w06jj",
+    "bucket_name": "amplify-d22jot62bwzbje-ma-profileimagesbucket03812-8owdctbpbrrx",
     "buckets": [
       {
         "name": "profileImages",
-        "bucket_name": "amplify-protosadminangula-profileimagesbucket03812-cpomsn2w06jj",
+        "bucket_name": "amplify-d22jot62bwzbje-ma-profileimagesbucket03812-8owdctbpbrrx",
         "aws_region": "us-west-1",
         "paths": {
           "profile/${cognito-identity.amazonaws.com:sub}/*": {

@@ -44,6 +44,35 @@ const schema = a.schema({
       user: a.belongsTo('User', 'userId'), 
     })
     .authorization(allow => [allow.owner()]),
+
+  // New messaging schema models (Channel, Message, and UserChannel join for many-to-many)
+  Channel: a
+    .model({
+      name: a.string(), // Optional name for group channels; for 1:1, could derive from members
+      users: a.hasMany('UserChannel', 'channelId'), // Many-to-many with users
+      messages: a.hasMany('Message', 'channelId'), // One-to-many with messages
+    })
+    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]), // Allow authenticated users; refine with custom logic for member-only access
+  Message: a
+    .model({
+      content: a.string().required(),
+      senderId: a.id().required(),
+      channelId: a.id().required(),
+      timestamp: a.datetime().required(),
+      attachment: a.string(), // S3 key for file/image attachments
+      readBy: a.string().array(), // Array of user IDs who have read the message
+      sender: a.belongsTo('User', 'senderId'),
+      channel: a.belongsTo('Channel', 'channelId'),
+    })
+    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]), // Authenticated access; client-side filter for channel members
+  UserChannel: a // Join table for User <-> Channel many-to-many
+    .model({
+      userId: a.id().required(),
+      channelId: a.id().required(),
+      user: a.belongsTo('User', 'userId'),
+      channel: a.belongsTo('Channel', 'channelId'),
+    })
+    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]), // Similar auth; secure via app logic
 });
 
 export type Schema = ClientSchema<typeof schema>;
