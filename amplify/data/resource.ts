@@ -36,45 +36,47 @@ const schema = a.schema({
       paymentMethods: a.hasMany('PaymentMethod', 'userId'),
       channels: a.hasMany('UserChannel', 'userId'),
       messages: a.hasMany('Message', 'senderId'),
+      owner: a.string().authorization(allow => [allow.owner().to(['read'])])  // Change: Explicit owner field with field-level auth (read-only, prevent reassignment)
     })
-    .authorization(allow => [allow.owner()]),
+    .authorization(allow => [allow.owner()]),  // Model-level owner auth
   PaymentMethod: a
     .model({
       userId: a.id().required(),
       type: a.string(),
       name: a.string(),
-      user: a.belongsTo('User', 'userId'), 
+      user: a.belongsTo('User', 'userId'),
+      owner: a.string().authorization(allow => [allow.owner().to(['read'])])  // Change: Explicit owner field with field-level auth
     })
     .authorization(allow => [allow.owner()]),
 
-  // New messaging schema models (Channel, Message, and UserChannel join for many-to-many)
+  // Other models unchanged
   Channel: a
     .model({
-      name: a.string(), // Optional name for group channels; for 1:1, could derive from members
-      users: a.hasMany('UserChannel', 'channelId'), // Many-to-many with users
+      name: a.string(),
+      users: a.hasMany('UserChannel', 'channelId'),
       messages: a.hasMany('Message', 'channelId'),
     })
-    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]), // Allow authenticated users; refine with custom logic for member-only access
+    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]),
   Message: a
     .model({
       content: a.string().required(),
       senderId: a.id().required(),
       channelId: a.id().required(),
       timestamp: a.datetime().required(),
-      attachment: a.string(), // S3 key for file/image attachments
-      readBy: a.string().array(), // Array of user IDs who have read the message
+      attachment: a.string(),
+      readBy: a.string().array(),
       sender: a.belongsTo('User', 'senderId'),
       channel: a.belongsTo('Channel', 'channelId'),
     })
-    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]), // Authenticated access; client-side filter for channel members
-  UserChannel: a // Join table for User <-> Channel many-to-many
+    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]),
+  UserChannel: a
     .model({
       userId: a.id().required(),
       channelId: a.id().required(),
       user: a.belongsTo('User', 'userId'),
       channel: a.belongsTo('Channel', 'channelId'),
     })
-    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]), // Similar auth; secure via app logic
+    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]),
 });
 
 export type Schema = ClientSchema<typeof schema>;

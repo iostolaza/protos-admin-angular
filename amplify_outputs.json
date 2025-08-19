@@ -171,6 +171,13 @@
                 ]
               }
             },
+            "owner": {
+              "name": "owner",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "createdAt": {
               "name": "createdAt",
               "isArray": false,
@@ -266,6 +273,13 @@
                   "userId"
                 ]
               }
+            },
+            "owner": {
+              "name": "owner",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
             },
             "createdAt": {
               "name": "createdAt",

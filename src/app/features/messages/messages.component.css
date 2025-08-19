@@ -8,7 +8,7 @@
 }
 
 .received {
-  @apply bg-[#4b5563] text-white;  // Keep hex if preferred, or use gray-700 from config
+  @apply bg-[#4b5563] text-white;
 }
 
 .sent {
@@ -24,5 +24,3 @@ mat-sidenav-content {
 mat-toolbar {
   @apply bg-[#1f2937];
 }
-
-/* Messages Component Styles */
