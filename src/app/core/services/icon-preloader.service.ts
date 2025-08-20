@@ -3,7 +3,6 @@ import { SvgIconRegistryService } from 'angular-svg-icon';
 import { HttpClient } from '@angular/common/http';
 import { forkJoin, map } from 'rxjs';
 
-// Central, typed map of icons → file paths
 export const ICONS = {
   'arrow-long-left': 'assets/icons/heroicons/outline/arrow-long-left.svg',
   'arrow-long-right': 'assets/icons/heroicons/outline/arrow-long-right.svg',
@@ -43,6 +42,7 @@ export const ICONS = {
   'menu': 'assets/icons/heroicons/outline/menu.svg',
   'minus': 'assets/icons/heroicons/outline/minus.svg',
   'moon': 'assets/icons/heroicons/outline/moon.svg',
+  'paper-clip': 'assets/icons/heroicons/outline/paper-clip.svg',
   'plus': 'assets/icons/heroicons/outline/plus.svg',
   'refresh': 'assets/icons/heroicons/outline/refresh.svg',
   'shield-check': 'assets/icons/heroicons/outline/shield-check.svg',
@@ -70,16 +70,11 @@ export class IconPreloaderService {
     private http: HttpClient
   ) {}
 
-  /**
-   * Preload all icons once (optional)
-   * angular-svg-icon caches by URL; preloading reduces initial flashes.
-   */
   preloadIcons() {
     const entries = Object.entries(ICONS) as [IconName, string][];
     const reqs = entries.map(([key, path]) =>
       this.http.get(path, { responseType: 'text' }).pipe(
         map(svgText => {
-          // registry index by *URL*; we still use [src]="getIconPath(key)" in templates
           this.iconRegistry.addSvg(path, svgText);
           return key;
         })

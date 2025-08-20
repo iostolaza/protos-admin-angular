@@ -36,20 +36,18 @@ const schema = a.schema({
       paymentMethods: a.hasMany('PaymentMethod', 'userId'),
       channels: a.hasMany('UserChannel', 'userId'),
       messages: a.hasMany('Message', 'senderId'),
-      owner: a.string().authorization(allow => [allow.owner().to(['read'])])  // Change: Explicit owner field with field-level auth (read-only, prevent reassignment)
+      owner: a.string().authorization(allow => [allow.owner().to(['read'])]) // Explicit owner field with field-level auth
     })
-    .authorization(allow => [allow.owner()]),  // Model-level owner auth
+    .authorization(allow => [allow.owner()]), // Model-level owner auth
   PaymentMethod: a
     .model({
       userId: a.id().required(),
       type: a.string(),
       name: a.string(),
       user: a.belongsTo('User', 'userId'),
-      owner: a.string().authorization(allow => [allow.owner().to(['read'])])  // Change: Explicit owner field with field-level auth
+      owner: a.string().authorization(allow => [allow.owner().to(['read'])])
     })
     .authorization(allow => [allow.owner()]),
-
-  // Other models unchanged
   Channel: a
     .model({
       name: a.string(),
@@ -68,6 +66,7 @@ const schema = a.schema({
       sender: a.belongsTo('User', 'senderId'),
       channel: a.belongsTo('Channel', 'channelId'),
     })
+    .index([{ name: 'messagesByChannelAndTimestamp', fields: ['channelId', 'timestamp'] }])
     .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]),
   UserChannel: a
     .model({

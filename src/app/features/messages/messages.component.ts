@@ -7,102 +7,121 @@ import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
-import { MessageService } from '../../core/services/message.service'; // Adjusted path based on your structure
-import type { Schema } from '../../../../amplify/data/resource'; // Adjust path if needed
+import { AngularSvgIconModule } from 'angular-svg-icon';
+import { MessageService } from '../../core/services/message.service';
+import { UserService } from '../../core/services/user.service';
+import { getIconPath } from '../../core/services/icon-preloader.service';
+import type { Schema } from '../../../../amplify/data/resource';
 import { Subscription } from 'rxjs';
+import { getUrl } from 'aws-amplify/storage';
 
-// Extended type for contacts with computed avatar URL
-type Contact = Schema['User']['type'] & {
-  firstName: string;
-  lastName: string;
-  username: string;
-  email: string;
-  id: string; // Implicit in Amplify models
-  avatar?: string;
-  // Add other fields if needed for type safety
-};
+interface Conversation {
+  channel: Schema['Channel']['type'];
+  otherUser: { id: string; name: string; avatar?: string; email: string };
+  lastMessage?: Schema['Message']['type'];
+}
 
 @Component({
   selector: 'app-messages',
   standalone: true,
   imports: [
-    CommonModule,
-    MatSidenavModule,
-    MatListModule,
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatButtonModule,
-    MatToolbarModule,
-    FormsModule
+    CommonModule, MatSidenavModule, MatListModule, MatIconModule, MatInputModule, MatFormFieldModule,
+    MatButtonModule, MatToolbarModule, FormsModule, MatProgressSpinnerModule, AngularSvgIconModule // Added
   ],
   templateUrl: './messages.component.html',
   styleUrl: './messages.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Messages implements OnInit, OnDestroy {
-  private messageService: MessageService;
-  private cdr: ChangeDetectorRef;
+  getIconPath = getIconPath; // Added to expose for template binding
 
-  contacts: Contact[] = [];
-  messages: Schema['Message']['type'][] = [];
+  constructor(private messageService: MessageService, private userService: UserService, private cdr: ChangeDetectorRef) {}
+
+  conversations: Conversation[] = [];
+  filteredConversations: Conversation[] = [];
+  selectedConversation: Conversation | null = null;
   selectedChannelId: string | null = null;
-  selectedContact: string = '';
-  selectedAvatar: string = '';
-  subscription: Subscription | undefined;
+  messages: Schema['Message']['type'][] = [];
   currentUserId: string = '';
+  currentUserName: string = '';
+  currentUserEmail: string = '';
+  currentUserAvatar: string = '';
   newMessage: string = '';
   file: File | null = null;
-
-  constructor(messageService: MessageService, cdr: ChangeDetectorRef) {
-    this.messageService = messageService;
-    this.cdr = cdr;
-  }
+  searchQuery: string = '';
+  loadingMessages: boolean = false;
+  subscriptions: Subscription[] = [];
 
   async ngOnInit() {
     try {
       this.currentUserId = await this.messageService.getCurrentUserId();
-      const rawContacts = await this.messageService.getContacts();
-      this.contacts = await Promise.all(
-        rawContacts.map(async (c) => ({
-          ...c,
-          avatar: c.profileImageKey ? await this.messageService.getAvatarUrl(c.profileImageKey) : 'default.png',
-        }))
-      );
-      this.cdr.detectChanges();
-    } catch (error) {
-      console.error('Error loading contacts:', error);
-    }
-  }
-
-  async selectContact(contact: Contact) {
-    this.selectedContact = `${contact.firstName} ${contact.lastName}`;
-    this.selectedAvatar = contact.avatar || 'default.png';
-    try {
-      const channel = await this.messageService.getOrCreateChannel(contact.id);
-      this.selectedChannelId = channel.id;
-      this.messages = await this.messageService.getMessages(channel.id);
-      // Subscribe for real-time
-      this.subscription = this.messageService.subscribeMessages(channel.id, (newMsg) => {
-        this.messages = [...this.messages, newMsg]; // Immutable update for OnPush
-        this.cdr.detectChanges();
+      const userProfile = this.userService.user$();
+      if (userProfile) {
+        this.currentUserName = `${userProfile.firstName} ${userProfile.lastName}`;
+        this.currentUserEmail = userProfile.email;
+        this.currentUserAvatar = userProfile.profileImageUrl || 'default.png';
+      }
+      await this.loadConversations();
+      // Per-conversation real-time subs for sidebar updates
+      this.conversations.forEach(conv => {
+        const sub = this.messageService.subscribeMessages(conv.channel.id, (newMsg) => {
+          this.updateConversationsOnNewMessage(newMsg);
+          this.cdr.detectChanges();
+        });
+        this.subscriptions.push(sub);
       });
       this.cdr.detectChanges();
     } catch (error) {
-      console.error('Error selecting contact:', error);
+      console.error('Init error:', error);
     }
+  }
+
+  async loadConversations() {
+    const channels = await this.messageService.getUserChannels(this.currentUserId);
+    this.conversations = await Promise.all(channels.map(async (channel) => {
+      const otherUserId = await this.messageService.getOtherUserId(channel.id, this.currentUserId);
+      const otherUser = await this.messageService.getUserById(otherUserId);
+      const lastMsg = await this.messageService.getLastMessage(channel.id);
+      return {
+        channel,
+        otherUser: { id: otherUserId, name: `${otherUser.firstName} ${otherUser.lastName}`, avatar: await this.messageService.getAvatarUrl(otherUser.profileImageKey || ''), email: otherUser.email },
+        lastMessage: lastMsg
+      };
+    }));
+    this.conversations.sort((a, b) => (new Date(b.lastMessage?.timestamp || 0).getTime() - new Date(a.lastMessage?.timestamp || 0).getTime()));
+    this.filteredConversations = [...this.conversations];
+    this.cdr.detectChanges();
+  }
+
+  filterConversations() {
+    this.filteredConversations = this.conversations.filter(conv =>
+      conv.otherUser.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+      (conv.lastMessage?.content || '').toLowerCase().includes(this.searchQuery.toLowerCase())
+    );
+    this.cdr.detectChanges();
+  }
+
+  async selectConversation(conv: Conversation) {
+    this.selectedConversation = conv;
+    this.selectedChannelId = conv.channel.id;
+    this.loadingMessages = true;
+    this.messages = await this.messageService.getMessages(conv.channel.id);
+    this.loadingMessages = false;
+    const sub = this.messageService.subscribeMessages(conv.channel.id, (newMsg) => {
+      this.messages = [...this.messages, newMsg];
+      this.cdr.detectChanges();
+    });
+    this.subscriptions.push(sub);
+    this.cdr.detectChanges();
   }
 
   async sendMessage() {
     if (this.newMessage.trim() && this.selectedChannelId) {
-      try {
-        await this.messageService.sendMessage(this.selectedChannelId, this.newMessage);
-        this.newMessage = '';
-        this.cdr.detectChanges();
-      } catch (error) {
-        console.error('Error sending message:', error);
-      }
+      await this.messageService.sendMessage(this.selectedChannelId, this.newMessage);
+      this.newMessage = '';
+      this.cdr.detectChanges();
     }
   }
 
@@ -116,25 +135,43 @@ export class Messages implements OnInit, OnDestroy {
 
   async sendWithFile() {
     if (this.file && this.selectedChannelId) {
-      try {
-        const attachment = await this.messageService.uploadAttachment(this.file);
-        await this.messageService.sendMessage(this.selectedChannelId, this.newMessage, attachment);
-        this.file = null;
-        this.newMessage = '';
-        this.cdr.detectChanges();
-      } catch (error) {
-        console.error('Error sending file:', error);
-      }
+      const attachment = await this.messageService.uploadAttachment(this.file);
+      await this.messageService.sendMessage(this.selectedChannelId, this.newMessage, attachment);
+      this.file = null;
+      this.newMessage = '';
+      this.cdr.detectChanges();
     }
   }
 
-  // Sync helper to get avatar for messages (uses preloaded contacts)
+  async getAttachmentUrl(path: string): Promise<string> {
+    const { url } = await getUrl({ path, options: { expiresIn: 3600 } });
+    return url.toString();
+  }
+
+  isImage(path: string): boolean {
+    return /\.(jpg|jpeg|png|gif)$/i.test(path);
+  }
+
+  getFileName(path: string): string {
+    return path.split('/').pop() || 'file';
+  }
+
   getAvatarForMessage(senderId: string): string {
-    const sender = this.contacts.find(c => c.id === senderId);
+    const sender = this.conversations.find(c => c.otherUser.id === senderId)?.otherUser;
     return sender?.avatar || 'default.png';
   }
 
+  updateConversationsOnNewMessage(newMsg: Schema['Message']['type']) {
+    const convIndex = this.conversations.findIndex(c => c.channel.id === newMsg.channelId);
+    if (convIndex > -1) {
+      this.conversations[convIndex].lastMessage = newMsg;
+      this.conversations.sort((a, b) => (new Date(b.lastMessage?.timestamp || 0).getTime() - new Date(a.lastMessage?.timestamp || 0).getTime()));
+      this.filteredConversations = [...this.conversations];
+      this.cdr.detectChanges();
+    }
+  }
+
   ngOnDestroy() {
-    this.subscription?.unsubscribe();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }
