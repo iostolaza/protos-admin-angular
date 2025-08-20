@@ -62,8 +62,8 @@ export class MessageService {
   subscribeMessages(channelId: string | null, onNewMessage: (msg: Schema['Message']['type']) => void) {
     const filter = channelId ? { channelId: { eq: channelId } } : undefined;
     return this.client.models.Message.observeQuery({ filter }).subscribe({
-      next: ({ items }) => {
-        const newMsg = items[items.length - 1];
+      next: (snapshot: { items: Schema['Message']['type'][] }) => {
+        const newMsg = snapshot.items[snapshot.items.length - 1];
         if (newMsg) onNewMessage(newMsg);
       },
     });
@@ -109,13 +109,13 @@ export class MessageService {
   }
 
   async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
-    const { data } = await this.client.queries.messagesByChannelAndTimestamp({
-      channelId,
-      sortDirection: 'DESC',
-      limit: 1,
-    });
-    return data?.items[0] || null;
-  }
+  const { data } = await this.client.models.Message.messagesByChannelAndTimestamp({
+    channelId,
+    sortDirection: 'DESC',
+    limit: 1,
+  } as any);
+  return data?.[0] ?? null;
+}
 
   // Helper: Get other user ID for 1:1 channel
   async getOtherUserId(channelId: string, currentUserId: string): Promise<string> {

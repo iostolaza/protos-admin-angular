@@ -534,6 +534,17 @@
               "properties": {}
             },
             {
+              "type": "key",
+              "properties": {
+                "name": "messagesByChannelIdAndTimestamp",
+                "queryField": "messagesByChannelAndTimestamp",
+                "fields": [
+                  "channelId",
+                  "timestamp"
+                ]
+              }
+            },
+            {
               "type": "auth",
               "properties": {
                 "rules": [

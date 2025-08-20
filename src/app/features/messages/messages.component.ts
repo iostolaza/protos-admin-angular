@@ -87,7 +87,7 @@ export class Messages implements OnInit, OnDestroy {
       return {
         channel,
         otherUser: { id: otherUserId, name: `${otherUser.firstName} ${otherUser.lastName}`, avatar: await this.messageService.getAvatarUrl(otherUser.profileImageKey || ''), email: otherUser.email },
-        lastMessage: lastMsg
+        lastMessage: lastMsg ?? undefined  // Coerce null to undefined
       };
     }));
     this.conversations.sort((a, b) => (new Date(b.lastMessage?.timestamp || 0).getTime() - new Date(a.lastMessage?.timestamp || 0).getTime()));

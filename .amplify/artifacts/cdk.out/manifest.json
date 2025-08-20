@@ -22,7 +22,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/a4a8edabea08caf1f296290e45f6c8a80f582dd2f7632c9c83b75f4266865cdf.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/62ae02ea4d4d9f8c96d41f8f169fe8e53b5beba9c6ed2aa087e0b01425d49ed5.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -2427,6 +2427,46 @@
           {
             "type": "graphqltransformer:resourceName",
             "data": "Subscription.onDeleteMessage"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/data/amplifyData/Message/QuerymessagesByChannelAndTimestampauth0Function/QuerymessagesByChannelAndTimestampauth0Function.AppSyncFunction": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QuerymessagesByChannelAndTimestampauth0FunctionQuerymessagesByChannelAndTimestampauth0FunctionAppSyncFunctionA3E01681"
+          },
+          {
+            "type": "graphqltransformer:resourceName",
+            "data": "QuerymessagesByChannelAndTimestampauth0Function"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/data/amplifyData/Message/QuerymessagesByChannelAndTimestamppostAuth0Function/QuerymessagesByChannelAndTimestamppostAuth0Function.AppSyncFunction": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QuerymessagesByChannelAndTimestamppostAuth0FunctionQuerymessagesByChannelAndTimestamppostAuth0FunctionAppSyncFunction1D380AA6"
+          },
+          {
+            "type": "graphqltransformer:resourceName",
+            "data": "QuerymessagesByChannelAndTimestamppostAuth0Function"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/data/amplifyData/Message/QueryMessagesByChannelAndTimestampDataResolverFn/QueryMessagesByChannelAndTimestampDataResolverFn.AppSyncFunction": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QueryMessagesByChannelAndTimestampDataResolverFnQueryMessagesByChannelAndTimestampDataResolverFnAppSyncFunction81C666AD"
+          },
+          {
+            "type": "graphqltransformer:resourceName",
+            "data": "QueryMessagesByChannelAndTimestampDataResolverFn"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/data/amplifyData/Message/queryMessagesByChannelAndTimestampResolver": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "QuerymessagesByChannelAndTimestampResolver"
+          },
+          {
+            "type": "graphqltransformer:resourceName",
+            "data": "Query.messagesByChannelAndTimestamp"
           }
         ],
         "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/data/amplifyData/Message/CDKMetadata/Default": [

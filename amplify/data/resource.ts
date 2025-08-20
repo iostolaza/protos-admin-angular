@@ -36,25 +36,27 @@ const schema = a.schema({
       paymentMethods: a.hasMany('PaymentMethod', 'userId'),
       channels: a.hasMany('UserChannel', 'userId'),
       messages: a.hasMany('Message', 'senderId'),
-      owner: a.string().authorization(allow => [allow.owner().to(['read'])]) // Explicit owner field with field-level auth
+      owner: a.string(),  // Removed .authorization
+      // owner: a.string().authorization((allow: any) => [allow.owner().to(['read'])]) // Typed allow
     })
-    .authorization(allow => [allow.owner()]), // Model-level owner auth
+    .authorization((allow: any) => [allow.owner()]), // Model-level only
   PaymentMethod: a
     .model({
       userId: a.id().required(),
       type: a.string(),
       name: a.string(),
       user: a.belongsTo('User', 'userId'),
-      owner: a.string().authorization(allow => [allow.owner().to(['read'])])
+      owner: a.string(),  // Removed .authorization
+      // owner: a.string().authorization((allow: any) => [allow.owner().to(['read'])])
     })
-    .authorization(allow => [allow.owner()]),
+    .authorization((allow: any) => [allow.owner()]),
   Channel: a
     .model({
       name: a.string(),
       users: a.hasMany('UserChannel', 'channelId'),
       messages: a.hasMany('Message', 'channelId'),
     })
-    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]),
+    .authorization((allow: any) => [allow.authenticated().to(['read', 'create', 'update'])]),
   Message: a
     .model({
       content: a.string().required(),
@@ -66,8 +68,8 @@ const schema = a.schema({
       sender: a.belongsTo('User', 'senderId'),
       channel: a.belongsTo('Channel', 'channelId'),
     })
-    .index([{ name: 'messagesByChannelAndTimestamp', fields: ['channelId', 'timestamp'] }])
-    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]),
+    .secondaryIndexes((index) => [index("channelId").sortKeys(["timestamp"]).queryField('messagesByChannelAndTimestamp')])
+    .authorization((allow: any) => [allow.authenticated().to(['read', 'create', 'update'])]),
   UserChannel: a
     .model({
       userId: a.id().required(),
@@ -75,7 +77,7 @@ const schema = a.schema({
       user: a.belongsTo('User', 'userId'),
       channel: a.belongsTo('Channel', 'channelId'),
     })
-    .authorization(allow => [allow.authenticated().to(['read', 'create', 'update'])]),
+    .authorization((allow: any) => [allow.authenticated().to(['read', 'create', 'update'])]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
