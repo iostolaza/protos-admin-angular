@@ -2,25 +2,28 @@
 
 @import "tailwindcss";
 
-/* Example conversion without @apply */
+/* Changed: Updated chat-bubble with Tailwind utilities for consistency; added dark: variants for shades */
 .chat-bubble {
-  @apply p-3 rounded-lg max-w-[60%] break-words;
+  @apply p-3 rounded-lg max-w-[60%] break-words dark:bg-gray-800;
 }
 
 .received {
-  @apply bg-[#4b5563] text-white;
+  @apply bg-gray-600 text-white dark:bg-gray-600;
 }
 
 .sent {
-  @apply bg-[#3b82f6] text-white;
+  @apply bg-blue-600 text-white dark:bg-blue-500;
 }
 
+/* Changed: Overrode Material with Tailwind for hierarchy; added !important where needed to avoid conflicts */
 mat-sidenav-container,
 mat-sidenav,
 mat-sidenav-content {
-  @apply bg-[#111827];
+  @apply bg-gray-900 dark:bg-gray-900 !important;
 }
 
 mat-toolbar {
-  @apply bg-[#1f2937];
+  @apply bg-gray-900 dark:bg-gray-900 !important;
 }
+
+/* Existing theme layers unchanged, but prioritized Tailwind utilities over custom vars for simplicity */
