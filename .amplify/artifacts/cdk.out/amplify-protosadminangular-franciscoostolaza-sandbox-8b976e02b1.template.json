@@ -237,7 +237,7 @@
       {
        "Ref": "AWS::Region"
       },
-      "\\\",\\\"paths\\\":{\\\"profile/${cognito-identity.amazonaws.com:sub}/*\\\":{\\\"entityidentity\\\":[\\\"get\\\",\\\"list\\\",\\\"write\\\",\\\"delete\\\"]}}}\"]"
+      "\\\",\\\"paths\\\":{\\\"profile/*\\\":{\\\"authenticated\\\":[\\\"get\\\",\\\"list\\\"]},\\\"profile/${cognito-identity.amazonaws.com:sub}/*\\\":{\\\"entityidentity\\\":[\\\"write\\\",\\\"delete\\\"]}}}\"]"
      ]
     ]
    }
@@ -273,7 +273,7 @@
        {
         "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
        },
-       "/0b5bf55bea8d042a13bf501205b9c14ebc36d921cec579619d958158c836bd77.json"
+       "/e33e2bc3f8c8104c42d4ebbd276438863cdc46421d373dbafca15528d1694eb6.json"
       ]
      ]
     }
@@ -341,7 +341,7 @@
        {
         "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
        },
-       "/59b258c4e3c6adbe96db32d1e306120006b409f4298809100ffa7c4f6a501694.json"
+       "/90a080aa16791823f1b7eb122bbcaa6e36ea63df8e57421b7fc849f3917089ca.json"
       ]
      ]
     }
@@ -391,7 +391,7 @@
        {
         "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
        },
-       "/7513c31d12169764813d137ee629c16e74154bc6e99dccf6b6fe8f987543d7db.json"
+       "/20266472b2195404a1f10b23827c118940c21da601f43cb12e75bea3cd26c2dd.json"
       ]
      ]
     }
@@ -407,7 +407,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzI01DNQTCwv1k1OydbNyUzSqw4uSUzO1nFOy/MvLSkoLQGxwEK1Onn5Kal6WcX6ZUYGeoaWeiaKWcWZmbpFpXklmbmpekEQGgDVR7XcVAAAAA=="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/zPSMzI00jNQTCwv1k1OydbNyUzSqw4uSUzO1nFOy/MvLSkoLQGxwEK1Onn5Kal6WcX6ZUYGeoaWeiaKWcWZmbpFpXklmbmpekEQGgDq7934VAAAAA=="
    },
    "Metadata": {
     "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/CDKMetadata/Default"

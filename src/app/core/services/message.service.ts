@@ -82,17 +82,30 @@ export class MessageService {
   }
 
   async uploadAttachment(file: File): Promise<string> {
-    const currentUserId = await this.getCurrentUserId();
-    const result = await uploadData({
-      path: `profile/${currentUserId}/attachments/${file.name}`,
-      data: file,
-    }).result;
-    return result.path;
-  }
+      try {
+        const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/attachments/${file.name}`;
+        const result = await uploadData({
+          path,
+          data: file,
+        }).result;
+        return result.path;  // Resolved path with identityId
+      } catch (error) {
+        console.error('Upload attachment error:', error);
+        throw error;
+      }
+    }
 
   async getAvatarUrl(profileImageKey: string): Promise<string> {
-    const { url } = await getUrl({ path: profileImageKey });
-    return url.toString();
+    if (!profileImageKey) {
+      return 'assets/profile/avatar-default.svg'; 
+    }
+    try {
+      const { url } = await getUrl({ path: profileImageKey });
+      return url.toString();
+    } catch (error) {
+      console.error('Get avatar URL error:', error);
+      return 'assets/profile/avatar-default.svg';
+    }
   }
 
   async getUserChannels(userId: string): Promise<Schema['Channel']['type'][]> {
@@ -109,13 +122,21 @@ export class MessageService {
   }
 
   async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
-  const { data } = await this.client.models.Message.messagesByChannelAndTimestamp({
-    channelId,
-    sortDirection: 'DESC',
-    limit: 1,
-  } as any);
+  const { data } = await this.client.models.Message.messagesByChannelAndTimestamp(
+    { channelId },  // Key conditions (hash key only, no sort filter)
+    { sortDirection: 'DESC', limit: 1 }  // Options for sort and pagination
+  );
   return data?.[0] ?? null;
 }
+//   async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
+//   const { data } = await this.client.models.Message.messagesByChannelAndTimestamp({
+//     channelId,
+//     sortDirection: 'DESC',
+//     limit: 1,
+//   } as any );
+//   // return data?.items[0] ?? null;
+//   return data?.[0] ?? null;
+// }
 
   // Helper: Get other user ID for 1:1 channel
   async getOtherUserId(channelId: string, currentUserId: string): Promise<string> {

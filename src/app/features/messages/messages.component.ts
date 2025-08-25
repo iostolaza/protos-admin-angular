@@ -35,7 +35,7 @@ interface Conversation {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Messages implements OnInit, OnDestroy {
-  getIconPath = getIconPath; // Added to expose for template binding
+  getIconPath = getIconPath;
 
   constructor(private messageService: MessageService, private userService: UserService, private cdr: ChangeDetectorRef) {}
 
@@ -87,7 +87,7 @@ export class Messages implements OnInit, OnDestroy {
       return {
         channel,
         otherUser: { id: otherUserId, name: `${otherUser.firstName} ${otherUser.lastName}`, avatar: await this.messageService.getAvatarUrl(otherUser.profileImageKey || ''), email: otherUser.email },
-        lastMessage: lastMsg ?? undefined  // Coerce null to undefined
+        lastMessage: lastMsg ?? undefined
       };
     }));
     this.conversations.sort((a, b) => (new Date(b.lastMessage?.timestamp || 0).getTime() - new Date(a.lastMessage?.timestamp || 0).getTime()));
@@ -143,9 +143,14 @@ export class Messages implements OnInit, OnDestroy {
     }
   }
 
-  async getAttachmentUrl(path: string): Promise<string> {
-    const { url } = await getUrl({ path, options: { expiresIn: 3600 } });
-    return url.toString();
+async getAttachmentUrl(path: string): Promise<string> {
+    try {
+      const { url } = await getUrl({ path, options: { expiresIn: 3600 } });
+      return url.toString();
+    } catch (error) {
+      console.error('Get attachment URL error:', error);
+      return '';  // Or fallback
+    }
   }
 
   isImage(path: string): boolean {
@@ -158,7 +163,7 @@ export class Messages implements OnInit, OnDestroy {
 
   getAvatarForMessage(senderId: string): string {
     const sender = this.conversations.find(c => c.otherUser.id === senderId)?.otherUser;
-    return sender?.avatar || 'default.png';
+    return sender?.avatar || 'assets/default.png';
   }
 
   updateConversationsOnNewMessage(newMsg: Schema['Message']['type']) {

@@ -28,11 +28,14 @@ export interface UserProfile {
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
+  private client = generateClient<Schema>();
+
+
   user$ = signal<UserProfile | null>(null);
 
   async load() {
     try {
-  const { username: sub } = await getCurrentUser(); // username is Cognito sub (UUID)
+  const { username: sub } = await getCurrentUser(); 
   console.log('Current authenticated user sub (ID/username):', sub);
 
   const session = await fetchAuthSession();
@@ -102,10 +105,11 @@ export class UserService {
       profile.profileImageUrl = url.toString();
     } catch (err) {
       console.error('Error getting image URL:', err);
-      profile.profileImageUrl = 'src/assets/profile/avatar-default.svg'; // Fallback
+      profile.profileImageUrl = 'assets/profile/avatar-default.svg';
+     
     }
   } else {
-    profile.profileImageUrl = 'src/assets/profile/avatar-default.svg';
+    profile.profileImageUrl = 'assets/profile/avatar-default.svg';
   }
 
   this.user$.set(profile);

@@ -1,27 +1,40 @@
-<!-- Changed: Added wrapper div for dynamic width (80% equiv via max-w-5xl mx-auto) and white shadow (shadow-lg shadow-white/20) around main chat box -->
+
+<!-- src/app/features/messages/messages.component.html -->
+
+<!-- wrapper div for dynamic width -->
 <div class="max-w-5xl mx-auto h-screen shadow-lg shadow-white/20 rounded-lg overflow-hidden">
+
   <mat-sidenav-container class="h-full bg-gray-900 text-white">
     <!-- Left Sidebar: Contacts/Conversations -->
     <!-- Changed: Added border-r border-gray-700 for border between sidebar and messages -->
+
     <mat-sidenav mode="side" opened class="w-64 bg-gray-800 border-r border-gray-700">
+
+
       <!-- Current User Profile -->
       <!-- Changed: Made profile bg-gray-900 for darker header hierarchy -->
-      <div class="p-4 flex items-center bg-gray-900">
-        <img class="w-10 h-10 rounded-full mr-2" [src]="currentUserAvatar || 'default.png'" alt="Current User">
+
+      <div class="p-4 flex items-center bg-red-800">
+
+        <img class="w-10 h-10 rounded-full mr-2" [src]="currentUserAvatar || 'assets/profile/avatar-default.svg'" alt="Current User">
+
         <div>
           <span class="font-bold">{{ currentUserName }}</span>
           <span class="text-sm text-gray-400">{{ currentUserEmail }}</span>
         </div>
       </div>
+
       <!-- Search -->
-      <!-- Changed: Kept bg-gray-800 for sidebar shade (lighter than headers) -->
-      <mat-toolbar class="bg-gray-800">
+      <!-- <mat-toolbar class="bg-foreground">
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Search Contacts</mat-label>
+          <mat-label>contacts</mat-label>
           <input matInput [(ngModel)]="searchQuery" (ngModelChange)="filterConversations()" placeholder="Search Contacts">
+
           <svg-icon [src]="getIconPath('magnifying-glass')" class="text-gray-400" matSuffix></svg-icon>
         </mat-form-field>
-      </mat-toolbar>
+      </mat-toolbar> -->
+
+
       <!-- Conversations List -->
       <mat-list>
         <mat-list-item *ngFor="let conv of filteredConversations" (click)="selectConversation(conv)">
@@ -32,11 +45,15 @@
         </mat-list-item>
       </mat-list>
     </mat-sidenav>
+
+
     <!-- Right Chat Window -->
     <mat-sidenav-content class="flex flex-col">
+
       <!-- Chat Header -->
       <!-- Changed: Made header bg-gray-900 for darker shade -->
-      <mat-toolbar class="bg-gray-900" *ngIf="selectedConversation">
+      <mat-toolbar class="bg-white-900" *ngIf="selectedConversation">
+        
         <img class="w-10 h-10 rounded-full mr-2" [src]="selectedConversation.otherUser.avatar || 'default.png'" alt="{{selectedConversation.otherUser.name}}">
         <span>{{selectedConversation.otherUser.name}}</span>
         <span class="flex-1"></span>

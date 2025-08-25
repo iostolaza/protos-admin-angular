@@ -7,7 +7,7 @@ const schema = a.schema({
       lastName: a.string().required(),
       username: a.string().required(),
       email: a.email().required(),
-      accessLevel: a.string().required(),
+      accessLevel: a.enum(['basic', 'premium', 'admin']), 
       address: a.customType({
         line1: a.string().required(),
         city: a.string().required(),
@@ -18,6 +18,7 @@ const schema = a.schema({
       contactPrefs: a.customType({
         email: a.boolean(),
         push: a.boolean(),
+        sms: a.boolean(),
       }),
       emergencyContact: a.customType({
         name: a.string().required(),
@@ -33,26 +34,33 @@ const schema = a.schema({
         year: a.string(),
       }),
       profileImageKey: a.string(),
+      status: a.enum(['online', 'offline', 'away']),
+      location: a.customType({
+        latitude: a.float(),
+        longitude: a.float(),
+        lastUpdated: a.datetime(),
+      }),
       paymentMethods: a.hasMany('PaymentMethod', 'userId'),
       channels: a.hasMany('UserChannel', 'userId'),
       messages: a.hasMany('Message', 'senderId'),
-      owner: a.string(),  // Removed .authorization
-      // owner: a.string().authorization((allow: any) => [allow.owner().to(['read'])]) // Typed allow
+      tickets: a.hasMany('Ticket', 'userId'),
+      eventLogs: a.hasMany('EventLog', 'userId'),
+      owner: a.string(),
     })
-    .authorization((allow: any) => [allow.owner()]), // Model-level only
+    .authorization((allow: any) => [allow.owner()]),
   PaymentMethod: a
     .model({
       userId: a.id().required(),
       type: a.string(),
       name: a.string(),
       user: a.belongsTo('User', 'userId'),
-      owner: a.string(),  // Removed .authorization
-      // owner: a.string().authorization((allow: any) => [allow.owner().to(['read'])])
+      owner: a.string(),
     })
     .authorization((allow: any) => [allow.owner()]),
   Channel: a
     .model({
       name: a.string(),
+      type: a.enum(['direct', 'group']), 
       users: a.hasMany('UserChannel', 'channelId'),
       messages: a.hasMany('Message', 'channelId'),
     })
@@ -65,10 +73,18 @@ const schema = a.schema({
       timestamp: a.datetime().required(),
       attachment: a.string(),
       readBy: a.string().array(),
+      reactions: a.customType({
+        emoji: a.string(),
+        userIds: a.string().array(),
+      }), 
+      replyToMessageId: a.id(),
       sender: a.belongsTo('User', 'senderId'),
       channel: a.belongsTo('Channel', 'channelId'),
     })
-    .secondaryIndexes((index) => [index("channelId").sortKeys(["timestamp"]).queryField('messagesByChannelAndTimestamp')])
+    .secondaryIndexes((index) => [
+      index('channelId').sortKeys(['timestamp']).queryField('messagesByChannelAndTimestamp'),
+      index('senderId').sortKeys(['timestamp']).queryField('messagesBySenderAndTimestamp'),
+    ])
     .authorization((allow: any) => [allow.authenticated().to(['read', 'create', 'update'])]),
   UserChannel: a
     .model({
@@ -78,6 +94,38 @@ const schema = a.schema({
       channel: a.belongsTo('Channel', 'channelId'),
     })
     .authorization((allow: any) => [allow.authenticated().to(['read', 'create', 'update'])]),
+  Ticket: a
+    .model({
+      userId: a.id().required(),
+      title: a.string().required(),
+      description: a.string().required(),
+      status: a.enum(['open', 'in_progress', 'closed']), 
+      priority: a.enum(['low', 'medium', 'high']),
+      assignedTo: a.id(),
+      channelId: a.id(),
+      attachments: a.string().array(),
+      createdAt: a.datetime().required(),
+      updatedAt: a.datetime(),
+      user: a.belongsTo('User', 'userId'),
+    })
+    .secondaryIndexes((index) => [
+      index('userId').sortKeys(['createdAt']).queryField('ticketsByUserAndCreatedAt'),
+      index('status').sortKeys(['priority']).queryField('ticketsByStatusAndPriority'),
+    ])
+    .authorization((allow: any) => [allow.owner(), allow.authenticated().to(['read'])]),
+  EventLog: a
+    .model({
+      userId: a.id().required(),
+      eventType: a.enum(['login', 'message_sent', 'ticket_created', 'page_view']),
+      details: a.json(),
+      timestamp: a.datetime().required(),
+      user: a.belongsTo('User', 'userId'),
+    })
+    .secondaryIndexes((index) => [
+      index('userId').sortKeys(['timestamp']).queryField('eventsByUserAndTimestamp'),
+      index('eventType').sortKeys(['timestamp']).queryField('eventsByTypeAndTimestamp'),
+    ])
+    .authorization((allow: any) => [allow.owner(), allow.authenticated().to(['read'])]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
