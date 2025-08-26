@@ -1,3 +1,4 @@
+// tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ['./src/**/*.{html,ts}'],
@@ -5,58 +6,32 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
+        poppins: ['Poppins', 'system-ui', 'sans-serif'],
       },
       colors: {
-        border: '#E2E8F0',  // --border
-        background: '#FFFFFF',  // --background
-        foreground: '#0C1420',  // --foreground
-        primary: '#E11D48',  // --primary
-        'primary-foreground': '#FFFFFF',
-        destructive: '#CC0033',
-        'destructive-foreground': '#FAFAFA',
-        muted: '#CFD9E5',
-        'muted-foreground': '#64748B',
-        card: '#F1F5F9',
-        'card-foreground': '#000000',
-        // Dark mode extends
-        'dark-border': '#262626',
-        'dark-background': '#1E293B',
-        // Add more as needed (e.g., themes like violet)
+        border: 'var(--border)',
+        background: 'var(--background)',
+        foreground: 'var(--foreground)',
+        primary: 'var(--primary)',
+        'primary-foreground': 'var(--primary-foreground)',
+        destructive: 'var(--destructive)',
+        'destructive-foreground': 'var(--destructive-foreground)',
+        muted: 'var(--muted)', 
+        'muted-foreground': 'var(--muted-foreground)',
+        card: 'var(--card)',
+        'card-foreground': 'var(--card-foreground)',
       },
       animation: {
-        wiggle: 'wiggle 1s ease-in-out infinite',
-        'fade-in-down': 'fade-in-down 0.3s ease-out',
-        'fade-out-down': 'fade-out-down 0.3s ease-out',
-        'fade-in-up': 'fade-in-up 0.3s ease-out',
-        'fade-out-up': 'fade-out-up 0.3s ease-out',
-      },
-      keyframes: {
-        wiggle: {
-          '0%, 100%': { transform: 'rotate(-3deg)' },
-          '50%': { transform: 'rotate(3deg)' },
-        },
-        'fade-in-down': {
-          '0%': { opacity: '0', transform: 'translateY(-10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        // Add others similarly
+        wiggle: 'var(--animate-wiggle)',
+        'fade-in-down': 'var(--animate-fade-in-down)',
+        'fade-out-down': 'var(--animate-fade-out-down)',
+        'fade-in-up': 'var(--animate-fade-in-up)',
+        'fade-out-up': 'var(--animate-fade-out-up)',
       },
       boxShadow: {
-        custom: '0px 0px 50px 0px rgb(82 63 105 / 15%)',
+        custom: 'var(--shadow-custom)',
       },
     },
   },
   plugins: [],
-};// Inside module.exports.theme.extend.colors
-primary: {
-  100: '#f1f5f9',
-  200: '#e2e8f0',
-  300: '#cbd5e1',
-  400: '#94a3b8',
-  500: '#64748b',
-  600: '#475569',
-  700: '#334155',
-  800: '#1e293b',
-  900: '#0f172a',
-  950: '#020617',
-},
+};
