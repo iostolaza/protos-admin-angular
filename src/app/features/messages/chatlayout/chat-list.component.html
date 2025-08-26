@@ -1,0 +1,12 @@
+<div class="flex-1 overflow-y-auto">
+  <ul>
+    <li *ngFor="let chat of chats()" class="chat-item-hover" (click)="chatSelected.emit(chat)">
+      <img [src]="chat.avatar || 'assets/profile/avatar-default.svg'" alt="User" class="w-8 h-8 rounded-full" />
+      <div>
+        <p class="chat-item-text">{{ chat.name }}</p>
+        <p class="text-sm text-muted-foreground">{{ chat.snippet }}</p>
+      </div>
+      <span class="ml-auto text-xs text-muted-foreground">{{ chat.timestamp | date:'shortTime' }}</span>
+    </li>
+  </ul>
+</div>

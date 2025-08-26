@@ -41,8 +41,8 @@ export const routes: Routes = [
       
       // Messages variants (incoming/outgoing) using same component
       { path: 'messages', redirectTo: 'messages/incoming', pathMatch: 'full' },
-      { path: 'messages/incoming', loadComponent: () => import('./features/messages/messages.component').then(m => m.Messages) },
-      { path: 'messages/outgoing', loadComponent: () => import('./features/messages/messages.component').then(m => m.Messages) },
+      { path: 'messages/incoming', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
+      { path: 'messages/outgoing', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
       
       // Contacts variants (new/favorites/online) using same component
       { path: 'contacts/new', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },

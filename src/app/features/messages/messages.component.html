@@ -1,96 +1,19 @@
-
 <!-- src/app/features/messages/messages.component.html -->
-
-<!-- wrapper div for dynamic width -->
-<div class="max-w-5xl mx-auto h-screen shadow-lg shadow-white/20 rounded-lg overflow-hidden">
-
-  <mat-sidenav-container class="h-full bg-gray-900 text-white">
-    <!-- Left Sidebar: Contacts/Conversations -->
-    <!-- Changed: Added border-r border-gray-700 for border between sidebar and messages -->
-
-    <mat-sidenav mode="side" opened class="w-64 bg-gray-800 border-r border-gray-700">
-
-
-      <!-- Current User Profile -->
-      <!-- Changed: Made profile bg-gray-900 for darker header hierarchy -->
-
-      <div class="p-4 flex items-center bg-red-800">
-
-        <img class="w-10 h-10 rounded-full mr-2" [src]="currentUserAvatar || 'assets/profile/avatar-default.svg'" alt="Current User">
-
-        <div>
-          <span class="font-bold">{{ currentUserName }}</span>
-          <span class="text-sm text-gray-400">{{ currentUserEmail }}</span>
-        </div>
-      </div>
-
-      <!-- Search -->
-      <!-- <mat-toolbar class="bg-foreground">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>contacts</mat-label>
-          <input matInput [(ngModel)]="searchQuery" (ngModelChange)="filterConversations()" placeholder="Search Contacts">
-
-          <svg-icon [src]="getIconPath('magnifying-glass')" class="text-gray-400" matSuffix></svg-icon>
-        </mat-form-field>
-      </mat-toolbar> -->
-
-
-      <!-- Conversations List -->
-      <mat-list>
-        <mat-list-item *ngFor="let conv of filteredConversations" (click)="selectConversation(conv)">
-          <img matListItemAvatar [src]="conv.otherUser.avatar || 'default.png'" alt="{{conv.otherUser.name}}">
-          <span matListItemTitle>{{conv.otherUser.name}}</span>
-          <span matListItemLine>{{conv.lastMessage?.content?.substring(0, 50) || 'No messages yet'}}</span>
-          <span class="text-xs text-gray-400 ml-auto">{{conv.lastMessage?.timestamp | date:'shortTime'}}</span>
-        </mat-list-item>
-      </mat-list>
-    </mat-sidenav>
-
-
-    <!-- Right Chat Window -->
-    <mat-sidenav-content class="flex flex-col">
-
-      <!-- Chat Header -->
-      <!-- Changed: Made header bg-gray-900 for darker shade -->
-      <mat-toolbar class="bg-white-900" *ngIf="selectedConversation">
-        
-        <img class="w-10 h-10 rounded-full mr-2" [src]="selectedConversation.otherUser.avatar || 'default.png'" alt="{{selectedConversation.otherUser.name}}">
-        <span>{{selectedConversation.otherUser.name}}</span>
-        <span class="flex-1"></span>
-        <svg-icon [src]="getIconPath('ellipsis-vertical')" class="text-white"></svg-icon>
-      </mat-toolbar>
-      <!-- Messages List with Attachments -->
-      <!-- Changed: Made messages bg-gray-700 for two shades lighter (hierarchy: headers 900, sidebar 800, messages 700) -->
-      <div class="flex-1 overflow-y-auto p-4 bg-gray-700" *ngIf="!loadingMessages; else loader">
-        <div *ngFor="let msg of messages" class="mb-4 flex" [ngClass]="{'justify-end': msg.senderId === currentUserId}">
-          <div class="flex" [ngClass]="{'flex-row-reverse': msg.senderId === currentUserId}">
-            <img *ngIf="msg.senderId !== currentUserId" class="w-8 h-8 rounded-full mr-2" [src]="getAvatarForMessage(msg.senderId)" alt="{{msg.senderId}}">
-            <div class="chat-bubble" [ngClass]="{'sent': msg.senderId === currentUserId, 'received': msg.senderId !== currentUserId}">
-              <p class="m-0" *ngIf="!msg.attachment">{{msg.content}}</p>
-              <ng-container *ngIf="msg.attachment">
-                <img *ngIf="isImage(msg.attachment)" [src]="getAttachmentUrl(msg.attachment)" class="max-w-xs rounded">
-                <a *ngIf="!isImage(msg.attachment)" [href]="getAttachmentUrl(msg.attachment)" download class="text-blue-400">Download {{getFileName(msg.attachment)}}</a>
-              </ng-container>
-              <span class="text-xs text-gray-400">{{msg.timestamp | date:'short'}}</span>
-              <span *ngIf="msg.readBy?.length === 2" class="text-xs text-green-400">✓✓</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <ng-template #loader><mat-spinner></mat-spinner></ng-template>
-      <!-- Send Input with File Icon -->
-      <!-- Changed: Ensured fixed at bottom via flex-col parent; added bg-gray-800 for input shade consistency -->
-      <div class="p-4 bg-gray-800 flex" *ngIf="selectedChannelId">
-        <label for="fileInput" class="mr-2 cursor-pointer">
-          <svg-icon [src]="getIconPath('paper-clip')" class="text-white"></svg-icon>
-        </label>
-        <input id="fileInput" type="file" (change)="onFileChange($event)" class="hidden">
-        <mat-form-field appearance="outline" class="flex-1 mr-2">
-          <input matInput [(ngModel)]="newMessage" placeholder="Send message" (keyup.enter)="sendMessage()">
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="sendMessage()">Send</button>
-        <button mat-raised-button color="accent" (click)="sendWithFile()" *ngIf="file">Send File</button>
-      </div>
-    </mat-sidenav-content>
-  </mat-sidenav-container>
+<!-- Outer wrapper for 80% width, centering, shadow, and full height -->
+<div class="mx-auto w-[80%] h-screen shadow-lg bg-background text-foreground md:w-[80%] sm:w-full">
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <div class="w-64 flex flex-col bg-muted border-r md:w-64 sm:w-20 sm:overflow-x-hidden">
+      <app-user-profile class="user-profile"></app-user-profile>
+      <app-chat-search class="chat-search" (searchChanged)="onSearch($event)"></app-chat-search>
+      <app-chat-list class="chat-list" [chats]="filteredChats()" (chatSelected)="selectConversation($event)"></app-chat-list>
+    </div>
+   
+    <!-- Main area -->
+    <div class="flex-1 flex flex-col bg-card relative min-h-0">
+      <app-chat-header class="chat-header" [recipient]="selectedConversation()?.otherUser?.name ?? ''" [avatar]="selectedConversation()?.otherUser?.avatar ?? ''"></app-chat-header>
+      <app-chat-messages class="chat-messages" [messages]="messages()"></app-chat-messages>
+      <app-message-input class="message-input" (send)="send($event)" (sendWithFile)="sendWithFile($event)"></app-message-input>
+    </div>
+  </div>
 </div>

@@ -1,24 +1,23 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+// src/app/features/messages/messages.component.ts
+import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatListModule } from '@angular/material/list';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { FormsModule } from '@angular/forms';
-import { AngularSvgIconModule } from 'angular-svg-icon';
+import { Subscription } from 'rxjs';
 import { MessageService } from '../../core/services/message.service';
 import { UserService } from '../../core/services/user.service';
-import { getIconPath } from '../../core/services/icon-preloader.service';
-import type { Schema } from '../../../../amplify/data/resource';
-import { Subscription } from 'rxjs';
 import { getUrl } from 'aws-amplify/storage';
+import type { Schema } from '../../../../amplify/data/resource';
+import { UserProfileComponent } from './chatlayout/user-profile.component';
+import { ChatSearchComponent } from './chatlayout/chat-search.component';
+import { ChatListComponent } from './chatlayout/chat-list.component';
+import { ChatHeaderComponent } from './chatlayout/chat-header.component';
+import { ChatMessagesComponent } from './chatlayout/chat-messages.component';
+import { MessageInputComponent } from './chatlayout/message-input.component';
 
+interface ChatItem { id: string; name: string; snippet?: string; avatar?: string; timestamp?: Date; }
+interface Message { text: string; sender: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
 interface Conversation {
-  channel: Schema['Channel']['type'];
+  channel: { id: string };
   otherUser: { id: string; name: string; avatar?: string; email: string };
   lastMessage?: Schema['Message']['type'];
 }
@@ -26,130 +25,104 @@ interface Conversation {
 @Component({
   selector: 'app-messages',
   standalone: true,
-  imports: [
-    CommonModule, MatSidenavModule, MatListModule, MatIconModule, MatInputModule, MatFormFieldModule,
-    MatButtonModule, MatToolbarModule, FormsModule, MatProgressSpinnerModule, AngularSvgIconModule // Added
-  ],
+  imports: [CommonModule, FormsModule, UserProfileComponent, ChatSearchComponent, ChatListComponent, ChatHeaderComponent, ChatMessagesComponent, MessageInputComponent],
   templateUrl: './messages.component.html',
-  styleUrl: './messages.component.css',
+  styleUrls: ['./messages.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Messages implements OnInit, OnDestroy {
-  getIconPath = getIconPath;
-
-  constructor(private messageService: MessageService, private userService: UserService, private cdr: ChangeDetectorRef) {}
-
-  conversations: Conversation[] = [];
-  filteredConversations: Conversation[] = [];
-  selectedConversation: Conversation | null = null;
-  selectedChannelId: string | null = null;
-  messages: Schema['Message']['type'][] = [];
-  currentUserId: string = '';
-  currentUserName: string = '';
-  currentUserEmail: string = '';
-  currentUserAvatar: string = '';
-  newMessage: string = '';
-  file: File | null = null;
-  searchQuery: string = '';
-  loadingMessages: boolean = false;
+export class MessagesComponent implements OnInit, OnDestroy {
+  private messageService = inject(MessageService);
+  private userService = inject(UserService);
+  conversations = signal<Conversation[]>([]);
+  filteredConversations = computed(() => this.conversations().filter((conv: Conversation) =>
+    conv.otherUser.name.toLowerCase().includes(this.searchQuery().toLowerCase()) ||
+    (conv.lastMessage?.content || '').toLowerCase().includes(this.searchQuery().toLowerCase())
+  ));
+  filteredChats = computed(() => this.filteredConversations().map((conv: Conversation) => ({
+    id: conv.channel.id,
+    name: conv.otherUser.name,
+    snippet: conv.lastMessage?.content,
+    avatar: conv.otherUser.avatar,
+    timestamp: conv.lastMessage?.timestamp ? new Date(conv.lastMessage.timestamp) : undefined
+  } as ChatItem)));
+  messages = signal<Message[]>([]);
+  selectedConversation = signal<Conversation | null>(null);
+  searchQuery = signal<string>('');
+  loadingMessages = signal<boolean>(false);
+  newMessage = signal<string>('');
+  file = signal<File | null>(null);
+  currentUserId = '';
   subscriptions: Subscription[] = [];
 
   async ngOnInit() {
     try {
       this.currentUserId = await this.messageService.getCurrentUserId();
-      const userProfile = this.userService.user$();
-      if (userProfile) {
-        this.currentUserName = `${userProfile.firstName} ${userProfile.lastName}`;
-        this.currentUserEmail = userProfile.email;
-        this.currentUserAvatar = userProfile.profileImageUrl || 'default.png';
-      }
-      await this.loadConversations();
-      // Per-conversation real-time subs for sidebar updates
-      this.conversations.forEach(conv => {
-        const sub = this.messageService.subscribeMessages(conv.channel.id, (newMsg) => {
-          this.updateConversationsOnNewMessage(newMsg);
-          this.cdr.detectChanges();
-        });
-        this.subscriptions.push(sub);
-      });
-      this.cdr.detectChanges();
+      await this.messageService.loadRecentChats();
+      // Map to Conversation for compatibility
+      this.conversations.set(this.messageService.getRecentChats()().map((chat: ChatItem) => ({
+        channel: { id: chat.id },
+        otherUser: { id: '', name: chat.name, avatar: chat.avatar, email: '' },
+        lastMessage: { content: chat.snippet || '', timestamp: chat.timestamp?.toISOString() || '' } as Schema['Message']['type']
+      })));
+      // Real-time for all
+      this.subscriptions.push(this.messageService.subscribeMessages(null, (newMsg: Schema['Message']['type']) => {
+        this.updateConversationsOnNewMessage(newMsg);
+      }));
     } catch (error) {
       console.error('Init error:', error);
     }
   }
 
-  async loadConversations() {
-    const channels = await this.messageService.getUserChannels(this.currentUserId);
-    this.conversations = await Promise.all(channels.map(async (channel) => {
-      const otherUserId = await this.messageService.getOtherUserId(channel.id, this.currentUserId);
-      const otherUser = await this.messageService.getUserById(otherUserId);
-      const lastMsg = await this.messageService.getLastMessage(channel.id);
-      return {
-        channel,
-        otherUser: { id: otherUserId, name: `${otherUser.firstName} ${otherUser.lastName}`, avatar: await this.messageService.getAvatarUrl(otherUser.profileImageKey || ''), email: otherUser.email },
-        lastMessage: lastMsg ?? undefined
-      };
-    }));
-    this.conversations.sort((a, b) => (new Date(b.lastMessage?.timestamp || 0).getTime() - new Date(a.lastMessage?.timestamp || 0).getTime()));
-    this.filteredConversations = [...this.conversations];
-    this.cdr.detectChanges();
+  onSearch(value: string) {
+    this.searchQuery.set(value);
   }
 
-  filterConversations() {
-    this.filteredConversations = this.conversations.filter(conv =>
-      conv.otherUser.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-      (conv.lastMessage?.content || '').toLowerCase().includes(this.searchQuery.toLowerCase())
-    );
-    this.cdr.detectChanges();
-  }
-
-  async selectConversation(conv: Conversation) {
-    this.selectedConversation = conv;
-    this.selectedChannelId = conv.channel.id;
-    this.loadingMessages = true;
-    this.messages = await this.messageService.getMessages(conv.channel.id);
-    this.loadingMessages = false;
-    const sub = this.messageService.subscribeMessages(conv.channel.id, (newMsg) => {
-      this.messages = [...this.messages, newMsg];
-      this.cdr.detectChanges();
-    });
-    this.subscriptions.push(sub);
-    this.cdr.detectChanges();
-  }
-
-  async sendMessage() {
-    if (this.newMessage.trim() && this.selectedChannelId) {
-      await this.messageService.sendMessage(this.selectedChannelId, this.newMessage);
-      this.newMessage = '';
-      this.cdr.detectChanges();
+  async selectConversation(chat: ChatItem) {
+    const conv = this.conversations().find((c: Conversation) => c.channel.id === chat.id);
+    if (conv) {
+      this.selectedConversation.set(conv);
+      this.loadingMessages.set(true);
+      await this.messageService.loadMessages(chat.id);
+      this.messages.set(this.messageService.getMessages()());
+      this.loadingMessages.set(false);
+      this.subscriptions.push(this.messageService.subscribeMessages(chat.id, (newMsg: Schema['Message']['type']) => {
+        this.messages.update((msgs: Message[]) => [...msgs, {
+          text: newMsg.content,
+          sender: newMsg.senderId,
+          isSelf: newMsg.senderId === this.currentUserId,
+          timestamp: new Date(newMsg.timestamp),
+          read: newMsg.readBy?.includes(this.currentUserId)
+        }]);
+      }));
     }
   }
 
-  onFileChange(event: Event) {
-    const target = event.target as HTMLInputElement;
-    if (target.files && target.files.length > 0) {
-      this.file = target.files[0];
-      this.cdr.detectChanges();
+  async send(text: string) {
+    this.newMessage.set(text);
+    if (this.newMessage().trim() && this.selectedConversation()?.channel.id) {
+      await this.messageService.sendMessage(this.selectedConversation()!.channel.id, this.newMessage());
+      this.newMessage.set('');
     }
   }
 
-  async sendWithFile() {
-    if (this.file && this.selectedChannelId) {
-      const attachment = await this.messageService.uploadAttachment(this.file);
-      await this.messageService.sendMessage(this.selectedChannelId, this.newMessage, attachment);
-      this.file = null;
-      this.newMessage = '';
-      this.cdr.detectChanges();
+  async sendWithFile(data: {text: string; file: File}) {
+    this.newMessage.set(data.text);
+    this.file.set(data.file);
+    if (this.file() && this.selectedConversation()?.channel.id) {
+      const attachment = await this.messageService.uploadAttachment(this.file()!);
+      await this.messageService.sendMessage(this.selectedConversation()!.channel.id, this.newMessage(), attachment);
+      this.newMessage.set('');
+      this.file.set(null);
     }
   }
 
-async getAttachmentUrl(path: string): Promise<string> {
+  async getAttachmentUrl(path: string): Promise<string> {
     try {
       const { url } = await getUrl({ path, options: { expiresIn: 3600 } });
       return url.toString();
     } catch (error) {
       console.error('Get attachment URL error:', error);
-      return '';  // Or fallback
+      return '';
     }
   }
 
@@ -161,18 +134,15 @@ async getAttachmentUrl(path: string): Promise<string> {
     return path.split('/').pop() || 'file';
   }
 
-  getAvatarForMessage(senderId: string): string {
-    const sender = this.conversations.find(c => c.otherUser.id === senderId)?.otherUser;
-    return sender?.avatar || 'assets/default.png';
+  trackByTimestamp(index: number, msg: Message): Date | undefined {
+    return msg.timestamp;
   }
 
   updateConversationsOnNewMessage(newMsg: Schema['Message']['type']) {
-    const convIndex = this.conversations.findIndex(c => c.channel.id === newMsg.channelId);
-    if (convIndex > -1) {
-      this.conversations[convIndex].lastMessage = newMsg;
-      this.conversations.sort((a, b) => (new Date(b.lastMessage?.timestamp || 0).getTime() - new Date(a.lastMessage?.timestamp || 0).getTime()));
-      this.filteredConversations = [...this.conversations];
-      this.cdr.detectChanges();
+    const conv = this.conversations().find((c: Conversation) => c.channel.id === newMsg.channelId);
+    if (conv) {
+      const updated = {...conv, lastMessage: newMsg};
+      this.conversations.update((convs: Conversation[]) => convs.map((c: Conversation) => c.channel.id === newMsg.channelId ? updated : c).sort((a: Conversation, b: Conversation) => new Date(b.lastMessage?.timestamp || '0').getTime() - new Date(a.lastMessage?.timestamp || '0').getTime()));
     }
   }
 

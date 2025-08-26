@@ -1,18 +1,103 @@
-import { Injectable } from '@angular/core';
-import { generateClient } from 'aws-amplify/data';
+// src/app/core/services/message.service.ts
+import { Injectable, signal } from '@angular/core';
+import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
+
+const client = generateClient<Schema>();
+
+interface ChatItem { id: string; name: string; snippet?: string; avatar?: string; timestamp?: Date; }
+interface Message { text: string; sender: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
 
 @Injectable({
   providedIn: 'root',
 })
 export class MessageService {
   private client = generateClient<Schema>();
+  private recentChats = signal<ChatItem[]>([]);
+  private messages = signal<Message[]>([]);
+  private searchQuery = signal<string>('');
+  private selectedChannel = signal<string | null>(null);
+
+  getRecentChats() { return this.recentChats.asReadonly(); }
+  getMessages() { return this.messages.asReadonly(); }
+  getSearchQuery() { return this.searchQuery.asReadonly(); }
+  setSearchQuery(value: string) { this.searchQuery.set(value); }
+  setSelectedChannel(id: string) { this.selectedChannel.set(id); }
 
   async getCurrentUserId(): Promise<string> {
     const { userId } = await getCurrentUser();
     return userId;
+  }
+
+  async getUserChannels(userId: string): Promise<Schema['Channel']['type'][]> {
+    const { data: userChannels } = await this.client.models.UserChannel.list({ filter: { userId: { eq: userId } } });
+    const channelIds = userChannels.map(uc => uc.channelId);
+    const channels = await Promise.all(channelIds.map(id => this.client.models.Channel.get({ id })));
+    return channels.map(c => c.data!).filter(Boolean);
+  }
+
+  async getOtherUserId(channelId: string, currentUserId: string): Promise<string> {
+    const { data: userChannels } = await this.client.models.UserChannel.list({ filter: { channelId: { eq: channelId } } });
+    const userIds = userChannels.map(uc => uc.userId);
+    return userIds.find(id => id !== currentUserId) || '';
+  }
+
+  async getUserById(userId: string): Promise<Schema['User']['type']> {
+    const { data } = await this.client.models.User.get({ id: userId });
+    if (!data) throw new Error('User not found');
+    return data;
+  }
+
+  async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
+    const { data } = await this.client.models.Message.messagesByChannelAndTimestamp(
+      { channelId },
+      { sortDirection: 'DESC', limit: 1 }
+    );
+    return data?.[0] ?? null;
+  }
+
+  async loadRecentChats() {
+    try {
+      const userId = await this.getCurrentUserId();
+      const channels = await this.getUserChannels(userId);
+      const chats: ChatItem[] = await Promise.all(channels.map(async (channel: Schema['Channel']['type']) => {
+        const otherUserId = await this.getOtherUserId(channel.id, userId);
+        const otherUser = await this.getUserById(otherUserId);
+        const lastMsg = await this.getLastMessage(channel.id);
+        return {
+          id: channel.id,
+          name: `${otherUser.firstName} ${otherUser.lastName}`,
+          snippet: lastMsg?.content,
+          avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
+          timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
+        };
+      }));
+      chats.sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+      this.recentChats.set(chats);
+    } catch (error) {
+      console.error('Load recent chats error:', error);
+      this.recentChats.set([]); // Fallback
+    }
+  }
+
+  async loadMessages(channelId: string) {
+    try {
+      const messages = await this.fetchMessages(channelId);
+      const currentUserId = await this.getCurrentUserId();
+      const mapped: Message[] = messages.map(msg => ({
+        text: msg.content,
+        sender: msg.senderId,
+        isSelf: msg.senderId === currentUserId,
+        timestamp: new Date(msg.timestamp),
+        read: msg.readBy?.includes(currentUserId)
+      }));
+      this.messages.set(mapped);
+    } catch (error) {
+      console.error('Load messages error:', error);
+      this.messages.set([]); // Fallback
+    }
   }
 
   async getContacts(): Promise<Schema['User']['type'][]> {
@@ -43,7 +128,7 @@ export class MessageService {
     return newChannel;
   }
 
-  async getMessages(channelId: string): Promise<Schema['Message']['type'][]> {
+  async fetchMessages(channelId: string): Promise<Schema['Message']['type'][]> {
     const currentUserId = await this.getCurrentUserId();
     const { data: messages } = await this.client.models.Message.list({
       filter: { channelId: { eq: channelId } },
@@ -82,22 +167,22 @@ export class MessageService {
   }
 
   async uploadAttachment(file: File): Promise<string> {
-      try {
-        const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/attachments/${file.name}`;
-        const result = await uploadData({
-          path,
-          data: file,
-        }).result;
-        return result.path;  // Resolved path with identityId
-      } catch (error) {
-        console.error('Upload attachment error:', error);
-        throw error;
-      }
+    try {
+      const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/attachments/${file.name}`;
+      const result = await uploadData({
+        path,
+        data: file,
+      }).result;
+      return result.path;
+    } catch (error) {
+      console.error('Upload attachment error:', error);
+      throw error;
     }
+  }
 
   async getAvatarUrl(profileImageKey: string): Promise<string> {
     if (!profileImageKey) {
-      return 'assets/profile/avatar-default.svg'; 
+      return 'assets/profile/avatar-default.svg';
     }
     try {
       const { url } = await getUrl({ path: profileImageKey });
@@ -106,42 +191,5 @@ export class MessageService {
       console.error('Get avatar URL error:', error);
       return 'assets/profile/avatar-default.svg';
     }
-  }
-
-  async getUserChannels(userId: string): Promise<Schema['Channel']['type'][]> {
-    const { data: userChannels } = await this.client.models.UserChannel.list({ filter: { userId: { eq: userId } } });
-    const channelIds = userChannels.map(uc => uc.channelId);
-    const channels = await Promise.all(channelIds.map(id => this.client.models.Channel.get({ id })));
-    return channels.map(c => c.data!).filter(Boolean);
-  }
-
-  async getUserById(userId: string): Promise<Schema['User']['type']> {
-    const { data } = await this.client.models.User.get({ id: userId });
-    if (!data) throw new Error('User not found');
-    return data;
-  }
-
-  async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
-  const { data } = await this.client.models.Message.messagesByChannelAndTimestamp(
-    { channelId },  // Key conditions (hash key only, no sort filter)
-    { sortDirection: 'DESC', limit: 1 }  // Options for sort and pagination
-  );
-  return data?.[0] ?? null;
-}
-//   async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
-//   const { data } = await this.client.models.Message.messagesByChannelAndTimestamp({
-//     channelId,
-//     sortDirection: 'DESC',
-//     limit: 1,
-//   } as any );
-//   // return data?.items[0] ?? null;
-//   return data?.[0] ?? null;
-// }
-
-  // Helper: Get other user ID for 1:1 channel
-  async getOtherUserId(channelId: string, currentUserId: string): Promise<string> {
-    const { data: userChannels } = await this.client.models.UserChannel.list({ filter: { channelId: { eq: channelId } } });
-    const userIds = userChannels.map(uc => uc.userId);
-    return userIds.find(id => id !== currentUserId) || '';
   }
 }

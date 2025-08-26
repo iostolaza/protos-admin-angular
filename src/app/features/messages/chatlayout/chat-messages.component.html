@@ -1,0 +1,13 @@
+<div class="chat-messages">
+  <ng-container *ngFor="let msg of messages(); trackBy: trackByTimestamp">
+    <div [class]="msg.isSelf ? 'flex justify-end' : 'flex'">
+      <div [class]="msg.isSelf ? 'chat-message-self' : 'chat-message-other'">
+        <p>{{ msg.text }}</p>
+        <span class="text-xs text-muted-foreground">{{ msg.timestamp | date:'shortTime' }}</span>
+        <ng-container *ngIf="msg.read">
+          <span class="text-xs">✓</span>
+        </ng-container>
+      </div>
+    </div>
+  </ng-container>
+</div>
