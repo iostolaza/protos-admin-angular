@@ -1,5 +1,4 @@
-// tailwind.config.js
-/** @type {import('tailwindcss').Config} */
+// tailwind.config.js (edit: extend colors as object for utilities like bg-muted/50)
 module.exports = {
   content: ['./src/**/*.{html,ts}'],
   theme: {
@@ -12,14 +11,22 @@ module.exports = {
         border: 'var(--border)',
         background: 'var(--background)',
         foreground: 'var(--foreground)',
-        primary: 'var(--primary)',
-        'primary-foreground': 'var(--primary-foreground)',
-        destructive: 'var(--destructive)',
-        'destructive-foreground': 'var(--destructive-foreground)',
-        muted: 'var(--muted)', 
-        'muted-foreground': 'var(--muted-foreground)',
-        card: 'var(--card)',
-        'card-foreground': 'var(--card-foreground)',
+        primary: {
+          DEFAULT: 'var(--primary)',
+          foreground: 'var(--primary-foreground)',
+        },
+        destructive: {
+          DEFAULT: 'var(--destructive)',
+          foreground: 'var(--destructive-foreground)',
+        },
+        muted: {
+          DEFAULT: 'var(--muted)',
+          foreground: 'var(--muted-foreground)',
+        },
+        card: {
+          DEFAULT: 'var(--card)',
+          foreground: 'var(--card-foreground)',
+        },
       },
       animation: {
         wiggle: 'var(--animate-wiggle)',

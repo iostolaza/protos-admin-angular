@@ -77,25 +77,25 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.searchQuery.set(value);
   }
 
-  async selectConversation(chat: ChatItem) {
-    const conv = this.conversations().find((c: Conversation) => c.channel.id === chat.id);
-    if (conv) {
-      this.selectedConversation.set(conv);
-      this.loadingMessages.set(true);
-      await this.messageService.loadMessages(chat.id);
-      this.messages.set(this.messageService.getMessages()());
-      this.loadingMessages.set(false);
-      this.subscriptions.push(this.messageService.subscribeMessages(chat.id, (newMsg: Schema['Message']['type']) => {
-        this.messages.update((msgs: Message[]) => [...msgs, {
-          text: newMsg.content,
-          sender: newMsg.senderId,
-          isSelf: newMsg.senderId === this.currentUserId,
-          timestamp: new Date(newMsg.timestamp),
-          read: newMsg.readBy?.includes(this.currentUserId)
-        }]);
-      }));
-    }
+ async selectConversation(chat: ChatItem) {
+  const conv = this.conversations().find((c: Conversation) => c.channel.id === chat.id);
+  if (conv) {
+    this.selectedConversation.set(conv);
+    this.loadingMessages.set(true);
+    await this.messageService.loadMessages(chat.id);
+    this.messages.set(this.messageService.getMessages()());
+    this.loadingMessages.set(false);
+    this.subscriptions.push(this.messageService.subscribeMessages(chat.id, (newMsg: Schema['Message']['type']) => {
+      this.messages.update((msgs: Message[]) => [...msgs, {
+        text: newMsg.content,
+        sender: newMsg.senderId,
+        isSelf: newMsg.senderId === this.currentUserId,
+        timestamp: new Date(newMsg.timestamp),
+        read: newMsg.readBy?.includes(this.currentUserId)
+      }]);
+    }));
   }
+}
 
   async send(text: string) {
     this.newMessage.set(text);
