@@ -7,6 +7,10 @@ const schema = a.schema({
       lastName: a.string().required(),
       username: a.string().required(),
       email: a.email().required(),
+      mobile: a.string(),
+      dateJoined: a.datetime().required(),
+      salary: a.float(),
+      projects: a.hasMany('Project', 'userId'),
       accessLevel: a.enum(['basic', 'premium', 'admin']), 
       address: a.customType({
         line1: a.string().required(),
@@ -45,9 +49,24 @@ const schema = a.schema({
       messages: a.hasMany('Message', 'senderId'),
       tickets: a.hasMany('Ticket', 'userId'),
       eventLogs: a.hasMany('EventLog', 'userId'),
+      friends: a.hasMany('Friend', 'userId'),
       owner: a.string(),
     })
+    .authorization((allow: any) => [allow.owner(), allow.authenticated().to(['read'])]),
+  Friend: a
+    .model({
+      userId: a.id().required(),
+      friendId: a.id().required(),
+      user: a.belongsTo('User', 'userId'),
+    })
     .authorization((allow: any) => [allow.owner()]),
+  Project: a
+    .model({
+      name: a.string().required(),
+      userId: a.id().required(),
+      user: a.belongsTo('User', 'userId'),
+    })
+    .authorization((allow: any) => [allow.owner(), allow.authenticated().to(['read'])]),
   PaymentMethod: a
     .model({
       userId: a.id().required(),

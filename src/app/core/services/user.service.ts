@@ -1,4 +1,3 @@
-// src/app/core/services/user.service.ts
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/api';
 import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
@@ -55,6 +54,9 @@ export class UserService {
           emergencyContact: { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
           vehicle: { make: '', model: '', color: '', license: '', year: '' },
           profileImageKey: '',
+          dateJoined: new Date().toISOString(),
+          salary: 0,
+          mobile: '',
         });
         if (createResp.errors) {
           throw new Error(`User creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);

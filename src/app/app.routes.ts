@@ -45,10 +45,11 @@ export const routes: Routes = [
       { path: 'messages/outgoing', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
       
       // Contacts variants (new/favorites/online) using same component
-      { path: 'contacts/new', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
-      { path: 'contacts/favorites', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
-      { path: 'contacts/online', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.Contacts) },
-
+      { path: 'contacts', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
+      { path: 'contacts/new', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
+      { path: 'contacts/favorites', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
+      { path: 'contacts/online', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
+      
          // Analytics page lazy-loaded
       { path: 'analytics', loadComponent: () => import('./features/analytics/analytics.component').then(m => m.Analytics) },
       
