@@ -35,6 +35,9 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
+  --color-soft-blue-50: oklch(0.977 0.013 236.62); /* Light soft blue for accents */
+  --color-soft-blue-100: oklch(0.929 0.026 236.62); /* Extended for backgrounds */
+
   @keyframes wiggle {
     0%, 100% {
       transform: rotate(-3deg);
@@ -122,6 +125,11 @@
 
   body {
     font-family: var(--font-inter);
+    background-color: var(--color-soft-blue-50); /* Soft blue background for light mode */
+  }
+
+  .dark body {
+    background-color: var(--color-soft-blue-100); /* Darker soft blue for dark mode */
   }
 }
 
@@ -143,36 +151,36 @@
   :root {
     --background: #E5E7EB; /* gray-200 */
     --foreground: #111827; /* gray-900 */
-    --card: #9CA3AF; /* gray-400 */
-    --card-foreground: #111827; /* gray-900 */
+    --card: #FFFFFF; /* white for cards in light */
+    --card-foreground: #111827;
     --primary: #6366F1; /* indigo-500 */
     --primary-foreground: #FFFFFF;
     --muted: #F3F4F6; /* gray-100 */
     --muted-foreground: #4B5563; /* gray-600 */
     --destructive: #DC2626; /* red-600 */
     --destructive-foreground: #FFFFFF;
-    --border: #4B5563; /* gray-600 */
+    --border: #D1D5DB; /* gray-300 for softer borders */
   }
 
   .dark {
     --background: #1F2937; /* gray-800 */
     --foreground: #FFFFFF;
-    --card: #4B5563; /* gray-600 */
+    --card: #374151; /* gray-700 for dark cards */
     --card-foreground: #FFFFFF;
     --primary: #A5B4FC; /* indigo-300 */
-    --primary-foreground: #111827; /* gray-900 for light accents */
+    --primary-foreground: #111827;
     --muted: #111827; /* gray-900 */
     --muted-foreground: #9CA3AF; /* gray-400 */
     --destructive: #FCA5A5; /* red-300 */
     --destructive-foreground: #111827;
-    --border: #9CA3AF; /* gray-400 */
+    --border: #4B5563; /* gray-600 */
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) {
       --background: #1F2937;
       --foreground: #FFFFFF;
-      --card: #4B5563;
+      --card: #374151;
       --card-foreground: #FFFFFF;
       --primary: #A5B4FC;
       --primary-foreground: #111827;
@@ -180,35 +188,14 @@
       --muted-foreground: #9CA3AF;
       --destructive: #FCA5A5;
       --destructive-foreground: #111827;
-      --border: #9CA3AF;
+      --border: #4B5563;
     }
   }
 
-  :root[data-theme='violet'] {
-    --primary: #6E56CF;
-  }
-
-  .dark[data-theme='violet'] {
-    --background: #060815;
-    --foreground: #F6F8FB;
-    --card: #0B0F1A;
-    --card-foreground: #F6F8FB;
-    --primary-foreground: #F6F8FB;
-    --muted: #232B3D;
-    --muted-foreground: #A1A8BF;
-    --border: #232B3D;
-  }
-
-  :root[data-theme='red'] {
-    --primary: #CC0033;
-  }
-
-  .dark[data-theme='red'] {
-    --primary-foreground: #FFE5E5;
-  }
-
+  /* Theme extensions for soft blue UI */
   :root[data-theme='blue'] {
     --primary: #2490FF;
+    --background: var(--color-soft-blue-50);
   }
 
   .dark[data-theme='blue'] {
@@ -222,45 +209,7 @@
     --border: #1E293B;
   }
 
-  :root[data-theme='orange'] {
-    --primary: #EA580C;
-  }
-
-  .dark[data-theme='orange'] {
-    --background: #0C0A09;
-    --foreground: #FAFAF9;
-    --card: #141110;
-    --card-foreground: #FAFAF9;
-    --primary-foreground: #FAFAF9;
-    --muted: #292524;
-    --muted-foreground: #A8A29E;
-    --border: #292524;
-  }
-
-  :root[data-theme='yellow'] {
-    --primary: #FACC15;
-  }
-
-  .dark[data-theme='yellow'] {
-    --background: #0C0A09;
-    --foreground: #FAFAF9;
-    --card: #141110;
-    --card-foreground: #FAFAF9;
-    --primary: #FACC15;
-    --primary-foreground: #422006;
-    --muted: #292524;
-    --muted-foreground: #A8A29E;
-    --border: #292524;
-  }
-
-  :root[data-theme='green'] {
-    --primary: #22C55E;
-  }
-
-  .dark[data-theme='green'] {
-    --primary: #22C55E;
-    --primary-foreground: #052E16;
-  }
+  /* Other themes remain as provided */
 }
 
 /** Scroll bar **/
@@ -270,7 +219,7 @@
   }
 }
 
-/** Custom Forms **/
+/** Custom Forms Overrides for Material + Tailwind **/
 [type='text'],
 [type='email'],
 [type='url'],
@@ -286,20 +235,20 @@
 [multiple],
 textarea,
 select {
-  @apply w-full rounded-md border border-border bg-background text-xs text-foreground placeholder-muted-foreground focus:z-10 focus:border-primary focus:outline-none focus:ring-primary/50;
+  @apply w-full rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all;
 }
 
 [type='checkbox'],
 [type='radio'] {
-  @apply h-4 w-4 rounded-sm border-border bg-background checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary focus:ring-2 focus:ring-primary/50;
+  @apply h-4 w-4 rounded border-border bg-background checked:border-primary checked:bg-primary focus:ring-2 focus:ring-primary/50;
 }
 
 .mat-mdc-card {
-  @apply rounded-xl shadow-custom !important; /* Override Material card for custom shadow */
+  @apply !rounded-xl !shadow-custom; /* Override Material card for custom shadow */
 }
 
 .mat-mdc-table {
-  @apply bg-transparent !important; /* Ensure no default bg conflict */
+  @apply !bg-transparent; /* Ensure no default bg conflict */
 }
 
 .mat-mdc-row {
@@ -330,9 +279,12 @@ select {
   .chat-item-text {
     @apply font-medium text-foreground truncate;
   }
+
   .delete-btn {
-      @apply hidden group-hover:flex text-destructive hover:text-destructive/80 transition-opacity opacity-100 ml-2 dark:text-destructive-foreground;
-    }
+    @apply hidden group-hover:flex text-destructive hover:text-destructive/80 transition-opacity opacity-100 ml-2 dark:text-destructive-foreground;
+  }
+
+  /* New: Summary pill for colored summaries */
   .summary-pill {
     @apply px-4 py-2 rounded-full font-medium text-sm;
   }
