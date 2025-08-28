@@ -1,4 +1,4 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, Output, EventEmitter, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -10,10 +10,12 @@ import { FormsModule } from '@angular/forms';
 export class MessageInputComponent {
   newMessage = '';
   file: File | null = null;
+  disabled = input<boolean>(false);
   @Output() send = new EventEmitter<string>();
   @Output() sendWithFile = new EventEmitter<{text: string, file: File}>();
 
   onSend() {
+    if (this.disabled()) return;
     if (this.file) {
       this.sendWithFile.emit({text: this.newMessage, file: this.file});
     } else if (this.newMessage.trim()) {
@@ -24,6 +26,7 @@ export class MessageInputComponent {
   }
 
   onFileChange(event: Event) {
+    if (this.disabled()) return;
     const target = event.target as HTMLInputElement;
     if (target.files && target.files.length > 0) {
       this.file = target.files[0];

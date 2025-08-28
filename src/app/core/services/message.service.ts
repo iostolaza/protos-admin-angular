@@ -4,6 +4,8 @@ import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 
 const client = generateClient<Schema>();
 
@@ -144,14 +146,14 @@ export class MessageService {
     return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
 
-  subscribeMessages(channelId: string | null, onNewMessage: (msg: Schema['Message']['type']) => void) {
+subscribeMessages(channelId: string | null, onNewMessage: (msg: Schema['Message']['type']) => void): Observable<{ items: Schema['Message']['type'][] }> {
     const filter = channelId ? { channelId: { eq: channelId } } : undefined;
-    return this.client.models.Message.observeQuery({ filter }).subscribe({
-      next: (snapshot: { items: Schema['Message']['type'][] }) => {
+    return this.client.models.Message.observeQuery({ filter }).pipe(
+      tap((snapshot: { items: Schema['Message']['type'][] }) => {
         const newMsg = snapshot.items[snapshot.items.length - 1];
         if (newMsg) onNewMessage(newMsg);
-      },
-    });
+      })
+    );
   }
 
   async sendMessage(channelId: string, content: string, attachment?: string) {
@@ -190,6 +192,21 @@ export class MessageService {
     } catch (error) {
       console.error('Get avatar URL error:', error);
       return 'assets/profile/avatar-default.svg';
+    }
+  }
+
+  async deleteChat(channelId: string) {
+    try {
+      const userId = await this.getCurrentUserId();
+      const { data: userChannels } = await this.client.models.UserChannel.list({
+        filter: { userId: { eq: userId }, channelId: { eq: channelId } },
+      });
+      if (userChannels.length > 0) {
+        await this.client.models.UserChannel.delete({ id: userChannels[0].id });
+      }
+      await this.loadRecentChats();
+    } catch (error) {
+      console.error('Delete chat error:', error);
     }
   }
 }

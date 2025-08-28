@@ -52,9 +52,9 @@ export const ICONS = {
   'users': 'assets/icons/heroicons/outline/users.svg',
   'view-grid': 'assets/icons/heroicons/outline/view-grid.svg',
   'x': 'assets/icons/heroicons/outline/x.svg',
-  'chevron-double-left': 'assets/icons/heroicons/solid/chevron-double-left.svg',
-  'chevron-right': 'assets/icons/heroicons/solid/chevron-right.svg',
-  'play': 'assets/icons/heroicons/solid/play.svg',
+  'chevron-double-left': 'assets/icons/heroicons/outline/chevron-double-left.svg',
+  'chevron-right': 'assets/icons/heroicons/outline/chevron-right.svg',
+  'play': 'assets/icons/heroicons/outline/play.svg',
 } as const;
 
 export type IconName = keyof typeof ICONS;

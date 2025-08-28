@@ -1,6 +1,6 @@
 <!-- src/app/features/messages/chatlayout/user-profile.component.html (example; update to use signal access) -->
-<div *ngIf="user()">
+<div *ngIf="user()" class="flex items-center gap-4">
   <img [src]="user()?.profileImageUrl" alt="Profile" class="w-10 h-10 rounded-full" />
-  <span>{{ user()?.firstName }} {{ user()?.lastName }}</span>
+  <span class="text-foreground font-medium">{{ user()?.firstName }} {{ user()?.lastName }}</span>
 </div>
 <div *ngIf="!user()">Loading profile...</div>

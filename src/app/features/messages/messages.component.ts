@@ -1,8 +1,8 @@
-// src/app/features/messages/messages.component.ts
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { MessageService } from '../../core/services/message.service';
 import { UserService } from '../../core/services/user.service';
 import { getUrl } from 'aws-amplify/storage';
@@ -52,6 +52,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
   newMessage = signal<string>('');
   file = signal<File | null>(null);
   currentUserId = '';
+  private destroy$ = new Subject<void>();
+  private chatSub: Subscription | null = null;
+  private messageCache = new Map<string, Message[]>();
   subscriptions: Subscription[] = [];
 
   async ngOnInit() {
@@ -67,7 +70,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
       // Real-time for all
       this.subscriptions.push(this.messageService.subscribeMessages(null, (newMsg: Schema['Message']['type']) => {
         this.updateConversationsOnNewMessage(newMsg);
-      }));
+      }).pipe(takeUntil(this.destroy$)).subscribe());
     } catch (error) {
       console.error('Init error:', error);
     }
@@ -77,25 +80,46 @@ export class MessagesComponent implements OnInit, OnDestroy {
     this.searchQuery.set(value);
   }
 
- async selectConversation(chat: ChatItem) {
-  const conv = this.conversations().find((c: Conversation) => c.channel.id === chat.id);
-  if (conv) {
-    this.selectedConversation.set(conv);
-    this.loadingMessages.set(true);
-    await this.messageService.loadMessages(chat.id);
-    this.messages.set(this.messageService.getMessages()());
-    this.loadingMessages.set(false);
-    this.subscriptions.push(this.messageService.subscribeMessages(chat.id, (newMsg: Schema['Message']['type']) => {
-      this.messages.update((msgs: Message[]) => [...msgs, {
-        text: newMsg.content,
-        sender: newMsg.senderId,
-        isSelf: newMsg.senderId === this.currentUserId,
-        timestamp: new Date(newMsg.timestamp),
-        read: newMsg.readBy?.includes(this.currentUserId)
-      }]);
-    }));
+  async selectConversation(chat: ChatItem) {
+    const conv = this.conversations().find((c: Conversation) => c.channel.id === chat.id);
+    if (conv) {
+      if (this.chatSub) {
+        this.chatSub.unsubscribe();
+        this.chatSub = null;
+      }
+      this.selectedConversation.set(conv);
+      this.loadingMessages.set(true);
+      try {
+        const channelId = conv.channel.id;
+        if (this.messageCache.has(channelId)) {
+          this.messages.set(this.messageCache.get(channelId)!);
+        } else {
+          await this.messageService.loadMessages(channelId);
+          const loadedMessages = this.messageService.getMessages()();
+          this.messages.set(loadedMessages);
+          this.messageCache.set(channelId, loadedMessages);
+        }
+        this.chatSub = this.messageService.subscribeMessages(channelId, (newMsg: Schema['Message']['type']) => {
+          this.messages.update((msgs: Message[]) => {
+            const updated = [...msgs, {
+              text: newMsg.content,
+              sender: newMsg.senderId,
+              isSelf: newMsg.senderId === this.currentUserId,
+              timestamp: new Date(newMsg.timestamp),
+              read: newMsg.readBy?.includes(this.currentUserId)
+            }];
+            this.messageCache.set(channelId, updated);
+            return updated;
+          });
+        }).pipe(takeUntil(this.destroy$)).subscribe();
+      } catch (error) {
+        console.error('Load messages error:', error);
+        // TODO: Add toast notification
+      } finally {
+        this.loadingMessages.set(false);
+      }
+    }
   }
-}
 
   async send(text: string) {
     this.newMessage.set(text);
@@ -146,7 +170,22 @@ export class MessagesComponent implements OnInit, OnDestroy {
     }
   }
 
+  async deleteConversation(channelId: string) {
+    if (confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
+      await this.messageService.deleteChat(channelId);
+      this.conversations.update((convs: Conversation[]) => convs.filter((c: Conversation) => c.channel.id !== channelId));
+      this.messageCache.delete(channelId);
+      if (this.selectedConversation()?.channel.id === channelId) {
+        this.selectedConversation.set(null);
+        this.messages.set([]);
+      }
+    }
+  }
+
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.subscriptions.forEach(sub => sub.unsubscribe());
+    if (this.chatSub) this.chatSub.unsubscribe();
   }
 }

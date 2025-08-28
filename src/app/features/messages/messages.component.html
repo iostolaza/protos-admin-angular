@@ -1,19 +1,25 @@
-<!-- src/app/features/messages/messages.component.html -->
 <!-- Outer wrapper for 80% width, centering, shadow, and full height -->
 <div class="mx-auto w-[80%] h-screen shadow-lg bg-background text-foreground md:w-[80%] sm:w-full">
   <div class="flex h-full">
     <!-- Sidebar -->
-    <div class="w-64 flex flex-col bg-muted border-r md:w-64 sm:w-20 sm:overflow-x-hidden">
+    <div class="w-64 p-3 flex flex-col bg-card border-r overflow-hidden md:w-64 sm:w-20 sm:overflow-x-hidden">
       <app-user-profile class="user-profile"></app-user-profile>
       <app-chat-search class="chat-search" (searchChanged)="onSearch($event)"></app-chat-search>
-      <app-chat-list class="chat-list" [chats]="filteredChats()" (chatSelected)="selectConversation($event)"></app-chat-list>
+      <app-chat-list class="chat-list flex-1" [chats]="filteredChats()" (chatSelected)="selectConversation($event)" (chatDeleted)="deleteConversation($event)"></app-chat-list>
     </div>
    
     <!-- Main area -->
-    <div class="flex-1 flex flex-col bg-card relative min-h-0">
-      <app-chat-header class="chat-header" [recipient]="selectedConversation()?.otherUser?.name ?? ''" [avatar]="selectedConversation()?.otherUser?.avatar ?? ''"></app-chat-header>
-      <app-chat-messages class="chat-messages" [messages]="messages()"></app-chat-messages>
-      <app-message-input class="message-input" (send)="send($event)" (sendWithFile)="sendWithFile($event)"></app-message-input>
+    <div class="flex-1 flex flex-col bg-background relative min-h-0">
+      <app-chat-header class="chat-header" [recipient]="selectedConversation()?.otherUser?.name ?? 'Select a chat'" [avatar]="selectedConversation()?.otherUser?.avatar ?? ''"></app-chat-header>
+      <ng-container *ngIf="selectedConversation(); else noChat">
+        <app-chat-messages class="chat-messages" [messages]="messages()"></app-chat-messages>
+      </ng-container>
+      <ng-template #noChat>
+        <div class="chat-messages flex-1 flex items-center justify-center text-muted-foreground min-h-0">
+          <p>Select a chat to start messaging</p>
+        </div>
+      </ng-template>
+      <app-message-input class="message-input" (send)="send($event)" (sendWithFile)="sendWithFile($event)" [disabled]="!selectedConversation()"></app-message-input>
     </div>
   </div>
 </div>

@@ -293,3 +293,23 @@ select {
 [type='radio'] {
   @apply h-4 w-4 rounded-sm border-border bg-background checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary focus:ring-2 focus:ring-primary/50;
 }
+@layer components {
+  .message-input {
+    @apply sticky bottom-0 left-0 right-0 border-t border-border bg-background text-foreground z-10;
+  }
+
+  .chat-messages {
+    @apply flex-1 overflow-y-auto p-4 space-y-4 bg-background min-h-0 pb-16 md:pb-14 sm:pb-12;
+  }
+
+  .chat-item-hover {
+    @apply flex items-center justify-between gap-3 p-4 cursor-pointer hover:bg-card/50 dark:hover:bg-card/80;
+  }
+
+  .chat-item-text {
+    @apply font-medium text-foreground truncate;
+  }
+.delete-btn {
+    @apply hidden group-hover:flex text-destructive hover:text-destructive/80 transition-opacity opacity-100 ml-2 dark:text-destructive-foreground;
+  }
+}
