@@ -39,6 +39,7 @@ const schema = a.schema({
       }),
       profileImageKey: a.string(),
       status: a.enum(['online', 'offline', 'away']),
+      role: a.string(),
       location: a.customType({
         latitude: a.float(),
         longitude: a.float(),

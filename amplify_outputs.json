@@ -171,6 +171,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "role": {
+              "name": "role",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "location": {
               "name": "location",
               "isArray": false,

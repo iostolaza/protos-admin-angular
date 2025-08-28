@@ -293,6 +293,27 @@ select {
 [type='radio'] {
   @apply h-4 w-4 rounded-sm border-border bg-background checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary focus:ring-2 focus:ring-primary/50;
 }
+
+.mat-mdc-card {
+  @apply rounded-xl shadow-custom !important; /* Override Material card for custom shadow */
+}
+
+.mat-mdc-table {
+  @apply bg-transparent !important; /* Ensure no default bg conflict */
+}
+
+.mat-mdc-row {
+  @apply border-b border-border last:border-0;
+}
+
+.mat-mdc-header-row {
+  @apply bg-muted/50;
+}
+
+.mat-mdc-paginator {
+  @apply bg-card border-t border-border text-muted-foreground px-4 py-2;
+}
+
 @layer components {
   .message-input {
     @apply sticky bottom-0 left-0 right-0 border-t border-border bg-background text-foreground z-10;
@@ -309,7 +330,18 @@ select {
   .chat-item-text {
     @apply font-medium text-foreground truncate;
   }
-.delete-btn {
-    @apply hidden group-hover:flex text-destructive hover:text-destructive/80 transition-opacity opacity-100 ml-2 dark:text-destructive-foreground;
+  .delete-btn {
+      @apply hidden group-hover:flex text-destructive hover:text-destructive/80 transition-opacity opacity-100 ml-2 dark:text-destructive-foreground;
+    }
+  .summary-pill {
+    @apply px-4 py-2 rounded-full font-medium text-sm;
   }
+}
+
+.example-element-row td {
+  border-bottom-width: 0;
+}
+
+.detail-row {
+  height: 0;
 }
