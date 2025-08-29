@@ -6,7 +6,6 @@ import { Schema } from '../../../../amplify/data/resource';
 
 const client = generateClient<Schema>();
 
-// Explicit type alias to unify model references across operations
 type UserModel = Schema["User"]["type"];
 
 export interface UserProfile {
@@ -17,11 +16,12 @@ export interface UserProfile {
   email: string;
   accessLevel: "basic" | "premium" | "admin";
   address: { line1: string; city: string; state: string; zip: string; country: string };
-  contactPrefs: { email: boolean; push: boolean };
+  contactPrefs: { email: boolean; push: boolean; sms?: boolean };
   emergencyContact: { name: string; phone: string; email: string; address: string };
   vehicle: { make: string; model: string; color: string; license: string; year: string };
   profileImageKey: string;
   profileImageUrl?: string;
+  mobile?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -32,40 +32,45 @@ export class UserService {
   async load() {
     try {
       const { username: sub } = await getCurrentUser();
-      console.log('Current authenticated user sub (ID/username):', sub);
-      const session = await fetchAuthSession();
-      const tokenSub = session.tokens?.idToken?.payload.sub;
-      console.log('Token sub (should match):', tokenSub);
       const attributes = await fetchUserAttributes();
       const email = attributes.email ?? '';
-      console.log('User email from attributes:', email);
-      const usersResp = await client.models.User.list();
-      console.log('Listed User models (should be 1 for current owner):', usersResp.data);
-      let userModel: UserModel | null = usersResp.data[0] || null;
+      const { data } = await client.models.User.list({ filter: { owner: { eq: sub } } });
+      let userModel: UserModel | null = data[0] || null;
       if (!userModel) {
+        // Create with attributes
         const createResp = await client.models.User.create({
-          username: email.split('@')[0] || 'defaultUser',
+          owner: sub,
+          username: attributes.preferred_username || email.split('@')[0] || 'defaultUser',
           email,
           accessLevel: 'basic',
-          firstName: 'First Name',
-          lastName: 'Last Name',
+          firstName: attributes.given_name || 'First Name',
+          lastName: attributes.family_name || 'Last Name',
           address: { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
-          contactPrefs: { email: false, push: false },
+          contactPrefs: { email: false, push: false, sms: false },
           emergencyContact: { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
           vehicle: { make: '', model: '', color: '', license: '', year: '' },
-          profileImageKey: '',
+          profileImageKey: attributes.picture || '',
           dateJoined: new Date().toISOString(),
           salary: 0,
-          mobile: '',
+          mobile: attributes.phone_number || ''
         });
         if (createResp.errors) {
           throw new Error(`User creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
         }
         userModel = createResp.data;
-        console.log('Created new User model:', userModel);
         if (userModel === null) {
           throw new Error('User creation returned null data despite no errors.');
         }
+      } else if (attributes.given_name && userModel.firstName === 'First Name') {
+        // Update defaults with attributes if still default
+        await client.models.User.update({
+          id: userModel.id,
+          firstName: attributes.given_name,
+          lastName: attributes.family_name || userModel.lastName,
+          profileImageKey: attributes.picture || userModel.profileImageKey,
+          mobile: attributes.phone_number || userModel.mobile
+        });
+        userModel = (await client.models.User.get({ id: userModel.id })).data!;
       }
       if (userModel) {
         const profile: UserProfile = {
@@ -78,7 +83,8 @@ export class UserService {
           address: userModel.address ?? { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
           contactPrefs: {
             email: userModel.contactPrefs?.email ?? false,
-            push: userModel.contactPrefs?.push ?? false
+            push: userModel.contactPrefs?.push ?? false,
+            sms: userModel.contactPrefs?.sms ?? false
           },
           emergencyContact: userModel.emergencyContact ?? { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
           vehicle: {
@@ -89,12 +95,13 @@ export class UserService {
             year: userModel.vehicle?.year ?? ''
           },
           profileImageKey: userModel.profileImageKey ?? '',
+          mobile: userModel.mobile ?? ''
         };
         if (profile.profileImageKey) {
           try {
             const { url } = await getUrl({
               path: profile.profileImageKey,
-              options: { expiresIn: 3600 }, // 1 hour expiration for security
+              options: { expiresIn: 3600 },
             });
             profile.profileImageUrl = url.toString();
           } catch (err) {
@@ -189,7 +196,7 @@ export class UserService {
   async uploadProfileImage(file: File): Promise<string | null> {
     try {
       const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/profile.jpg`;
-      console.log('Uploading to path:', path({})); // Debug
+      console.log('Uploading to path:', path({})); 
       const uploadTask = uploadData({ path, data: file });
       const { path: uploadedPath } = await uploadTask.result;
       console.log('Upload success, key:', uploadedPath);

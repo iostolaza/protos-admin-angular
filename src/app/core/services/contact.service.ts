@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import type { Schema } from '../../../../amplify/data/resource';
-import { InputContact } from '../models/contact'; // Adjusted type
+import { InputContact } from '../models/contact'; // Import extended type
 
 const client = generateClient<Schema>();
 
@@ -25,6 +25,7 @@ export class ContactsService {
         username: user.username,
         email: user.email,
         profileImageKey: user.profileImageKey,
+        status: user.status,
         dateAdded: f.createdAt
       } as InputContact;
     }));
@@ -43,7 +44,8 @@ export class ContactsService {
       lastName: u.lastName,
       username: u.username,
       email: u.email,
-      profileImageKey: u.profileImageKey
+      profileImageKey: u.profileImageKey,
+      status: u.status
     }) as InputContact);
     return { users: usersPicked, nextToken: newToken };
   }

@@ -3,7 +3,7 @@ import { type Schema } from '../../../../amplify/data/resource'; // Adjust path 
 
 export type Contact = Schema['User']['type'];
 
-export type InputContact = Pick<Contact, 'id' | 'firstName' | 'lastName' | 'username' | 'email' | 'profileImageKey'> & {
+export type InputContact = Pick<Contact, 'id' | 'firstName' | 'lastName' | 'username' | 'email' | 'profileImageKey' | 'status'> & {
   dateAdded?: string;
   imageUrl?: string;
 };

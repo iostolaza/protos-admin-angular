@@ -6,21 +6,27 @@ import { ContactsTableItemComponent } from './contacts-table-item/contacts-table
 import { ContactsService } from '../../core/services/contact.service';
 import { InputContact } from '../../core/models/contact';
 import { getUrl } from 'aws-amplify/storage';
+import { getIconPath } from '../../core/services/icon-preloader.service'; // Assume this exists from user
+import { AngularSvgIconModule } from 'angular-svg-icon'; // Assume imported
 
 @Component({
   selector: 'app-contacts',
   templateUrl: './contacts.component.html',
   styleUrls: ['./contacts.component.scss'],
   standalone: true,
-  imports: [CommonModule, NgFor, FormsModule, ContactsTableItemComponent],
+  imports: [CommonModule, NgFor, FormsModule, ContactsTableItemComponent, AngularSvgIconModule],
 })
 export class ContactsComponent implements OnInit {
   public contacts: InputContact[] = [];
   public searchResults: InputContact[] = [];
   public searchQuery: string = '';
-  public updatedAgo: string = 'a moment ago'; // Can compute dynamically
+  public updatedAgo: string = 'a moment ago';
+  public onlineContacts: number = 0;
+  public recentContacts: InputContact[] = [];
 
   constructor(private contactsService: ContactsService) {}
+
+  getIconPath = getIconPath; // For template access
 
   async ngOnInit(): Promise<void> {
     await this.loadContacts();
@@ -51,6 +57,7 @@ export class ContactsComponent implements OnInit {
       this.contacts.push(...extendedFriends);
       nextToken = newToken;
     } while (nextToken);
+    this.updateSummary();
     this.updatedAgo = this.computeUpdatedAgo();
   }
 
@@ -86,18 +93,24 @@ export class ContactsComponent implements OnInit {
 
   async addContact(user: InputContact): Promise<void> {
     await this.contactsService.addContact(user.id);
-    const extendedUser = { ...user, dateAdded: new Date().toISOString() }; // Approximate dateAdded
+    const extendedUser = { ...user, dateAdded: new Date().toISOString() };
     this.contacts.push(extendedUser);
     this.searchResults = this.searchResults.filter(u => u.id !== user.id);
+    this.updateSummary();
   }
 
   async onDelete(id: string): Promise<void> {
     await this.contactsService.deleteContact(id);
     this.contacts = this.contacts.filter(c => c.id !== id);
+    this.updateSummary();
+  }
+
+  private updateSummary(): void {
+    this.onlineContacts = this.contacts.filter(c => c.status === 'online').length; // Assume status from schema
+    this.recentContacts = this.contacts.slice().sort((a, b) => new Date(b.dateAdded || '').getTime() - new Date(a.dateAdded || '').getTime()).slice(0, 3);
   }
 
   private computeUpdatedAgo(): string {
-    // Logic to compute time ago, e.g., manual
     return '37 minutes ago'; // Placeholder
   }
 }
