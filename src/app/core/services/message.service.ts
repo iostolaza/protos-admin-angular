@@ -47,9 +47,14 @@ export class MessageService {
   }
 
   async getUserById(userId: string): Promise<Schema['User']['type']> {
-    const { data } = await this.client.models.User.get({ id: userId });
-    if (!data) throw new Error('User not found');
-    return data;
+    const { data } = await this.client.models.User.list({ filter: { owner: { eq: userId } } });
+    const user = data[0];
+    if (!user) throw new Error('User not found');
+    return user;
+  }
+
+  async deleteMessage(id: string): Promise<void> {
+    await this.client.models.Message.delete({ id });
   }
 
   async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
@@ -102,6 +107,33 @@ export class MessageService {
     }
   }
 
+  async searchChats(query: string): Promise<ChatItem[]> {
+    try {
+      const userId = await this.getCurrentUserId();
+      const channels = await this.getUserChannels(userId);
+      const chats: ChatItem[] = await Promise.all(channels.map(async (channel: Schema['Channel']['type']) => {
+        const otherUserId = await this.getOtherUserId(channel.id, userId);
+        const otherUser = await this.getUserById(otherUserId);
+        const lastMsg = await this.getLastMessage(channel.id);
+        return {
+          id: channel.id,
+          name: `${otherUser.firstName} ${otherUser.lastName}`,
+          snippet: lastMsg?.content,
+          avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
+          timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
+        };
+      }));
+      const filteredChats = chats.filter(chat =>
+        chat.name.toLowerCase().includes(query.toLowerCase()) ||
+        (chat.snippet && chat.snippet.toLowerCase().includes(query.toLowerCase()))
+      );
+      return filteredChats.sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+    } catch (error) {
+      console.error('Search chats error:', error);
+      return [];
+    }
+  }
+
   async getContacts(): Promise<Schema['User']['type'][]> {
     const currentUserId = await this.getCurrentUserId();
     const { data } = await this.client.models.User.list();
@@ -146,7 +178,7 @@ export class MessageService {
     return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
 
-subscribeMessages(channelId: string | null, onNewMessage: (msg: Schema['Message']['type']) => void): Observable<{ items: Schema['Message']['type'][] }> {
+  subscribeMessages(channelId: string | null, onNewMessage: (msg: Schema['Message']['type']) => void): Observable<{ items: Schema['Message']['type'][] }> {
     const filter = channelId ? { channelId: { eq: channelId } } : undefined;
     return this.client.models.Message.observeQuery({ filter }).pipe(
       tap((snapshot: { items: Schema['Message']['type'][] }) => {

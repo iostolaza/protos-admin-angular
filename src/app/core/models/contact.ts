@@ -1,9 +1,11 @@
 // src/app/core/models/contact.ts
-import { type Schema } from '../../../../amplify/data/resource'; // Adjust path as per directory
-
-export type Contact = Schema['User']['type'];
-
-export type InputContact = Pick<Contact, 'id' | 'firstName' | 'lastName' | 'username' | 'email' | 'profileImageKey' | 'status'> & {
+export interface InputContact {
+  id: string; // Add this
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  profileImageKey?: string;
+  status?: string;
   dateAdded?: string;
-  imageUrl?: string;
-};
+}

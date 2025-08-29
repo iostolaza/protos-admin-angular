@@ -1,6 +1,20 @@
 {
   "version": "48.0.0",
   "files": {
+    "94479c1cb17f69ceafaeea1d4c4c24804531fada9e06f202934dd4e93709adfb": {
+      "displayName": "function/post-confirmation-lambda/Code",
+      "source": {
+        "path": "asset.94479c1cb17f69ceafaeea1d4c4c24804531fada9e06f202934dd4e93709adfb",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-current_region-e7b41cdf": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "94479c1cb17f69ceafaeea1d4c4c24804531fada9e06f202934dd4e93709adfb.zip",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
     "23df4a10f7743e90a710888ea87205f23d214aad2b34e617221bec49c1d24ebc": {
       "displayName": "data/amplifyData/AmplifyTableManager/TableManagerCustomProvider/framework-onEvent/Code",
       "source": {
@@ -1121,16 +1135,30 @@
         }
       }
     },
-    "a62f7059af1823b8cdb94caa06956ce73b7fa829b84443247ad30d30949971bc": {
+    "dca6a63f529487bf97807c2c601e9c0bdc82e668b9cd64cc3d421bd1142d35b9": {
       "displayName": "auth Nested Stack Template",
       "source": {
         "path": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1auth676C897D.nested.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "current_account-current_region-2d2bf646": {
+        "current_account-current_region-f29b9ab4": {
           "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
-          "objectKey": "a62f7059af1823b8cdb94caa06956ce73b7fa829b84443247ad30d30949971bc.json",
+          "objectKey": "dca6a63f529487bf97807c2c601e9c0bdc82e668b9cd64cc3d421bd1142d35b9.json",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
+        }
+      }
+    },
+    "22834d8e22c5d3f7b874f2d2df859ba0bbd2bfb7cbca6f4e3cce15a26b8d1749": {
+      "displayName": "function Nested Stack Template",
+      "source": {
+        "path": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1function7C73C462.nested.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-current_region-3fa7fea7": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
+          "objectKey": "22834d8e22c5d3f7b874f2d2df859ba0bbd2bfb7cbca6f4e3cce15a26b8d1749.json",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
         }
       }
@@ -1317,16 +1345,16 @@
         }
       }
     },
-    "56a2c7eb4023f2f40e0176df3976acef02964bb86f3f8808c9b37874f6fd9de7": {
+    "57b78111f81278bc6f9276e9e4cefbe0d733e09998a1a75b9b486486ab22ad8f": {
       "displayName": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1 Template",
       "source": {
         "path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "current_account-current_region-00509b4c": {
+        "current_account-current_region-4b4d0a69": {
           "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}",
-          "objectKey": "56a2c7eb4023f2f40e0176df3976acef02964bb86f3f8808c9b37874f6fd9de7.json",
+          "objectKey": "57b78111f81278bc6f9276e9e4cefbe0d733e09998a1a75b9b486486ab22ad8f.json",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-${AWS::Region}"
         }
       }

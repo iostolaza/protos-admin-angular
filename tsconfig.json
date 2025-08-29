@@ -33,5 +33,11 @@
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.spec.json" }
+  ],
+    // tsconfig.json (add to exclude array)
+  "exclude": [
+    "node_modules",
+    "tmp",
+    "amplify/**"
   ]
 }

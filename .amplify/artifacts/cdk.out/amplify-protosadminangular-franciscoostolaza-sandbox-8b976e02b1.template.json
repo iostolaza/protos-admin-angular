@@ -33,6 +33,12 @@
     "groups"
    ]
   },
+  "AWS::Amplify::Function": {
+   "version": "1",
+   "stackOutputs": [
+    "definedFunctions"
+   ]
+  },
   "AWS::Amplify::GraphQL": {
    "version": "1",
    "stackOutputs": [
@@ -144,6 +150,23 @@
   "groups": {
    "Value": "[]"
   },
+  "definedFunctions": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "[\"",
+      {
+       "Fn::GetAtt": [
+        "function1351588B",
+        "Outputs.amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Ref"
+       ]
+      },
+      "\"]"
+     ]
+    ]
+   }
+  },
   "awsAppsyncApiId": {
    "Value": {
     "Fn::GetAtt": [
@@ -247,6 +270,14 @@
   "auth179371D7": {
    "Type": "AWS::CloudFormation::Stack",
    "Properties": {
+    "Parameters": {
+     "referencetoamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionNestedStackfunctionNestedStackResourceFF36F00EOutputsamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn": {
+      "Fn::GetAtt": [
+       "function1351588B",
+       "Outputs.amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn"
+      ]
+     }
+    },
     "Tags": [
      {
       "Key": "amplify:deployment-type",
@@ -273,7 +304,7 @@
        {
         "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
        },
-       "/a62f7059af1823b8cdb94caa06956ce73b7fa829b84443247ad30d30949971bc.json"
+       "/dca6a63f529487bf97807c2c601e9c0bdc82e668b9cd64cc3d421bd1142d35b9.json"
       ]
      ]
     }
@@ -283,6 +314,48 @@
    "Metadata": {
     "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth.NestedStack/auth.NestedStackResource",
     "aws:asset:path": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1auth676C897D.nested.template.json",
+    "aws:asset:property": "TemplateURL"
+   }
+  },
+  "function1351588B": {
+   "Type": "AWS::CloudFormation::Stack",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "amplify:deployment-type",
+      "Value": "sandbox"
+     },
+     {
+      "Key": "created-by",
+      "Value": "amplify"
+     }
+    ],
+    "TemplateURL": {
+     "Fn::Join": [
+      "",
+      [
+       "https://s3.",
+       {
+        "Ref": "AWS::Region"
+       },
+       ".",
+       {
+        "Ref": "AWS::URLSuffix"
+       },
+       "/",
+       {
+        "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}"
+       },
+       "/22834d8e22c5d3f7b874f2d2df859ba0bbd2bfb7cbca6f4e3cce15a26b8d1749.json"
+      ]
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function.NestedStack/function.NestedStackResource",
+    "aws:asset:path": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1function7C73C462.nested.template.json",
     "aws:asset:property": "TemplateURL"
    }
   },

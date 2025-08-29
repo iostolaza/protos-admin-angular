@@ -22,7 +22,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-${AWS::Region}",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-${AWS::Region}",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/56a2c7eb4023f2f40e0176df3976acef02964bb86f3f8808c9b37874f6fd9de7.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}/57b78111f81278bc6f9276e9e4cefbe0d733e09998a1a75b9b486486ab22ad8f.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -71,6 +71,12 @@
             "data": "amplifyAuthUserPool4BA7F805"
           }
         ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth/amplifyAuth/UserPool/PostConfirmationCognito": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "amplifyAuthUserPoolPostConfirmationCognitoE7E727CF"
+          }
+        ],
         "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth/amplifyAuth/UserPoolAppClient/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -111,6 +117,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "CDKMetadataAvailable"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth/reference-to-amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionNestedStackfunctionNestedStackResourceFF36F00EOutputs.amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "referencetoamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionNestedStackfunctionNestedStackResourceFF36F00EOutputsamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn"
           }
         ],
         "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth/amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1authamplifyAuthUserPool0E852F68Ref": [
@@ -267,6 +279,54 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "groups"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function/post-confirmation-lambda/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "postconfirmationlambdaServiceRoleD88F89BD"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function/post-confirmation-lambda/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "postconfirmationlambda195D98D2"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function/CDKMetadata/Condition": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadataAvailable"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function/amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function/amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Ref": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "amplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Ref"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/function.NestedStack/function.NestedStackResource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "function1351588B"
+          }
+        ],
+        "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/definedFunctions": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "definedFunctions"
           }
         ],
         "/amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/data/amplifyData/GraphQLAPI/Resource": [

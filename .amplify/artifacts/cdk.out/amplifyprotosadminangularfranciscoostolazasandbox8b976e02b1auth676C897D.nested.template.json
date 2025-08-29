@@ -20,6 +20,11 @@
     ],
     "EmailVerificationMessage": "The verification code to your new account is {####}",
     "EmailVerificationSubject": "Verify your new account",
+    "LambdaConfig": {
+     "PostConfirmation": {
+      "Ref": "referencetoamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionNestedStackfunctionNestedStackResourceFF36F00EOutputsamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn"
+     }
+    },
     "Policies": {
      "PasswordPolicy": {
       "MinimumLength": 8,
@@ -64,6 +69,27 @@
    "DeletionPolicy": "Delete",
    "Metadata": {
     "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth/amplifyAuth/UserPool/Resource"
+   }
+  },
+  "amplifyAuthUserPoolPostConfirmationCognitoE7E727CF": {
+   "Type": "AWS::Lambda::Permission",
+   "Properties": {
+    "Action": "lambda:InvokeFunction",
+    "FunctionName": {
+     "Ref": "referencetoamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionNestedStackfunctionNestedStackResourceFF36F00EOutputsamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn"
+    },
+    "Principal": "cognito-idp.amazonaws.com",
+    "SourceArn": {
+     "Fn::GetAtt": [
+      "amplifyAuthUserPool4BA7F805",
+      "Arn"
+     ]
+    }
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth/amplifyAuth/UserPool/PostConfirmationCognito"
    }
   },
   "amplifyAuthUserPoolAppClient2626C6F8": {
@@ -301,7 +327,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/02NQQ+CMAyFfwv3UWF68Wg4eTEG49ngVrUw1oQNjVn23x0xKKf39b32VYIs11BkzcvlSne5oSuEAzqP+uQb1YkUXILiuyXPEM4OhyOzEdXN/niGyhBav4z+zl4nIP+ej5dzzQZ3Pn179MmMgpoewmROi5PGKGp0PA4Ko7CsEVq3esoCyi1sstYR5cOY6nqE+qsfBIsuzNcAAAA="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/01Nuw6CMBT9FvZyBXRxNEwuhmCcTaFXvdBH0haNafrvlhiU6bxzKqjKLRQZf7m8F2MuqYNwQudRnD3vR5aCa+jNXZM3EC4ObWOMZPVN//hCakmo/Tr6O0eRCPn3Ml7r1kg8+PT2UMmMTHLVCQ6p1aBV5BwZzYgrCHNzXs8YI2vRmcn2GJk2AmFwm2dVQLmHXTY4otxO6UMhtF/8AIl0FjbsAAAA"
    },
    "Metadata": {
     "aws:cdk:path": "amplify-protosadminangular-franciscoostolaza-sandbox-8b976e02b1/auth/CDKMetadata/Default"
@@ -573,6 +599,11 @@
      ]
     }
    ]
+  }
+ },
+ "Parameters": {
+  "referencetoamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionNestedStackfunctionNestedStackResourceFF36F00EOutputsamplifyprotosadminangularfranciscoostolazasandbox8b976e02b1functionpostconfirmationlambda93DCD1C8Arn": {
+   "Type": "String"
   }
  },
  "Outputs": {
