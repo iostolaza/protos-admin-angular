@@ -1,20 +1,20 @@
 // src/app/features/contacts/contacts.component.ts
 import { Component, OnInit } from '@angular/core';
-import { CommonModule, NgFor } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ContactsTableItemComponent } from './contacts-table-item/contacts-table-item.component';
 import { ContactsService } from '../../core/services/contact.service';
 import { InputContact } from '../../core/models/contact';
 import { getUrl } from 'aws-amplify/storage';
-import { getIconPath } from '../../core/services/icon-preloader.service'; // Assume this exists from user
-import { AngularSvgIconModule } from 'angular-svg-icon'; // Assume imported
+import { getIconPath } from '../../core/services/icon-preloader.service';
+import { AngularSvgIconModule } from 'angular-svg-icon';
 
 @Component({
   selector: 'app-contacts',
   templateUrl: './contacts.component.html',
-  styleUrls: ['./contacts.component.scss'],
+  styleUrl: './contacts.component.scss',
   standalone: true,
-  imports: [CommonModule, NgFor, FormsModule, ContactsTableItemComponent, AngularSvgIconModule],
+  imports: [CommonModule, FormsModule, ContactsTableItemComponent, AngularSvgIconModule],
 })
 export class ContactsComponent implements OnInit {
   public contacts: InputContact[] = [];
@@ -58,7 +58,7 @@ export class ContactsComponent implements OnInit {
       nextToken = newToken;
     } while (nextToken);
     this.updateSummary();
-    this.updatedAgo = this.computeUpdatedAgo();
+    this.updatedAgo = this.computeUpdatedAgo(); 
   }
 
   async performSearch(): Promise<void> {
@@ -111,6 +111,6 @@ export class ContactsComponent implements OnInit {
   }
 
   private computeUpdatedAgo(): string {
-    return '37 minutes ago'; // Placeholder
+    return '37 minutes ago'; // Placeholder; implement actual logic if needed, e.g., using date-fns or Angular date pipe with relative time
   }
 }

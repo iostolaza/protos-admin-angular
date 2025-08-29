@@ -1,6 +1,6 @@
 // src/app/core/models/contact.ts
 export interface InputContact {
-  id: string; // Add this
+  id: string;
   firstName: string;
   lastName: string;
   username: string;
@@ -8,4 +8,5 @@ export interface InputContact {
   profileImageKey?: string;
   status?: string;
   dateAdded?: string;
+  imageUrl?: string; 
 }

@@ -12,8 +12,7 @@ import { InputContact } from '../../../core/models/contact';
   imports: [CommonModule, DatePipe, AngularSvgIconModule],
 })
 export class ContactsTableItemComponent {
-
-   getIconPath = getIconPath;
+  getIconPath = getIconPath;
 
   @Input() contact!: InputContact;
   @Output() deleted = new EventEmitter<string>();

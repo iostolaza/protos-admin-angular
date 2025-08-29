@@ -1,7 +1,7 @@
 <!-- src/app/features/contacts/contacts-table-item/contacts-table-item.component.html -->
 <td class="py-3 text-left">
   <div class="flex items-center gap-3">
-    <img *ngIf="contact.profileImageKey" [src]="contact.imageUrl" class="w-10 h-10 rounded" alt="Profile"> <!-- Use precomputed URL -->
+    <img *ngIf="contact.profileImageKey" [src]="contact.imageUrl || 'assets/profile/avatar-default.svg'" class="w-10 h-10 rounded-full" alt="Profile"> <!-- Use precomputed URL with fallback -->
     <div class="flex-col">
       <span class="font-medium text-foreground">{{ contact.firstName }} {{ contact.lastName }}</span>
       <span class="text-xs text-muted-foreground block">{{ contact.username }}</span> <!-- ID under contact name -->
