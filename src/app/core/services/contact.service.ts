@@ -1,41 +1,65 @@
-
-import { Injectable, inject } from '@angular/core';
+// src/app/core/services/contact.service.ts
+import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
 import type { Schema } from '../../../../amplify/data/resource';
+import { InputContact } from '../models/contact'; // Adjusted type
 
 const client = generateClient<Schema>();
 
 @Injectable({ providedIn: 'root' })
 export class ContactsService {
-  async getContacts(nextToken?: string | null) {
+  async getContacts(nextToken?: string | null): Promise<{ friends: InputContact[], nextToken: string | null | undefined }> {
     const userId = await this.getCurrentUserId();
     const { data, nextToken: newToken } = await client.models.Friend.list({
       filter: { userId: { eq: userId } },
       nextToken,
     });
-    const friendIds = data.map(f => f.friendId);
-    const friends = await Promise.all(friendIds.map(id => client.models.User.get({ id })));
-    return { friends: friends.map(f => f.data!), nextToken: newToken };
+    const friendsWithDate = await Promise.all(data.map(async (f) => {
+      const userRes = await client.models.User.get({ id: f.friendId });
+      const user = userRes.data!;
+      return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        profileImageKey: user.profileImageKey,
+        dateAdded: f.createdAt
+      } as InputContact;
+    }));
+    return { friends: friendsWithDate, nextToken: newToken };
   }
 
-  async searchPool(query: string, nextToken?: string | null) {
-    const { data, nextToken: newToken } = await client.models.User.list({ nextToken });
-    return data.filter(u => u.email.includes(query) || `${u.firstName} ${u.lastName}`.includes(query));
+  async searchPool(query: string, nextToken?: string | null): Promise<{ users: InputContact[], nextToken: string | null | undefined }> {
+    if (!query) return { users: [], nextToken: null };
+    const { data, nextToken: newToken } = await client.models.User.list({
+      filter: { or: [{ firstName: { contains: query } }, { lastName: { contains: query } }, { email: { contains: query } }] },
+      nextToken,
+    });
+    const usersPicked = data.map(u => ({
+      id: u.id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      username: u.username,
+      email: u.email,
+      profileImageKey: u.profileImageKey
+    }) as InputContact);
+    return { users: usersPicked, nextToken: newToken };
   }
 
-  async addContact(friendId: string) {
+  async addContact(friendId: string): Promise<void> {
     const userId = await this.getCurrentUserId();
     await client.models.Friend.create({ userId, friendId });
   }
 
-  async deleteContact(friendId: string) {
+  async deleteContact(friendId: string): Promise<void> {
     const userId = await this.getCurrentUserId();
     const { data } = await client.models.Friend.list({ filter: { userId: { eq: userId }, friendId: { eq: friendId } } });
     if (data[0]) await client.models.Friend.delete({ id: data[0].id });
   }
 
-  private async getCurrentUserId() {
+  private async getCurrentUserId(): Promise<string> {
     const { userId } = await getCurrentUser();
     return userId;
   }
