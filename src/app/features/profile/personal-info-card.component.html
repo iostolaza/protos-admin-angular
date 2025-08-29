@@ -1,0 +1,66 @@
+<!-- =====================================================================
+ * PERSONAL INFO CARD COMPONENT TEMPLATE
+ * =====================================================================
+ * Personal info: bg-card p-15 (consistent padding), inputs bg-background border-border.
+ * Updated: Edit button bg-primary text-primary-foreground hover:bg-primary/90, cancel bg-secondary hover:bg-muted.
+ * Labels text-muted-foreground, values text-foreground, strong text-muted-foreground.
+ * References:
+ * - Angular forms: https://angular.dev/guide/forms/reactive-forms (FormGroup/patchValue).
+ * - Tailwind inputs: https://tailwindcss.com/docs/forms (plugin overrides).
+ * Iteration 1: Basic form/display toggle.
+ * Iteration 2: Grid cols-2 for layout.
+ * Iteration 3: Aria-label for accessibility, rounded inputs.
+ * Best: Effect for user signal reactivity.
+ -->
+<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
+  <h2 class="text-xl font-bold mb-4 text-primary">Personal Information</h2>
+  <div class="mb-4">
+      <img [src]="profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile" class="w-20 h-20 rounded-full" aria-label="Profile image">
+    @if (editMode()) {
+      <input type="file" (change)="uploadImage($event)" accept="image/*" aria-label="Upload profile image" class="mt-2">
+    }
+  </div>
+  @if (editMode()) {
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-muted-foreground">First Name</label>
+          <input formControlName="firstName" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+        <div>
+          <label class="block text-sm text-muted-foreground">Last Name</label>
+          <input formControlName="lastName" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+        <div>
+          <label class="block text-sm text-muted-foreground">Username</label>
+          <input formControlName="username" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+        <div>
+          <label class="block text-sm text-muted-foreground">Email</label>
+          <input formControlName="email" type="email" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+        <div class="col-span-2">
+          <label class="block text-sm text-muted-foreground">Access Level</label>
+          <input formControlName="accessLevel" class="w-full p-2 border border-border rounded bg-muted text-foreground" />
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
+      </div>
+    </form>
+  } @else {
+    @if (user) {
+      <div class="grid grid-cols-2 gap-4 text-foreground">
+        <div><strong class="text-muted-foreground">First Name: </strong> <span class="text-foreground">{{ user.firstName }}</span></div>
+        <div><strong class="text-muted-foreground">Last Name: </strong> <span class="text-foreground">{{ user.lastName }}</span></div>
+        <div><strong class="text-muted-foreground">Username: </strong> <span class="text-foreground">{{ user.username }}</span></div>
+        <div><strong class="text-muted-foreground">Email: </strong> <span class="text-foreground">{{ user.email }}</span></div>
+        <div class="col-span-2"><strong class="text-muted-foreground">Access Level: </strong> <span class="text-foreground">{{ user.accessLevel }}</span></div>
+      </div>
+    }
+    <div class="mt-4 flex justify-start">
+    <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
+    </div>
+  }
+</div>

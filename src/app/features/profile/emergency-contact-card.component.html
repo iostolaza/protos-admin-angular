@@ -1,0 +1,51 @@
+<!-- =====================================================================
+ * EMERGENCY CONTACT CARD COMPONENT TEMPLATE
+ * =====================================================================
+ * Emergency contact: bg-card p-10, inputs bg-background border-border.
+ * Updated: Buttons match (primary/secondary), labels text-muted-foreground, values text-foreground.
+ * References:
+ * - Angular forms: https://angular.dev/guide/forms/reactive-forms.
+ * Iteration 1: Form/display toggle.
+ * Iteration 2: Grid cols-2, col-span-2 for address.
+ * Iteration 3: Validators.required for fields.
+ * Best: Flex justify-end for buttons.
+ -->
+<div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
+  <h2 class="text-xl font-bold mb-4 text-primary">Emergency Contact</h2>
+  @if (editMode()) {
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-muted-foreground">Name</label>
+          <input formControlName="name" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+        <div>
+          <label class="block text-sm text-muted-foreground">Phone</label>
+          <input formControlName="phone" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+        <div>
+          <label class="block text-sm text-muted-foreground">Email</label>
+          <input formControlName="email" type="email" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+        <div class="col-span-2">
+          <label class="block text-sm text-muted-foreground">Address</label>
+          <input formControlName="address" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+        </div>
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
+      </div>
+    </form>
+  } @else {
+    <div class="grid grid-cols-2 gap-4 text-foreground">
+      <div><strong class="text-muted-foreground">Name: </strong> <span class="text-foreground">{{ user?.emergencyContact?.name }}</span></div>
+      <div><strong class="text-muted-foreground">Phone: </strong> <span class="text-foreground">{{ user?.emergencyContact?.phone }}</span></div>
+      <div><strong class="text-muted-foreground">Email: </strong> <span class="text-foreground">{{ user?.emergencyContact?.email }}</span></div>
+      <div class="col-span-2"><strong class="text-muted-foreground">Address: </strong> <span class="text-foreground">{{ user?.emergencyContact?.address }}</span></div>
+    </div>
+    <div class="mt-4 flex justify-start">
+    <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
+    </div>
+  }
+</div>

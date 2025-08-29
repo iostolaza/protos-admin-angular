@@ -1,15 +1,27 @@
-<!-- src/app/features/profile/profile.component.html -->
-<!-- Profile: Two-per-row cards, fixed-height scroll -->
-<div class="px-15 sm:px-15 py-6 overflow-y-auto h-screen bg-background">
+<!-- =====================================================================
+ * PROFILE COMPONENT TEMPLATE
+ * =====================================================================
+ * Profile view: Overflow-y-auto h-screen bg-background, grid for cards with equal-row-grid.
+ * Updated: Padding px-15 py-6 (consistent with p-10 in cards but outer), h1 text-foreground.
+ * Cards use bg-card rounded-lg shadow-custom border-border (matching study for consistency).
+ * References:
+ * - Tailwind v4 grid: https://tailwindcss.com/docs/grid-template-columns (cols-1 md:cols-2 gap-6).
+ * - Angular v20 if/else: https://angular.dev/guide/control-flow (loading state).
+ * Iteration 1: Basic grid with col-span-full for top card.
+ * Iteration 2: Added h-full to two-per-row cards for equal height.
+ * Iteration 3: Overflow-y-auto h-screen for scrolling profile page.
+ * Best: Equal-row-grid utility for minmax(0,1fr) rows, ensuring balanced heights.
+ -->
+<div class="px-15 sm:px-15 py-6 overflow-y-auto h-screen bg-background text-foreground">
   <h1 class="text-2xl font-bold mb-8 text-foreground">User Profile</h1>
-
+  
   @if (loading()) {
     <p class="text-muted-foreground">Loading...</p>
   } @else {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-background equal-row-grid">
       <!-- Full-width top card (no change needed) -->
       <app-personal-info-card class="col-span-full"></app-personal-info-card>
-
+  
       <!-- Two-per-row with h-full -->
       <app-address-card class="h-full"></app-address-card>
       <app-contact-prefs-card class="h-full"></app-contact-prefs-card>

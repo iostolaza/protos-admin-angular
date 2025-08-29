@@ -37,7 +37,7 @@ export const routes: Routes = [
       { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.Home) },
       
       // Profile page lazy-loaded
-      { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.Profile) },
+      { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
       
       // Messages variants (incoming/outgoing) using same component
       { path: 'messages', redirectTo: 'messages/incoming', pathMatch: 'full' },

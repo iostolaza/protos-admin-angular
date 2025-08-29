@@ -1,0 +1,49 @@
+<!-- =====================================================================
+ * PAYMENT CARD COMPONENT TEMPLATE
+ * =====================================================================
+ * Payment methods: bg-card p-10, form array for dynamic methods, remove bg-destructive.
+ * Updated: Add/remove/save buttons match (primary/secondary/destructive), inputs bg-background.
+ * Labels text-muted-foreground, values text-foreground.
+ * References:
+ * - Angular FormArray: https://angular.dev/guide/forms/reactive-forms#formarray (dynamic controls).
+ * Iteration 1: FormArray with add/remove.
+ * Iteration 2: Grid cols-2 mb-4 per method.
+ * Iteration 3: Async loadPayments, populate on edit.
+ * Best: Track $index for loops, flex justify-end buttons.
+ -->
+<div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
+  <h2 class="text-xl font-bold mb-4 text-primary">Payment Methods</h2>
+  @if (editMode()) {
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div formArrayName="paymentMethods">
+        @for (method of paymentMethods.controls; track $index) {
+          <div class="grid grid-cols-2 gap-4 mb-4" [formGroupName]="$index">
+            <div>
+              <label class="block text-sm text-muted-foreground">Type</label>
+              <input formControlName="type" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+            </div>
+            <div>
+              <label class="block text-sm text-muted-foreground">Name</label>
+              <input formControlName="name" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+            </div>
+            <button type="button" (click)="removeMethod($index)" class="px-2 py-1 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90">Remove</button>
+          </div>
+        }
+      </div>
+      <button type="button" (click)="addMethod()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Add Method</button>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
+      </div>
+    </form>
+  } @else {
+    <div class="grid grid-cols-2 gap-4 text-foreground">
+      @for (method of paymentMethodsList(); track $index) {
+        <div><strong class="text-muted-foreground">{{ method.type }}:</strong> <span class="text-foreground">{{ method.name }}</span></div>
+      }
+    </div>
+    <div class="mt-4 flex justify-start">
+    <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
+    </div>
+  }
+</div>

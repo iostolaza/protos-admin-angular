@@ -15,7 +15,7 @@
  <mat-card class="mb-4 rounded-xl shadow-custom">
 <!-- <mat-card class="mb-4 bg-card text-card-foreground rounded-xl shadow-custom"> -->
   <mat-card-header class="px-6 py-4 border-b border-border">
-    <mat-card-title class="text-lg font-semibold text-blue-600">Contacts Summary</mat-card-title>
+    <mat-card-title class="text-lg font-semibold text-foreground">Contacts Summary</mat-card-title>
   </mat-card-header>
   <mat-card-content class="p-10 flex flex-wrap items-center justify-between gap-4">
     <div class="px-4 py-2 bg-muted/50 text-muted-foreground rounded-full font-medium">Total: {{ totalContacts() }}</div>
@@ -31,10 +31,10 @@
   </mat-card-content>
 </mat-card>
  
-<mat-card class="rounded-xl shadow-custom overflow-hidden bg-white">
+<mat-card class="rounded-xl shadow-custom overflow-hidden">
 <!-- <mat-card class="bg-card text-card-foreground rounded-xl shadow-custom overflow-hidden"> -->
   <mat-card-header class="px-6 py-4 border-b border-border flex justify-between items-center">
-    <mat-card-title class="text-lg font-semibold text-blue-600">Contacts List</mat-card-title>
+    <mat-card-title class="text-lg font-semibold text-foreground">Contacts List</mat-card-title>
     <mat-form-field appearance="outline" class="w-1/3">
       <mat-label>Filter table</mat-label>
       <input matInput (keyup)="applyFilter($event)" />
@@ -45,7 +45,7 @@
       <table mat-table [dataSource]="dataSource" class="min-w-full divide-y divide-border" multiTemplateDataRows>
         <ng-container matColumnDef="id">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
-          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.id }}</td>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{{ element.id }}</td>
         </ng-container>
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
@@ -53,7 +53,7 @@
             <div class="flex items-center gap-3">
               <img [src]="element.profileImageKey || 'assets/profile/avatar-default.svg'" class="h-10 w-10 rounded-full object-cover" />
               <div class="flex flex-col">
-                <span class="font-medium text-black">{{ element.firstName + ' ' + element.lastName }}</span>
+                <span class="font-medium text-foreground">{{ element.firstName + ' ' + element.lastName }}</span>
                 <span class="text-xs text-muted-foreground">{{ element.role || element.status }}</span>
               </div>
             </div>
@@ -61,27 +61,27 @@
         </ng-container>
         <ng-container matColumnDef="email">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
-          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.email }}</td>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{{ element.email }}</td>
         </ng-container>
         <ng-container matColumnDef="mobile">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Mobile</th>
-          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.mobile }}</td>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{{ element.mobile }}</td>
         </ng-container>
         <ng-container matColumnDef="dateJoined">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date of Joining</th>
-          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.dateJoined | date:'mediumDate' }}</td>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{{ element.dateJoined | date:'mediumDate' }}</td>
         </ng-container>
         <ng-container matColumnDef="salary">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Salary</th>
-          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.salary | currency }}</td>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{{ element.salary | currency }}</td>
         </ng-container>
         <ng-container matColumnDef="projects">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Projects</th>
-          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.projects.length }}</td>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-foreground">{{ element.projects.length }}</td>
         </ng-container>
         <ng-container matColumnDef="action">
           <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</th>
-          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-foreground">
               <button mat-icon-button (click)="messageContact(element.id)" class="text-muted-foreground hover:text-primary"><mat-icon>chat</mat-icon></button>
               <button mat-icon-button (click)="deleteContact(element.id)" class="text-muted-foreground hover:text-destructive"><mat-icon>delete</mat-icon></button>
           </td>
@@ -99,13 +99,13 @@
             <div class="overflow-hidden" [@detailExpand]="element === expandedElement() ? 'expanded' : 'collapsed'">
               <!-- <div class="bg-muted p-6 rounded-lg m-4 shadow-inner"></div> -->
               <div class="p-6 rounded-lg m-4 shadow-inner">
-                <div class="flex flex-col gap-2 text-sm text-black">
+                <div class="flex flex-col gap-2 text-sm text-foreground">
                   <p class="font-medium text-muted-foreground">Address:</p>
-                  <p class="text-black">{{ element.address.line1 }}, {{ element.address.city }} {{ element.address.state }} {{ element.address.zip }}, {{ element.address.country }}</p>
+                  <p class="text-foreground">{{ element.address.line1 }}, {{ element.address.city }} {{ element.address.state }} {{ element.address.zip }}, {{ element.address.country }}</p>
                   <p class="font-medium text-muted-foreground">Emergency Contact:</p>
-                  <p class="text-black">{{ element.emergencyContact.name }} - {{ element.emergencyContact.phone }}</p>
+                  <p class="text-foreground">{{ element.emergencyContact.name }} - {{ element.emergencyContact.phone }}</p>
                   <p class="font-medium text-muted-foreground">Vehicle:</p>
-                  <p class="text-black">{{ element.vehicle.make }} {{ element.vehicle.model }} ({{ element.vehicle.year }})</p>
+                  <p class="text-foreground">{{ element.vehicle.make }} {{ element.vehicle.model }} ({{ element.vehicle.year }})</p>
                   <!-- Add more details as needed -->
                 </div>
               </div>

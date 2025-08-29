@@ -1,123 +1,8 @@
-@import 'tailwindcss';
+/* style.css - Global Styles for App Layout, Animations, Colors, Themes */
 
-@plugin "@tailwindcss/forms";
-@plugin "@tailwindcss/typography";
-@plugin "tailwind-scrollbar";
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-  --font-*: initial;
-  --font-inter: Inter, system-ui, sans-serif;
-  --font-roboto: Roboto, system-ui, sans-serif;
-
-  --animate-wiggle: wiggle 1s ease-in-out infinite;
-  --animate-fade-in-down: fade-in-down 0.3s ease-out;
-  --animate-fade-out-down: fade-out-down 0.3s ease-out;
-  --animate-fade-in-up: fade-in-up 0.3s ease-out;
-  --animate-fade-out-up: fade-out-up 0.3s ease-out;
-
-  --shadow-custom: 0px 0px 50px 0px rgb(82 63 105 / 15%);
-
-  --color-border: var(--border);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-
-  --color-soft-blue-50: oklch(0.977 0.013 236.62); /* Light soft blue for accents */
-  --color-soft-blue-100: oklch(0.929 0.026 236.62); /* Extended for backgrounds */
-
-  @keyframes wiggle {
-    0%, 100% {
-      transform: rotate(-3deg);
-    }
-    50% {
-      transform: rotate(3deg);
-    }
-  }
-
-  @keyframes fade-in-down {
-    0% {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes fade-out-down {
-    from {
-      opacity: 1;
-      transform: translateY(0px);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-  }
-
-  @keyframes fade-in-up {
-    0% {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    100% {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes fade-out-up {
-    from {
-      opacity: 1;
-      transform: translateY(0px);
-    }
-    to {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-  }
-}
-
-@utility container {
-  padding-inline: 1rem;
-
-  @media (width >= theme(--breakpoint-sm)) {
-    padding-inline: 2rem;
-  }
-
-  @media (width >= theme(--breakpoint-lg)) {
-    padding-inline: 4rem;
-  }
-
-  @media (width >= theme(--breakpoint-xl)) {
-    padding-inline: 5rem;
-  }
-
-  @media (width >= theme(--breakpoint-2xl)) {
-    padding-inline: 6rem;
-  }
-}
-
-@utility equal-row-grid {
-  display: grid;
-  grid-auto-rows: minmax(0, 1fr);
-}
-
-/* Tailwind v4 border color compatibility */
+/* =====================================================================
+ * 1. RESETS & NORMALIZATION
+ * ===================================================================== */
 @layer base {
   *, ::after, ::before, ::backdrop, ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
@@ -125,12 +10,259 @@
 
   body {
     font-family: var(--font-inter);
-    background-color: var(--color-soft-blue-50); /* Soft blue background for light mode */
+    background-color: var(--background);
+  }
+}
+
+/* =====================================================================
+ * 2. PLUGINS & IMPORTS
+ * ===================================================================== */
+@import 'tailwindcss';
+
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+@plugin "tailwind-scrollbar";
+
+/* =====================================================================
+ * 3. CUSTOM VARIANTS
+ * ===================================================================== */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =====================================================================
+ * 4. THEME DEFINITIONS (FONTS, ANIMATIONS, SHADOWS, COLORS)
+ * ===================================================================== */
+@theme {
+  /* Fonts */
+  --font-*: initial;
+  --font-inter: Inter, system-ui, sans-serif;
+  --font-roboto: Roboto, system-ui, sans-serif;
+
+  /* Animations */
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+  --animate-fade-in-down: fade-in-down 0.3s ease-out;
+  --animate-fade-out-down: fade-out-down 0.3s ease-out;
+  --animate-fade-in-up: fade-in-up 0.3s ease-out;
+  --animate-fade-out-up: fade-out-up 0.3s ease-out;
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
   }
 
-  .dark body {
-    background-color: var(--color-soft-blue-100); /* Darker soft blue for dark mode */
+  @keyframes fade-in-down {
+    0% { opacity: 0; transform: translateY(-10px); }
+    100% { opacity: 1; transform: translateY(0); }
   }
+
+  @keyframes fade-out-down {
+    from { opacity: 1; transform: translateY(0px); }
+    to { opacity: 0; transform: translateY(10px); }
+  }
+
+  @keyframes fade-in-up {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fade-out-up {
+    from { opacity: 1; transform: translateY(0px); }
+    to { opacity: 0; transform: translateY(10px); }
+  }
+
+  /* Shadows */
+  --shadow-custom: 0px 0px 50px 0px rgb(82 63 105 / 15%);
+
+  /* Color Vars Mapping */
+  --color-border: var(--border);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+}
+
+@layer base {
+  /* Light Theme (Base) */
+  :root {
+    --background: theme(colors.gray.200); /* Second bg: main layout/container */
+    --foreground: theme(colors.gray.900); /* Text */
+    --card: theme(colors.gray.400); /* Main bg: header/sidebar/footer/cards */
+    --card-foreground: theme(colors.gray.900); /* Text on cards */
+    --primary: theme(colors.indigo.500); /* Buttons/links/hovers */
+    --primary-foreground: #FFFFFF; /* Text on primary */
+    --muted: theme(colors.gray.100); /* Muted bg */
+    --muted-foreground: theme(colors.gray.600); /* Secondary: borders/icons */
+    --destructive: theme(colors.red.600); /* Errors */
+    --destructive-foreground: #FFFFFF;
+    --border: theme(colors.gray.600); /* Borders */
+    --secondary: theme(colors.gray.300); /* Cancel/secondary buttons */
+    --secondary-foreground: theme(colors.gray.900); /* Text on secondary */
+  }
+
+  /* Dark Theme (Inverted) */
+  .dark {
+    --background: theme(colors.gray.800);
+    --foreground: #FFFFFF;
+    --card: theme(colors.gray.600);
+    --card-foreground: #FFFFFF;
+    --primary: theme(colors.indigo.300);
+    --primary-foreground: theme(colors.gray.900);
+    --muted: theme(colors.gray.900);
+    --muted-foreground: theme(colors.gray.400);
+    --destructive: theme(colors.red.300);
+    --destructive-foreground: theme(colors.gray.900);
+    --border: theme(colors.gray.400);
+    --secondary: theme(colors.gray.700);
+    --secondary-foreground: #FFFFFF;
+  }
+
+  /* System Preference Auto-Dark */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --background: theme(colors.gray.800);
+      --foreground: #FFFFFF;
+      --card: theme(colors.gray.600);
+      --card-foreground: #FFFFFF;
+      --primary: theme(colors.indigo.300);
+      --primary-foreground: theme(colors.gray.900);
+      --muted: theme(colors.gray.900);
+      --muted-foreground: theme(colors.gray.400);
+      --destructive: theme(colors.red.300);
+      --destructive-foreground: theme(colors.gray.900);
+      --border: theme(colors.gray.400);
+      --secondary: theme(colors.gray.700);
+      --secondary-foreground: #FFFFFF;
+    }
+  }
+
+  /* Custom Themes (like examples) */
+  :root[data-theme='blue'] {
+    --primary: #2490FF;
+  }
+
+  .dark[data-theme='blue'] {
+    --background: #02080F;
+    --foreground: #F8FAFC;
+    --card: #0B1117;
+    --card-foreground: #F8FAFC;
+    --primary-foreground: #0F1729;
+    --muted: #1E293B;
+    --muted-foreground: #94A3B8;
+    --border: #1E293B;
+    --secondary: #1E293B;
+    --secondary-foreground: #F8FAFC;
+  }
+
+  :root[data-theme='violet'] {
+    --primary: #6E56CF;
+  }
+
+  .dark[data-theme='violet'] {
+    --background: #060815;
+    --foreground: #F6F8FB;
+    --card: #0B0F1A;
+    --card-foreground: #F6F8FB;
+    --primary-foreground: #F6F8FB;
+    --muted: #232B3D;
+    --muted-foreground: #A1A8BF;
+    --border: #232B3D;
+    --secondary: #232B3D;
+    --secondary-foreground: #F6F8FB;
+  }
+
+  :root[data-theme='red'] {
+    --primary: #CC0033;
+  }
+
+  .dark[data-theme='red'] {
+    --background: #0C0409;
+    --foreground: #FAF9F9;
+    --card: #140B10;
+    --card-foreground: #FAF9F9;
+    --primary-foreground: #FFE5E5;
+    --muted: #292024;
+    --muted-foreground: #A89E9E;
+    --border: #292024;
+    --secondary: #292024;
+    --secondary-foreground: #FAF9F9;
+  }
+
+  :root[data-theme='orange'] {
+    --primary: #EA580C;
+  }
+
+  .dark[data-theme='orange'] {
+    --background: #0C0A09;
+    --foreground: #FAFAF9;
+    --card: #141110;
+    --card-foreground: #FAFAF9;
+    --primary-foreground: #FAFAF9;
+    --muted: #292524;
+    --muted-foreground: #A8A29E;
+    --border: #292524;
+    --secondary: #292524;
+    --secondary-foreground: #FAFAF9;
+  }
+
+  :root[data-theme='yellow'] {
+    --primary: #FACC15;
+  }
+
+  .dark[data-theme='yellow'] {
+    --background: #0C0A09;
+    --foreground: #FAFAF9;
+    --card: #141110;
+    --card-foreground: #FAFAF9;
+    --primary: #FACC15;
+    --primary-foreground: #422006;
+    --muted: #292524;
+    --muted-foreground: #A8A29E;
+    --border: #292524;
+    --secondary: #292524;
+    --secondary-foreground: #FAFAF9;
+  }
+
+  :root[data-theme='green'] {
+    --primary: #22C55E;
+  }
+
+  .dark[data-theme='green'] {
+    --background: #0A0C09;
+    --foreground: #F9FAF9;
+    --card: #101411;
+    --card-foreground: #F9FAF9;
+    --primary: #22C55E;
+    --primary-foreground: #052E16;
+    --muted: #242925;
+    --muted-foreground: #A2A89E;
+    --border: #242925;
+    --secondary: #242925;
+    --secondary-foreground: #F9FAF9;
+  }
+}
+
+/* =====================================================================
+ * 5. UTILITIES & CUSTOM CLASSES
+ * ===================================================================== */
+@utility container {
+  padding-inline: 1rem;
+
+  @media (width >= theme(--breakpoint-sm)) { padding-inline: 2rem; }
+  @media (width >= theme(--breakpoint-lg)) { padding-inline: 4rem; }
+  @media (width >= theme(--breakpoint-xl)) { padding-inline: 5rem; }
+  @media (width >= theme(--breakpoint-2xl)) { padding-inline: 6rem; }
+}
+
+@utility equal-row-grid {
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
 }
 
 @utility dropdown-content {
@@ -147,125 +279,70 @@
   }
 }
 
-@layer base {
-  :root {
-    --background: #E5E7EB; /* gray-200 */
-    --foreground: #111827; /* gray-900 */
-    --card: #FFFFFF; /* white for cards in light */
-    --card-foreground: #111827;
-    --primary: #6366F1; /* indigo-500 */
-    --primary-foreground: #FFFFFF;
-    --muted: #F3F4F6; /* gray-100 */
-    --muted-foreground: #4B5563; /* gray-600 */
-    --destructive: #DC2626; /* red-600 */
-    --destructive-foreground: #FFFFFF;
-    --border: #D1D5DB; /* gray-300 for softer borders */
-  }
-
-  .dark {
-    --background: #1F2937; /* gray-800 */
-    --foreground: #FFFFFF;
-    --card: #374151; /* gray-700 for dark cards */
-    --card-foreground: #FFFFFF;
-    --primary: #A5B4FC; /* indigo-300 */
-    --primary-foreground: #111827;
-    --muted: #111827; /* gray-900 */
-    --muted-foreground: #9CA3AF; /* gray-400 */
-    --destructive: #FCA5A5; /* red-300 */
-    --destructive-foreground: #111827;
-    --border: #4B5563; /* gray-600 */
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme]) {
-      --background: #1F2937;
-      --foreground: #FFFFFF;
-      --card: #374151;
-      --card-foreground: #FFFFFF;
-      --primary: #A5B4FC;
-      --primary-foreground: #111827;
-      --muted: #111827;
-      --muted-foreground: #9CA3AF;
-      --destructive: #FCA5A5;
-      --destructive-foreground: #111827;
-      --border: #4B5563;
-    }
-  }
-
-  /* Theme extensions for soft blue UI */
-  :root[data-theme='blue'] {
-    --primary: #2490FF;
-    --background: var(--color-soft-blue-50);
-  }
-
-  .dark[data-theme='blue'] {
-    --background: #02080F;
-    --foreground: #F8FAFC;
-    --card: #0B1117;
-    --card-foreground: #F8FAFC;
-    --primary-foreground: #0F1729;
-    --muted: #1E293B;
-    --muted-foreground: #94A3B8;
-    --border: #1E293B;
-  }
-
-  /* Other themes remain as provided */
-}
-
-/** Scroll bar **/
+/* Scrollbar Support */
 @supports selector(::-webkit-scrollbar) {
   .supports-scrollbars\:pr-2 {
     padding-right: 0.5rem;
   }
 }
 
-/** Custom Forms Overrides for Material + Tailwind **/
-[type='text'],
-[type='email'],
-[type='url'],
-[type='password'],
-[type='number'],
-[type='date'],
-[type='datetime-local'],
-[type='month'],
-[type='search'],
-[type='tel'],
-[type='time'],
-[type='week'],
-[multiple],
-textarea,
-select {
-  @apply w-full rounded-full border border-border bg-background px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all;
-}
-
-[type='checkbox'],
-[type='radio'] {
-  @apply h-4 w-4 rounded border-border bg-background checked:border-primary checked:bg-primary focus:ring-2 focus:ring-primary/50;
-}
-
-.mat-mdc-card {
-  @apply !rounded-xl !shadow-custom; /* Override Material card for custom shadow */
-}
-
-.mat-mdc-table {
-  @apply !bg-transparent; /* Ensure no default bg conflict */
-}
-
-.mat-mdc-row {
-  @apply border-b border-border last:border-0;
-}
-
-.mat-mdc-header-row {
-  @apply bg-muted/50;
-}
-
-.mat-mdc-paginator {
-  @apply bg-card border-t border-border text-muted-foreground px-4 py-2;
-}
-
+/* =====================================================================
+ * 6. COMPONENT-SPECIFIC STYLES & OVERRIDES
+ * ===================================================================== */
 @layer components {
+  /* Custom Forms */
+  [type='text'],
+  [type='email'],
+  [type='url'],
+  [type='password'],
+  [type='number'],
+  [type='date'],
+  [type='datetime-local'],
+  [type='month'],
+  [type='search'],
+  [type='tel'],
+  [type='time'],
+  [type='week'],
+  [multiple],
+  textarea,
+  select {
+    @apply w-full rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all;
+  }
+
+  [type='checkbox'],
+  [type='radio'] {
+    @apply h-4 w-4 rounded border-border bg-background checked:border-primary checked:bg-primary focus:ring-2 focus:ring-primary/50;
+  }
+
+  /* Angular Material Overrides */
+  /* .mat-mdc-card {
+    --mdc-filled-card-container-color: white;
+    @apply text-card-foreground rounded-xl shadow-custom;
+  }
+
+  .dark .mat-mdc-card {
+    --mdc-filled-card-container-color: theme(colors.gray.600); 
+  }
+
+  .mat-mdc-table {
+    @apply bg-transparent;
+  }
+
+  .mat-mdc-row {
+    @apply border-b border-border last:border-0;
+  }
+
+  .mat-mdc-header-row {
+    @apply bg-muted/50;
+  }
+
+  .mat-mdc-paginator {
+    @apply bg-card border-t border-border text-muted-foreground px-4 py-2;
+  } */
+
+  /* Chat Components */
   .message-input {
-    @apply sticky bottom-0 left-0 right-0 border-t border-border bg-background text-foreground z-10;
+    @apply sticky bottom-0 left-0 right-0 border-t border-border bg-card text-foreground z-10 p-4;
   }
 
   .chat-messages {
@@ -273,7 +350,7 @@ select {
   }
 
   .chat-item-hover {
-    @apply flex items-center justify-between gap-3 p-4 cursor-pointer hover:bg-card/50 dark:hover:bg-card/80;
+    @apply flex items-center justify-between gap-3 p-4 cursor-pointer hover:bg-muted/50 dark:hover:bg-muted/80 rounded-md;
   }
 
   .chat-item-text {
@@ -284,12 +361,30 @@ select {
     @apply hidden group-hover:flex text-destructive hover:text-destructive/80 transition-opacity opacity-100 ml-2 dark:text-destructive-foreground;
   }
 
-  /* New: Summary pill for colored summaries */
   .summary-pill {
-    @apply px-4 py-2 rounded-full font-medium text-sm;
+    @apply px-4 py-2 rounded-full font-medium text-sm bg-muted/50 text-muted-foreground;
+  }
+
+  .user-profile {
+    @apply mb-4 p-4 bg-card rounded-lg shadow-custom border border-border;
+  }
+
+  .chat-search {
+    @apply mb-4;
+  }
+
+  .chat-list {
+    @apply overflow-y-auto;
+  }
+
+  .chat-header {
+    @apply bg-card p-4 border-b border-border flex items-center gap-3 shadow-sm;
   }
 }
 
+/* =====================================================================
+ * 7. LOCAL/INLINE STYLES (Non-Tailwind)
+ * ===================================================================== */
 .example-element-row td {
   border-bottom-width: 0;
 }

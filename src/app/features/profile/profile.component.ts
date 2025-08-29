@@ -13,21 +13,20 @@ import { ContactPrefsCardComponent } from './contact-prefs-card.component';
 import { PaymentCardComponent } from './payment-card.component';
 import { EmergencyContactCardComponent } from './emergency-contact-card.component';
 import { VehicleCardComponent } from './vehicle-card.component';
-
+  
 @Component({
   selector: 'app-profile',
   standalone: true,
   imports: [CommonModule, PersonalInfoCardComponent, AddressCardComponent, ContactPrefsCardComponent, PaymentCardComponent, EmergencyContactCardComponent, VehicleCardComponent],
   templateUrl: './profile.component.html',
 })
-export class Profile implements OnInit {
+export class ProfileComponent implements OnInit {
   loading = signal(true);
-
+  
   constructor(private userService: UserService) {}
-
+  
   async ngOnInit() {
-  await this.userService.load();
-  this.loading.set(false);
-}
-
+    await this.userService.load();
+    this.loading.set(false);
+  }
 }
