@@ -22,6 +22,8 @@ export class MessageService {
   private searchQuery = signal<string>('');
   private selectedChannel = signal<string | null>(null);
 
+  private userCache = new Map<string, Schema['User']['type']>();
+
   getRecentChats() { return this.recentChats.asReadonly(); }
   getMessages() { return this.messages.asReadonly(); }
   getSearchQuery() { return this.searchQuery.asReadonly(); }
@@ -47,12 +49,12 @@ export class MessageService {
   }
 
   async getUserById(userId: string): Promise<Schema['User']['type']> {
-    const { data } = await this.client.models.User.list({ filter: { owner: { eq: userId } } });
-    const user = data[0];
-    if (!user) throw new Error('User not found');
-    return user;
-  }
-
+  if (this.userCache.has(userId)) return this.userCache.get(userId)!;
+  const { data } = await this.client.models.User.get({ id: userId });
+  if (!data) throw new Error('User not found');
+  this.userCache.set(userId, data);
+  return data;
+}
   async deleteMessage(id: string): Promise<void> {
     await this.client.models.Message.delete({ id });
   }
@@ -89,23 +91,30 @@ export class MessageService {
     }
   }
 
-  async loadMessages(channelId: string) {
-    try {
-      const messages = await this.fetchMessages(channelId);
-      const currentUserId = await this.getCurrentUserId();
-      const mapped: Message[] = messages.map(msg => ({
-        text: msg.content,
-        sender: msg.senderId,
-        isSelf: msg.senderId === currentUserId,
-        timestamp: new Date(msg.timestamp),
-        read: msg.readBy?.includes(currentUserId)
-      }));
-      this.messages.set(mapped);
-    } catch (error) {
-      console.error('Load messages error:', error);
-      this.messages.set([]); // Fallback
-    }
+
+async loadMessages(channelId: string) {
+  try {
+    const messages = await this.fetchMessages(channelId);
+    const currentUserId = await this.getCurrentUserId();
+    const mapped: Message[] = await Promise.all(
+      messages.map(async (msg) => {
+        const sender = await this.getUserById(msg.senderId); 
+        return {
+          text: msg.content,
+          sender: `${sender.firstName} ${sender.lastName}`,
+          senderAvatar: await this.getAvatarUrl(sender.profileImageKey || ''),
+          isSelf: msg.senderId === currentUserId,
+          timestamp: new Date(msg.timestamp),
+          read: msg.readBy?.includes(currentUserId),
+        };
+      })
+    );
+    this.messages.set(mapped);
+  } catch (error) {
+    console.error('Load messages error:', error);
+    this.messages.set([]); 
   }
+}
 
   async searchChats(query: string): Promise<ChatItem[]> {
     try {

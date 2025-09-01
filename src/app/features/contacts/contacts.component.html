@@ -25,20 +25,29 @@
     </div>
     <!-- Search bar -->
     <div class="mb-4 flex items-center gap-2">
-      <input type="text" [(ngModel)]="searchQuery" placeholder="Search by name or email..." class="w-3/4 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all">
-      <button (click)="performSearch()" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">Search</button>
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="Search by name or email..."
+        class="w-3/4 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground placeholder-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+      />
+      <button (click)="performSearch()" class="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+        Search
+      </button>
     </div>
-    <!-- Search results as detailed list -->
+    <!-- Search results -->
     <div *ngIf="searchResults.length > 0" class="mb-4">
       <h4 class="text-sm font-semibold text-foreground">Search Results</h4>
       <ul class="space-y-2">
         <li *ngFor="let result of searchResults" class="bg-card p-4 rounded-md">
           <div class="flex items-center gap-3">
-            <img *ngIf="result.profileImageKey" [src]="result.imageUrl || 'assets/profile/avatar-default.svg'" class="w-10 h-10 rounded-full" alt="Profile">
+            <img *ngIf="result.profileImageKey" [src]="result.imageUrl || 'assets/profile/avatar-default.svg'" class="w-10 h-10 rounded-full" alt="Profile" />
             <div class="flex-grow">
               <span class="font-medium text-foreground">{{ result.firstName }} {{ result.lastName }}</span>
               <span class="text-xs text-muted-foreground block">{{ result.username }}</span>
               <span class="text-sm text-foreground block">{{ result.email }}</span>
+              <span class="text-sm text-muted-foreground block">{{ result.status }}</span>
             </div>
             <button (click)="addContact(result)" class="text-primary hover:text-primary/80">
               <svg-icon [src]="getIconPath('plus')" svgClass="h-5 w-5"></svg-icon>
@@ -48,7 +57,7 @@
       </ul>
     </div>
   </div>
-  <!-- Second Card: Added Contacts Table -->
+  <!-- Added Contacts Table -->
   <div class="rounded-lg bg-card px-8 py-8">
     <h3 class="text-md font-bold text-foreground mb-4">Added Contacts</h3>
     <div class="relative overflow-x-auto">
@@ -67,7 +76,8 @@
             contacts-table-item
             [contact]="contact"
             (deleted)="onDelete($event)"
-            class="border-b border-dashed border-border hover:bg-card"></tr>
+            class="border-b border-dashed border-border hover:bg-card"
+          ></tr>
         </tbody>
       </table>
     </div>

@@ -1,5 +1,5 @@
 // src/app/features/messages/chatlayout/user-profile.component.ts
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user.service';
 
@@ -9,7 +9,12 @@ import { UserService } from '../../../core/services/user.service';
   imports: [CommonModule],
   templateUrl: './user-profile.component.html',
 })
-export class UserProfileComponent {
+
+export class UserProfileComponent implements OnInit {
   private userService = inject(UserService);
-  user = this.userService.user$;  
+  user = this.userService.user$;
+
+  async ngOnInit() {
+    await this.userService.load(); // Ensure user data is loaded
+  }
 }

@@ -1,3 +1,4 @@
+// src/app/app.config.ts
 /*
 Application config: router, animations, HTTP, SVG icon loader, icon preloader, and Amplify initialization
 */
@@ -11,7 +12,6 @@ import { provideIconPreload } from './app.icons';
 import { Amplify } from 'aws-amplify';
 import outputs from '../../amplify_outputs.json'; // Adjust path as needed
 
-// Initialize Amplify
 export function initializeAmplify() {
   return () => Amplify.configure(outputs);
 }
@@ -27,7 +27,7 @@ export const appConfig: ApplicationConfig = {
     {
       provide: APP_INITIALIZER,
       useFactory: initializeAmplify,
-      multi: true
-    }
-  ]
+      multi: true,
+    },
+  ],
 };

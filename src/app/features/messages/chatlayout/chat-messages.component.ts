@@ -1,8 +1,15 @@
+// src/app/features/messages/chatlayout/chat-messages.component.ts
 import { Component, input } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { DatePipe } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 
-interface Message { text: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
+interface Message {
+  text: string;
+  sender: string;
+  senderAvatar?: string;
+  isSelf?: boolean;
+  timestamp?: Date;
+  read?: boolean;
+}
 
 @Component({
   selector: 'app-chat-messages',
@@ -12,7 +19,6 @@ interface Message { text: string; isSelf?: boolean; timestamp?: Date; read?: boo
 })
 export class ChatMessagesComponent {
   messages = input<Message[]>([]);
-
   trackByTimestamp(index: number, msg: Message): Date | undefined {
     return msg.timestamp;
   }
