@@ -26,6 +26,12 @@ export class MessageService {
   setSearchQuery(value: string) { this.searchQuery.set(value); }
   setSelectedChannel(id: string) { this.selectedChannel.set(id); }
 
+  private handleErrors(errors?: { message: string }[], message: string = 'Operation failed'): void {
+    if (errors?.length) {
+      throw new Error(`${message}: ${errors.map(e => e.message).join(', ')}`);
+    }
+  }
+
   async getCurrentUserId(): Promise<string> {
     const session = await fetchAuthSession();
     console.log('Auth session:', session);
@@ -45,16 +51,14 @@ export class MessageService {
     }
     const { data: userChannels, errors } = await this.client.models.UserChannel.list({ filter: { userId: { eq: userId } } });
     console.log('User channels response:', { userChannels, errors });
-    if (errors) {
-      throw new Error(`List user channels failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'List user channels failed');
     const channelIds = userChannels.map(uc => uc.channelId);
     const channels: Schema['Channel']['type'][] = [];
     for (const id of channelIds) {
       const { data, errors: getErrors } = await this.client.models.Channel.get({ id });
       console.log('Channel get response:', { id, data, errors: getErrors });
-      if (getErrors) {
-        console.warn(`Get channel failed for ID ${id}: ${getErrors.map((e: { message: string }) => e.message).join(', ')}`);
+      if (getErrors?.length) {
+        console.warn(`Get channel failed for ID ${id}: ${getErrors.map(e => e.message).join(', ')}`);
         continue;
       }
       if (data && data.name !== undefined && data.name !== null) {
@@ -72,9 +76,7 @@ export class MessageService {
     }
     const { data: userChannels, errors } = await this.client.models.UserChannel.list({ filter: { channelId: { eq: channelId } } });
     console.log('Other user channels response:', { userChannels, errors });
-    if (errors) {
-      throw new Error(`List user channels failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'List user channels failed');
     const userIds = userChannels.map(uc => uc.userId);
     return userIds.find(id => id !== currentUserId) || '';
   }
@@ -88,9 +90,7 @@ export class MessageService {
     }
     const { data, errors } = await this.client.models.User.get({ id: userId });
     console.log('User by ID response:', { userId, data, errors });
-    if (errors) {
-      throw new Error(`Get user failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'Get user failed');
     if (!data) throw new Error('User not found');
     this.userCache.set(userId, data);
     return data;
@@ -104,9 +104,7 @@ export class MessageService {
     }
     const { errors } = await this.client.models.Message.delete({ id });
     console.log('Delete message response:', { id, errors });
-    if (errors) {
-      throw new Error(`Delete message failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'Delete message failed');
   }
 
   async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
@@ -120,9 +118,7 @@ export class MessageService {
       { sortDirection: 'DESC', limit: 1 }
     );
     console.log('Last message response:', { channelId, data, errors });
-    if (errors) {
-      throw new Error(`List messages failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'List messages failed');
     return data?.[0] ?? null;
   }
 
@@ -213,9 +209,7 @@ export class MessageService {
     const currentUserId = await this.getCurrentUserId();
     const { data, errors } = await this.client.models.User.list();
     console.log('Get contacts response:', { data, errors });
-    if (errors) {
-      throw new Error(`List users failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'List users failed');
     return data.filter(user => user.id !== currentUserId);
   }
 
@@ -230,28 +224,22 @@ export class MessageService {
       filter: { or: [{ userId: { eq: currentUserId } }, { userId: { eq: contactId } }] },
     });
     console.log('User channels for channel creation:', { userChannels, errors });
-    if (errors) {
-      throw new Error(`List user channels failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'List user channels failed');
     const potentialChannel = userChannels.reduce((acc: Record<string, number>, uc: Schema['UserChannel']['type']) => {
       acc[uc.channelId] = (acc[uc.channelId] || 0) + 1;
       return acc;
     }, {});
     const channelId = Object.keys(potentialChannel).find(id => potentialChannel[id] === 2);
     if (channelId) {
-      const { data, errors } = await this.client.models.Channel.get({ id: channelId });
-      console.log('Existing channel response:', { channelId, data, errors });
-      if (errors) {
-        throw new Error(`Get channel failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-      }
+      const { data, errors: getErrors } = await this.client.models.Channel.get({ id: channelId });
+      console.log('Existing channel response:', { channelId, data, errors: getErrors });
+      this.handleErrors(getErrors, 'Get channel failed');
       if (!data) throw new Error('Channel not found');
       return data;
     }
-    const { data: newChannel, errors } = await this.client.models.Channel.create({ name: `Chat with ${contactId}` });
-    console.log('Create channel response:', { newChannel, errors });
-    if (errors) {
-      throw new Error(`Create channel failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({ name: `Chat with ${contactId}` });
+    console.log('Create channel response:', { newChannel, errors: createErrors });
+    this.handleErrors(createErrors, 'Create channel failed');
     if (!newChannel) throw new Error('Failed to create channel');
     await this.client.models.UserChannel.create({ userId: currentUserId, channelId: newChannel.id });
     await this.client.models.UserChannel.create({ userId: contactId, channelId: newChannel.id });
@@ -269,9 +257,7 @@ export class MessageService {
       filter: { channelId: { eq: channelId } },
     });
     console.log('Fetch messages response:', { channelId, messages, errors });
-    if (errors) {
-      throw new Error(`List messages failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'List messages failed');
     for (const msg of messages) {
       if (!msg.readBy?.includes(currentUserId)) {
         const { errors: updateErrors } = await this.client.models.Message.update({
@@ -279,9 +265,7 @@ export class MessageService {
           readBy: [...(msg.readBy || []), currentUserId],
         });
         console.log('Update message readBy response:', { id: msg.id, errors: updateErrors });
-        if (updateErrors) {
-          throw new Error(`Update message failed: ${updateErrors.map((e: { message: string }) => e.message).join(', ')}`);
-        }
+        this.handleErrors(updateErrors, 'Update message failed');
       }
     }
     return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -316,9 +300,7 @@ export class MessageService {
       readBy: [currentUserId],
     });
     console.log('Send message response:', { channelId, content, errors });
-    if (errors) {
-      throw new Error(`Create message failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-    }
+    this.handleErrors(errors, 'Create message failed');
   }
 
   async uploadAttachment(file: File): Promise<string> {
@@ -372,15 +354,11 @@ export class MessageService {
         filter: { userId: { eq: userId }, channelId: { eq: channelId } },
       });
       console.log('User channels for deletion:', { userChannels, errors });
-      if (errors) {
-        throw new Error(`List user channels failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
-      }
+      this.handleErrors(errors, 'List user channels failed');
       if (userChannels.length > 0) {
         const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ id: userChannels[0].id });
         console.log('Delete user channel response:', { id: userChannels[0].id, errors: deleteErrors });
-        if (deleteErrors) {
-          throw new Error(`Delete user channel failed: ${deleteErrors.map((e: { message: string }) => e.message).join(', ')}`);
-        }
+        this.handleErrors(deleteErrors, 'Delete user channel failed');
       }
       await this.loadRecentChats();
     } catch (error) {
