@@ -136,6 +136,6 @@ describe('Contacts Component', () => {
 
     cy.visit('/contacts');
     cy.wait('@authRequestFailed').its('response.statusCode').should('eq', 401);
-    cy.get('.error-message').should('contain', 'Failed to load user'); // Assumes error display in UI
+    cy.get('.error-message').should('contain', 'Failed to load user');
   });
 });

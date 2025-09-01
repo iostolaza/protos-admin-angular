@@ -1,0 +1,123 @@
+<!-- =====================================================================
+ * CONTACTS COMPONENT TEMPLATE
+ * =====================================================================
+ * Contacts view: Cards bg-card p-6 (consistent with profile p-10 but table needs less), summary pills bg-muted/50 etc.
+ * Updated: Summary card bg-card (from bg-background), content p-6, table cells px-6 py-4 text-foreground.
+ * Buttons bg-primary text-primary-foreground hover:bg-primary/90.
+ * Expanded bg-muted p-6 rounded-lg m-4 shadow-inner (matching profile inner styles).
+ * References:
+ * - Material table: https://material.angular.io/components/table/overview.
+ * Iteration 1: Adjust padding to p-10 for content/header.
+ * Iteration 2: Form-field w-full, button rounded-full.
+ * Iteration 3: Font-medium for p in expanded, consistent text-muted-foreground for labels.
+ * Best: Hover transition-colors cursor-pointer for rows.
+ -->
+ <mat-card class="mb-4 bg-white rounded-xl">
+<!-- <mat-card class="mb-4 bg-card text-card-foreground rounded-xl shadow-custom"> -->
+  <mat-card-header class="px-6 py-4 border-b border-border">
+    <mat-card-title class="text-lg font-semibold text-blue-600">Contacts Summary</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="p-10 flex flex-wrap items-center justify-between gap-4">
+    <div class="px-4 py-2 bg-muted/50 text-muted-foreground rounded-full font-medium">Total: {{ totalContacts() }}</div>
+    <div class="px-4 py-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-full font-medium">Online: {{ onlineContacts() }}</div>
+    <div class="px-4 py-2 bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full font-medium">Recent (last 10 days): {{ recentContacts() }}</div>
+    <div class="ml-auto flex items-center gap-2 w-full sm:w-auto">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Search to add from pool</mat-label>
+        <input matInput [ngModel]="addSearch()" (ngModelChange)="addSearch.set($event)" (keyup.enter)="addContact(addSearch())" />
+      </mat-form-field>
+      <button mat-raised-button color="primary" class="rounded-full bg-primary text-primary-foreground hover:bg-primary/90" (click)="addContact(addSearch())">Add Contact</button>
+    </div>
+  </mat-card-content>
+</mat-card>
+ 
+<mat-card class="rounded-xl shadow-custom overflow-hidden bg-white">
+<!-- <mat-card class="bg-card text-card-foreground rounded-xl shadow-custom overflow-hidden"> -->
+  <mat-card-header class="px-6 py-4 border-b border-border flex justify-between items-center">
+    <mat-card-title class="text-lg font-semibold text-blue-600">Contacts List</mat-card-title>
+    <mat-form-field appearance="outline" class="w-1/3">
+      <mat-label>Filter table</mat-label>
+      <input matInput (keyup)="applyFilter($event)" />
+    </mat-form-field>
+  </mat-card-header>
+  <mat-card-content class="p-0">
+    <div class="overflow-x-auto">
+      <table mat-table [dataSource]="dataSource" class="min-w-full divide-y divide-border" multiTemplateDataRows>
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">#</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.id }}</td>
+        </ng-container>
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap">
+            <div class="flex items-center gap-3">
+              <img [src]="element.profileImageKey || 'assets/profile/avatar-default.svg'" class="h-10 w-10 rounded-full object-cover" />
+              <div class="flex flex-col">
+                <span class="font-medium text-black">{{ element.firstName + ' ' + element.lastName }}</span>
+                <span class="text-xs text-muted-foreground">{{ element.role || element.status }}</span>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="email">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.email }}</td>
+        </ng-container>
+        <ng-container matColumnDef="mobile">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Mobile</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.mobile }}</td>
+        </ng-container>
+        <ng-container matColumnDef="dateJoined">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date of Joining</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.dateJoined | date:'mediumDate' }}</td>
+        </ng-container>
+        <ng-container matColumnDef="salary">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Salary</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.salary | currency }}</td>
+        </ng-container>
+        <ng-container matColumnDef="projects">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Projects</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">{{ element.projects.length }}</td>
+        </ng-container>
+        <ng-container matColumnDef="action">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Action</th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-sm text-black">
+              <button mat-icon-button (click)="messageContact(element.id)" class="text-muted-foreground hover:text-primary"><mat-icon>chat</mat-icon></button>
+              <button mat-icon-button (click)="deleteContact(element.id)" class="text-muted-foreground hover:text-destructive"><mat-icon>delete</mat-icon></button>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="expand">
+          <th mat-header-cell *matHeaderCellDef class="px-6 py-3 bg-muted text-left text-xs font-medium text-muted-foreground uppercase tracking-wider"></th>
+          <td mat-cell *matCellDef="let element" class="px-6 py-4 whitespace-nowrap text-right">
+            <button mat-icon-button (click)="toggleExpand(element); $event.stopPropagation()" class="text-muted-foreground hover:text-primary">
+              <mat-icon>{{ expandedElement() === element ? 'keyboard_arrow_up' : 'keyboard_arrow_down' }}</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="expandedDetail">
+          <td mat-cell *matCellDef="let element" [attr.colspan]="displayedColumns.length" class="p-0">
+            <div class="overflow-hidden" [@detailExpand]="element === expandedElement() ? 'expanded' : 'collapsed'">
+              <!-- <div class="bg-muted p-6 rounded-lg m-4 shadow-inner"></div> -->
+              <div class="p-6 rounded-lg m-4 shadow-inner">
+                <div class="flex flex-col gap-2 text-sm text-black">
+                  <p class="font-medium text-muted-foreground">Address:</p>
+                  <p class="text-black">{{ element.address.line1 }}, {{ element.address.city }} {{ element.address.state }} {{ element.address.zip }}, {{ element.address.country }}</p>
+                  <p class="font-medium text-muted-foreground">Emergency Contact:</p>
+                  <p class="text-black">{{ element.emergencyContact.name }} - {{ element.emergencyContact.phone }}</p>
+                  <p class="font-medium text-muted-foreground">Vehicle:</p>
+                  <p class="text-black">{{ element.vehicle.make }} {{ element.vehicle.model }} ({{ element.vehicle.year }})</p>
+                  <!-- Add more details as needed -->
+                </div>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+        <!-- <tr mat-header-row *matHeaderRowDef="displayedColumns" class="bg-muted"></tr> -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns" class=" "></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns" (click)="toggleExpand(row)" class="hover:bg-muted/50 transition-colors cursor-pointer"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['expandedDetail']" class="detail-row"></tr>
+      </table>
+    </div>
+    <mat-paginator [pageSizeOptions]="[5, 10, 20, 50]" [pageSize]="5" showFirstLastButtons aria-label="Select page of contacts"></mat-paginator>
+  </mat-card-content>
+</mat-card>

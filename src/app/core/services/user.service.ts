@@ -44,11 +44,14 @@ export class UserService {
       const attributes = await fetchUserAttributes();
       console.log('User attributes:', attributes);
       const email = attributes.email ?? '';
-      const { data, errors } = await client.models.User.list({ filter: { owner: { eq: sub } } });
+      const { data, errors } = await this.client.models.User.list({ filter: { owner: { eq: sub } } });
       console.log('User list response:', { data, errors });
+      if (errors) {
+        throw new Error(`List users failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
+      }
       let userModel: UserModel | null = data[0] || null;
       if (!userModel) {
-        const createResp = await client.models.User.create({
+        const createResp = await this.client.models.User.create({
           username: email.split('@')[0] || 'defaultUser',
           email,
           accessLevel: 'basic',
@@ -123,8 +126,16 @@ export class UserService {
 
   async getAllUsers(): Promise<UserProfile[]> {
     try {
-      const { data, errors } = await client.models.User.list();
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
+      }
+      const { data, errors } = await this.client.models.User.list();
       console.log('All users response:', { data, errors });
+      if (errors) {
+        throw new Error(`List users failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
+      }
       const users = await Promise.all(data.map(async (userModel) => {
         const profile: UserProfile = {
           id: userModel.id,
@@ -173,9 +184,14 @@ export class UserService {
 
   async save(updatedUser: UserProfile) {
     try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
+      }
       console.log('Saving updated User:', updatedUser);
       const { id, firstName, lastName, username, email, accessLevel, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
-      const updateResp = await client.models.User.update({
+      const updateResp = await this.client.models.User.update({
         id,
         firstName,
         lastName,
@@ -200,53 +216,101 @@ export class UserService {
   }
 
   async getPaymentMethods() {
-    const userId = this.user$()?.id;
-    if (userId) {
-      const resp = await client.models.PaymentMethod.list({
-        filter: { userId: { eq: userId } },
-      });
-      console.log('Payment methods response:', resp);
-      return resp.data.map(pm => ({
-        id: pm.id,
-        type: pm.type ?? '',
-        name: pm.name ?? '',
-      }));
+    try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
+      }
+      const userId = this.user$()?.id;
+      if (userId) {
+        const { data, errors } = await this.client.models.PaymentMethod.list({
+          filter: { userId: { eq: userId } },
+        });
+        console.log('Payment methods response:', { data, errors });
+        if (errors) {
+          throw new Error(`List payment methods failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
+        }
+        return data.map(pm => ({
+          id: pm.id,
+          type: pm.type ?? '',
+          name: pm.name ?? '',
+        }));
+      }
+      return [];
+    } catch (error) {
+      console.error('Get payment methods error:', error);
+      return [];
     }
-    return [];
   }
 
   async addPaymentMethod(type: string, name: string) {
-    const userId = this.user$()?.id;
-    if (userId) {
-      console.log('Adding payment method with:', { userId, type, name });
-      const createResp = await client.models.PaymentMethod.create({ userId, type, name });
-      console.log('Add payment method response:', createResp);
-      if (createResp.errors) {
-        throw new Error(`Payment method creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+    try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
       }
+      const userId = this.user$()?.id;
+      if (userId) {
+        console.log('Adding payment method with:', { userId, type, name });
+        const { errors } = await this.client.models.PaymentMethod.create({ userId, type, name });
+        console.log('Add payment method response:', { errors });
+        if (errors) {
+          throw new Error(`Payment method creation failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
+        }
+      }
+    } catch (error) {
+      console.error('Add payment method error:', error);
+      throw error;
     }
   }
 
   async updatePaymentMethod(id: string, type: string, name: string) {
-    console.log('Updating payment method:', { id, type, name });
-    const updateResp = await client.models.PaymentMethod.update({ id, type, name });
-    console.log('Update payment method response:', updateResp);
-    if (updateResp.errors) {
-      throw new Error(`Payment method update failed: ${updateResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+    try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
+      }
+      console.log('Updating payment method:', { id, type, name });
+      const { errors } = await this.client.models.PaymentMethod.update({ id, type, name });
+      console.log('Update payment method response:', { errors });
+      if (errors) {
+        throw new Error(`Payment method update failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
+      }
+    } catch (error) {
+      console.error('Update payment method error:', error);
+      throw error;
     }
   }
 
   async deletePaymentMethod(id: string) {
-    console.log('Deleting payment method:', id);
-    const deleteResp = await client.models.PaymentMethod.delete({ id });
-    console.log('Delete payment method response:', deleteResp);
-    if (updateResp.errors) {
-      throw new Error(`Payment method deletion failed: ${deleteResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+    try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
+      }
+      console.log('Deleting payment method:', id);
+      const deleteResp = await this.client.models.PaymentMethod.delete({ id });
+      console.log('Delete payment method response:', deleteResp);
+      if (deleteResp.errors) {
+        throw new Error(`Payment method deletion failed: ${deleteResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+      }
+    } catch (error) {
+      console.error('Delete payment method error:', error);
+      throw error;
     }
   }
 
   async uploadProfileImage(file: File): Promise<string | null> {
     try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
+      }
       const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/profile.jpg`;
       console.log('Uploading to path:', path({}));
       const uploadTask = uploadData({ path, data: file });

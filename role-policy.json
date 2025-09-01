@@ -1,0 +1,21 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "appsync:GraphQL",
+        "s3:GetObject",
+        "s3:PutObject",
+        "cognito-idp:*",
+        "lambda:InvokeFunction"
+      ],
+      "Resource": [
+        "arn:aws:appsync:us-west-1:381491980392:apis/k4yq5rxwurbq3gotczvoexu4ya",
+        "arn:aws:s3:::amplify-protosadminangula-profileimagesbucket03812-cpomsn2w06jj/*",
+        "arn:aws:cognito-idp:us-west-1:381491980392:userpool/us-west-1_8wc5eQRBW",
+        "arn:aws:lambda:us-west-1:381491980392:function:amplify-protosadminangula-postconfirmationlambda19-VC5ZibwaliXy"
+      ]
+    }
+  ]
+}
