@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "lib": ["es2018", "dom"],
+    "types": ["cypress", "node"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0"
+  },
+  "include": ["**/*.ts"]
+}

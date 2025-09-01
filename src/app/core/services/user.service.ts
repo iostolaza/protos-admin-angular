@@ -1,4 +1,3 @@
-// src/app/core/services/user.service.ts
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/api';
 import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
@@ -29,93 +28,103 @@ export interface UserProfile {
 export class UserService {
   private client = generateClient<Schema>();
   user$ = signal<UserProfile | null>(null);
-
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
 
-async load() {
-  this.loading.set(true);
-  try {
-    const { userId: sub } = await getCurrentUser(); // Fixed to use userId
-    const attributes = await fetchUserAttributes();
-    const email = attributes.email ?? '';
-    const { data } = await client.models.User.list({ filter: { owner: { eq: sub } } });
-    let userModel: UserModel | null = data[0] || null;
-    if (!userModel) {
-      const createResp = await client.models.User.create({
-        username: email.split('@')[0] || 'defaultUser',
-        email,
-        accessLevel: 'basic',
-        firstName: 'First Name',
-        lastName: 'Last Name',
-        address: { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
-        contactPrefs: { email: false, push: false },
-        emergencyContact: { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
-        vehicle: { make: '', model: '', color: '', license: '', year: '' },
-        profileImageKey: '',
-        dateJoined: new Date().toISOString(),
-        salary: 0,
-        mobile: '',
-      });
-      if (createResp.errors) {
-        throw new Error(`User creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+  async load() {
+    this.loading.set(true);
+    try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
       }
-      userModel = createResp.data;
-      console.log('Created new User model:', userModel);
-      if (userModel === null) {
-        throw new Error('User creation returned null data despite no errors.');
+      const { userId: sub, username } = await getCurrentUser();
+      console.log('Current user:', { sub, username });
+      const attributes = await fetchUserAttributes();
+      console.log('User attributes:', attributes);
+      const email = attributes.email ?? '';
+      const { data, errors } = await client.models.User.list({ filter: { owner: { eq: sub } } });
+      console.log('User list response:', { data, errors });
+      let userModel: UserModel | null = data[0] || null;
+      if (!userModel) {
+        const createResp = await client.models.User.create({
+          username: email.split('@')[0] || 'defaultUser',
+          email,
+          accessLevel: 'basic',
+          firstName: 'First Name',
+          lastName: 'Last Name',
+          address: { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
+          contactPrefs: { email: false, push: false },
+          emergencyContact: { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
+          vehicle: { make: '', model: '', color: '', license: '', year: '' },
+          profileImageKey: '',
+          dateJoined: new Date().toISOString(),
+          salary: 0,
+          mobile: '',
+        });
+        console.log('Create user response:', createResp);
+        if (createResp.errors) {
+          throw new Error(`User creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
+        }
+        userModel = createResp.data;
+        console.log('Created new User model:', userModel);
+        if (userModel === null) {
+          throw new Error('User creation returned null data despite no errors.');
+        }
       }
-    }
-    if (userModel) {
-      const profile: UserProfile = {
-        id: userModel.id,
-        firstName: userModel.firstName,
-        lastName: userModel.lastName,
-        username: userModel.username,
-        email: userModel.email,
-        accessLevel: userModel.accessLevel ?? 'basic',
-        address: userModel.address ?? { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
-        contactPrefs: {
-          email: userModel.contactPrefs?.email ?? false,
-          push: userModel.contactPrefs?.push ?? false,
-        },
-        emergencyContact: userModel.emergencyContact ?? { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
-        vehicle: {
-          make: userModel.vehicle?.make ?? '',
-          model: userModel.vehicle?.model ?? '',
-          color: userModel.vehicle?.color ?? '',
-          license: userModel.vehicle?.license ?? '',
-          year: userModel.vehicle?.year ?? '',
-        },
-        profileImageKey: userModel.profileImageKey ?? '',
-      };
-      if (profile.profileImageKey) {
-        try {
-          const { url } = await getUrl({
-            path: profile.profileImageKey,
-            options: { expiresIn: 3600 },
-          });
-          profile.profileImageUrl = url.toString();
-        } catch (err) {
-          console.error('Error getting image URL:', err);
+      if (userModel) {
+        const profile: UserProfile = {
+          id: userModel.id,
+          firstName: userModel.firstName,
+          lastName: userModel.lastName,
+          username: userModel.username,
+          email: userModel.email,
+          accessLevel: userModel.accessLevel ?? 'basic',
+          address: userModel.address ?? { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
+          contactPrefs: {
+            email: userModel.contactPrefs?.email ?? false,
+            push: userModel.contactPrefs?.push ?? false,
+          },
+          emergencyContact: userModel.emergencyContact ?? { name: 'N/A', phone: '000-000-0000', email: 'na@default.com', address: 'N/A' },
+          vehicle: {
+            make: userModel.vehicle?.make ?? '',
+            model: userModel.vehicle?.model ?? '',
+            color: userModel.vehicle?.color ?? '',
+            license: userModel.vehicle?.license ?? '',
+            year: userModel.vehicle?.year ?? '',
+          },
+          profileImageKey: userModel.profileImageKey ?? '',
+        };
+        if (profile.profileImageKey) {
+          try {
+            const { url } = await getUrl({
+              path: profile.profileImageKey,
+              options: { expiresIn: 3600 },
+            });
+            profile.profileImageUrl = url.toString();
+          } catch (err) {
+            console.error('Error getting image URL:', err);
+            profile.profileImageUrl = 'assets/profile/avatar-default.svg';
+          }
+        } else {
           profile.profileImageUrl = 'assets/profile/avatar-default.svg';
         }
-      } else {
-        profile.profileImageUrl = 'assets/profile/avatar-default.svg';
+        console.log('Setting user profile:', profile);
+        this.user$.set(profile);
       }
-      this.user$.set(profile);
+    } catch (err: any) {
+      console.error('Load user error:', err);
+      this.error.set(err.message || 'Failed to load user');
+    } finally {
+      this.loading.set(false);
     }
-  } catch (err: any) {
-    console.error('Load user error:', err); // Fixed: Use err instead of error
-    this.error.set(err.message || 'Failed to load user'); // Fixed: Use this.error
-  } finally {
-    this.loading.set(false);
   }
-}
 
   async getAllUsers(): Promise<UserProfile[]> {
     try {
-      const { data } = await client.models.User.list();
+      const { data, errors } = await client.models.User.list();
+      console.log('All users response:', { data, errors });
       const users = await Promise.all(data.map(async (userModel) => {
         const profile: UserProfile = {
           id: userModel.id,
@@ -179,11 +188,11 @@ async load() {
         vehicle,
         profileImageKey,
       });
+      console.log('Update user response:', updateResp);
       if (updateResp.errors) {
         throw new Error(`User update failed: ${updateResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
       }
-      console.log('Update response:', updateResp.data);
-      await this.load(); // Refresh after save
+      await this.load();
     } catch (error) {
       console.error('Save user error:', error);
       throw error;
@@ -196,6 +205,7 @@ async load() {
       const resp = await client.models.PaymentMethod.list({
         filter: { userId: { eq: userId } },
       });
+      console.log('Payment methods response:', resp);
       return resp.data.map(pm => ({
         id: pm.id,
         type: pm.type ?? '',
@@ -210,35 +220,35 @@ async load() {
     if (userId) {
       console.log('Adding payment method with:', { userId, type, name });
       const createResp = await client.models.PaymentMethod.create({ userId, type, name });
+      console.log('Add payment method response:', createResp);
       if (createResp.errors) {
         throw new Error(`Payment method creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
       }
-      console.log('Added payment method:', createResp.data);
     }
   }
 
   async updatePaymentMethod(id: string, type: string, name: string) {
     console.log('Updating payment method:', { id, type, name });
     const updateResp = await client.models.PaymentMethod.update({ id, type, name });
+    console.log('Update payment method response:', updateResp);
     if (updateResp.errors) {
       throw new Error(`Payment method update failed: ${updateResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
     }
-    console.log('Updated payment method:', updateResp.data);
   }
 
   async deletePaymentMethod(id: string) {
     console.log('Deleting payment method:', id);
     const deleteResp = await client.models.PaymentMethod.delete({ id });
-    if (deleteResp.errors) {
+    console.log('Delete payment method response:', deleteResp);
+    if (updateResp.errors) {
       throw new Error(`Payment method deletion failed: ${deleteResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
     }
-    console.log('Deleted payment method:', deleteResp.data);
   }
 
   async uploadProfileImage(file: File): Promise<string | null> {
     try {
       const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/profile.jpg`;
-      console.log('Uploading to path:', path({})); // Debug
+      console.log('Uploading to path:', path({}));
       const uploadTask = uploadData({ path, data: file });
       const { path: uploadedPath } = await uploadTask.result;
       console.log('Upload success, key:', uploadedPath);
