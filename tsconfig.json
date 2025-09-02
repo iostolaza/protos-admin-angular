@@ -16,6 +16,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
+    "types": ["node"],
     "paths": {
       "@angular/animations/browser": [
         "./node_modules/@angular/animations/fesm2022/browser.mjs"
@@ -29,15 +30,7 @@
     "typeCheckHostBindings": true,
     "strictTemplates": true
   },
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.spec.json" }
-  ],
-    // tsconfig.json (add to exclude array)
-  "exclude": [
-    "node_modules",
-    "tmp",
-    "amplify/**"
-  ]
+  "files": ["src/main.ts"],
+  "include": ["src/**/*", "amplify/**/*"],
+  "exclude": ["node_modules", "tmp"]
 }

@@ -7,6 +7,7 @@ import { routes } from './app.routes';
 import { provideIconPreload } from './app.icons';
 import { Amplify } from 'aws-amplify';
 import outputs from '../../amplify_outputs.json';
+import { UserService } from './core/services/user.service';
 
 export function initializeAmplify() {
   return () => {
@@ -23,6 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     provideAngularSvgIcon(),
     provideIconPreload(),
+    UserService,
     {
       provide: APP_INITIALIZER,
       useFactory: initializeAmplify,
