@@ -157,7 +157,7 @@ const schema = a.schema({
       index('channelId').queryField('messagesByChannelAndTimestamp').sortKeys(['timestamp'])
     ])
     .authorization(allow => [
-      allow.owner(),
+      allow.owner(), 
       allow.authenticated().to(['read', 'create', 'update'])
     ]),
 

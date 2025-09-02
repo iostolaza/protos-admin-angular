@@ -1,6 +1,6 @@
 // src/app/core/services/user.service.ts
 import { Injectable, signal } from '@angular/core';
-import { generateClient } from 'aws-amplify/api';
+import { generateClient, GraphQLResult } from 'aws-amplify/api';
 import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { getUrl, uploadData } from 'aws-amplify/storage';
 import { Schema } from '../../../../amplify/data/resource';
@@ -31,8 +31,10 @@ export class UserService {
   user$ = signal<UserProfile | null>(null);
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
+  private retried = false;
 
-  async load() {
+  async load(): Promise<void> {
+    if (this.loading()) return;
     this.loading.set(true);
     try {
       const session = await fetchAuthSession();
@@ -45,15 +47,49 @@ export class UserService {
       const attributes = await fetchUserAttributes();
       console.log('User attributes:', attributes);
       const email = attributes.email ?? '';
-      const { data, errors } = await this.client.models.User.list({ 
-        filter: { owner: { eq: sub } },
+      const query = /* graphql */ `
+        query ListOwnUsers {
+          listUsers {
+            items {
+              id
+              firstName
+              lastName
+              username
+              email
+              address
+              contactPrefs
+              emergencyContact
+              vehicle
+              profileImageKey
+              dateJoined
+              salary
+              mobile
+              createdAt
+              updatedAt
+              owner
+            }
+            nextToken
+          }
+        }
+      `;
+      const response = await this.client.graphql<{ listUsers: { items: UserModel[]; nextToken?: string | null } }>({
+        query,
+        variables: { limit: 50 },
         authMode: 'userPool'
-      });
+      }) as GraphQLResult<{ listUsers: { items: UserModel[]; nextToken?: string | null } }>;
+      const { data, errors } = response;
       console.log('User list response:', { data, errors });
       if (errors) {
         throw new Error(`List users failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
       }
-      let userModel: UserModel | null = data[0] || null;
+      const items = data.listUsers.items;
+      let userModel: UserModel | null = null;
+      if (items.length > 0) {
+        userModel = items.find((u: UserModel) => u.email === email) || items[0];
+        if (items.length > 1) {
+          console.warn('Multiple user records found for owner; using first matching email or default:', items);
+        }
+      }
       if (!userModel) {
         const createResp = await this.client.models.User.create({
           username: email.split('@')[0] || 'defaultUser',
@@ -121,10 +157,15 @@ export class UserService {
         this.user$.set(profile);
       }
     } catch (err: any) {
+      if (err.message.includes('serialization') && !this.retried) {
+        this.retried = true;
+        return this.load();
+      }
       console.error('Load user error:', err);
       this.error.set(err.message || 'Failed to load user');
     } finally {
       this.loading.set(false);
+      this.retried = false;
     }
   }
 
@@ -135,12 +176,43 @@ export class UserService {
       if (!session.tokens) {
         throw new Error('User not authenticated');
       }
-      const { data, errors } = await this.client.models.User.list({ authMode: 'userPool' });
+      const query = /* graphql */ `
+        query ListOwnUsers {
+          listUsers {
+            items {
+              id
+              firstName
+              lastName
+              username
+              email
+              address
+              contactPrefs
+              emergencyContact
+              vehicle
+              profileImageKey
+              dateJoined
+              salary
+              mobile
+              createdAt
+              updatedAt
+              owner
+            }
+            nextToken
+          }
+        }
+      `;
+      const response = await this.client.graphql<{ listUsers: { items: UserModel[]; nextToken?: string | null } }>({
+        query,
+        variables: { limit: 50 },
+        authMode: 'userPool'
+      }) as GraphQLResult<{ listUsers: { items: UserModel[]; nextToken?: string | null } }>;
+      const { data, errors } = response;
       console.log('All users response:', { data, errors });
       if (errors) {
         throw new Error(`List users failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
       }
-      const users = await Promise.all(data.map(async (userModel) => {
+      const items = data.listUsers.items;
+      const users = await Promise.all(items.map(async (userModel: UserModel) => {
         const profile: UserProfile = {
           id: userModel.id,
           firstName: userModel.firstName,
@@ -334,5 +406,4 @@ export class UserService {
       return null;
     }
   }
-
 }
