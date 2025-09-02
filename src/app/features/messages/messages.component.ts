@@ -1,3 +1,4 @@
+// src/app/features/messages/messages.component.ts
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -75,6 +76,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
       console.error('Init error:', error);
     }
   }
+  
 
   onSearch(value: string) {
     this.searchQuery.set(value);

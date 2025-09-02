@@ -1,3 +1,4 @@
+// src/app/core/services/user.service.ts
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/api';
 import { fetchAuthSession, fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
@@ -182,38 +183,44 @@ export class UserService {
     }
   }
 
-  async save(updatedUser: UserProfile) {
-    try {
-      const session = await fetchAuthSession();
-      console.log('Auth session:', session);
-      if (!session.tokens) {
-        throw new Error('User not authenticated');
-      }
-      console.log('Saving updated User:', updatedUser);
-      const { id, firstName, lastName, username, email, accessLevel, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
-      const updateResp = await this.client.models.User.update({
-        id,
-        firstName,
-        lastName,
-        username,
-        email,
-        accessLevel,
-        address,
-        contactPrefs,
-        emergencyContact,
-        vehicle,
-        profileImageKey,
-      });
-      console.log('Update user response:', updateResp);
-      if (updateResp.errors) {
-        throw new Error(`User update failed: ${updateResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
-      }
-      await this.load();
-    } catch (error) {
-      console.error('Save user error:', error);
-      throw error;
+async save(updatedUser: UserProfile) {
+  try {
+    const session = await fetchAuthSession();
+    if (!session.tokens) {
+      throw new Error('User not authenticated');
     }
+    // Validate inputs
+    if (!updatedUser.firstName || !updatedUser.lastName || !updatedUser.username || !updatedUser.email) {
+      throw new Error('Required fields are missing');
+    }
+    // Optimistic update
+    this.user$.set(updatedUser);
+    const { id, firstName, lastName, username, email, accessLevel, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
+    const updateResp = await this.client.models.User.update({
+      id,
+      firstName,
+      lastName,
+      username,
+      email,
+      accessLevel,
+      address,
+      contactPrefs,
+      emergencyContact,
+      vehicle,
+      profileImageKey
+    }, { authMode: 'userPool' });
+    if (updateResp.errors) {
+      // Revert optimistic update on failure
+      await this.load();
+      throw new Error(`User update failed: ${updateResp.errors.map((e) => e.message).join(', ')}`);
+    }
+    await this.load(); // Ensure latest data
+  } catch (error: any) {
+    console.error('Save user error:', error);
+    this.error.set(error.message || 'Failed to save user');
+    throw error;
   }
+}
 
   async getPaymentMethods() {
     try {
@@ -304,22 +311,24 @@ export class UserService {
     }
   }
 
-  async uploadProfileImage(file: File): Promise<string | null> {
-    try {
-      const session = await fetchAuthSession();
-      console.log('Auth session:', session);
-      if (!session.tokens) {
-        throw new Error('User not authenticated');
-      }
-      const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/profile.jpg`;
-      console.log('Uploading to path:', path({}));
-      const uploadTask = uploadData({ path, data: file });
-      const { path: uploadedPath } = await uploadTask.result;
-      console.log('Upload success, key:', uploadedPath);
-      return uploadedPath;
-    } catch (error) {
-      console.error('Upload error:', error);
-      return null;
+async uploadProfileImage(file: File): Promise<string | null> {
+  try {
+    const session = await fetchAuthSession();
+    console.log('Auth session:', session);
+    if (!session.tokens || !session.identityId) {
+      throw new Error('User not authenticated or identityId missing');
     }
+    const path = `profile/${session.identityId}/profile.jpg`;
+    console.log('Uploading to path:', path);
+    const uploadTask = uploadData({ path, data: file });
+    const { path: uploadedPath } = await uploadTask.result;
+    console.log('Upload success, key:', uploadedPath);
+    return uploadedPath;
+  } catch (error) {
+    console.error('Upload error:', error);
+    this.error.set('Failed to upload profile image');
+    return null;
   }
+}
+
 }
