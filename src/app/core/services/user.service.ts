@@ -45,7 +45,10 @@ export class UserService {
       const attributes = await fetchUserAttributes();
       console.log('User attributes:', attributes);
       const email = attributes.email ?? '';
-      const { data, errors } = await this.client.models.User.list({ filter: { owner: { eq: sub } } });
+      const { data, errors } = await this.client.models.User.list({ 
+        filter: { owner: { eq: sub } },
+        authMode: 'userPool'
+      });
       console.log('User list response:', { data, errors });
       if (errors) {
         throw new Error(`List users failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
@@ -66,7 +69,7 @@ export class UserService {
           dateJoined: new Date().toISOString(),
           salary: 0,
           mobile: '',
-        });
+        }, { authMode: 'userPool' });
         console.log('Create user response:', createResp);
         if (createResp.errors) {
           throw new Error(`User creation failed: ${createResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
@@ -132,7 +135,7 @@ export class UserService {
       if (!session.tokens) {
         throw new Error('User not authenticated');
       }
-      const { data, errors } = await this.client.models.User.list();
+      const { data, errors } = await this.client.models.User.list({ authMode: 'userPool' });
       console.log('All users response:', { data, errors });
       if (errors) {
         throw new Error(`List users failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
@@ -183,44 +186,44 @@ export class UserService {
     }
   }
 
-async save(updatedUser: UserProfile) {
-  try {
-    const session = await fetchAuthSession();
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
+  async save(updatedUser: UserProfile) {
+    try {
+      const session = await fetchAuthSession();
+      if (!session.tokens) {
+        throw new Error('User not authenticated');
+      }
+      // Validate inputs
+      if (!updatedUser.firstName || !updatedUser.lastName || !updatedUser.username || !updatedUser.email) {
+        throw new Error('Required fields are missing');
+      }
+      // Optimistic update
+      this.user$.set(updatedUser);
+      const { id, firstName, lastName, username, email, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
+      const updateResp = await this.client.models.User.update({
+        id,
+        firstName,
+        lastName,
+        username,
+        email,
+        // accessLevel,
+        address,
+        contactPrefs,
+        emergencyContact,
+        vehicle,
+        profileImageKey
+      }, { authMode: 'userPool' });
+      if (updateResp.errors) {
+        // Revert optimistic update on failure
+        await this.load();
+        throw new Error(`User update failed: ${updateResp.errors.map((e) => e.message).join(', ')}`);
+      }
+      await this.load(); // Ensure latest data
+    } catch (error: any) {
+      console.error('Save user error:', error);
+      this.error.set(error.message || 'Failed to save user');
+      throw error;
     }
-    // Validate inputs
-    if (!updatedUser.firstName || !updatedUser.lastName || !updatedUser.username || !updatedUser.email) {
-      throw new Error('Required fields are missing');
-    }
-    // Optimistic update
-    this.user$.set(updatedUser);
-    const { id, firstName, lastName, username, email, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
-    const updateResp = await this.client.models.User.update({
-      id,
-      firstName,
-      lastName,
-      username,
-      email,
-      // accessLevel,
-      address,
-      contactPrefs,
-      emergencyContact,
-      vehicle,
-      profileImageKey
-    }, { authMode: 'userPool' });
-    if (updateResp.errors) {
-      // Revert optimistic update on failure
-      await this.load();
-      throw new Error(`User update failed: ${updateResp.errors.map((e) => e.message).join(', ')}`);
-    }
-    await this.load(); // Ensure latest data
-  } catch (error: any) {
-    console.error('Save user error:', error);
-    this.error.set(error.message || 'Failed to save user');
-    throw error;
   }
-}
 
   async getPaymentMethods() {
     try {
@@ -233,6 +236,7 @@ async save(updatedUser: UserProfile) {
       if (userId) {
         const { data, errors } = await this.client.models.PaymentMethod.list({
           filter: { userId: { eq: userId } },
+          authMode: 'userPool'
         });
         console.log('Payment methods response:', { data, errors });
         if (errors) {
@@ -261,7 +265,7 @@ async save(updatedUser: UserProfile) {
       const userId = this.user$()?.id;
       if (userId) {
         console.log('Adding payment method with:', { userId, type, name });
-        const { errors } = await this.client.models.PaymentMethod.create({ userId, type, name });
+        const { errors } = await this.client.models.PaymentMethod.create({ userId, type, name }, { authMode: 'userPool' });
         console.log('Add payment method response:', { errors });
         if (errors) {
           throw new Error(`Payment method creation failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
@@ -281,7 +285,7 @@ async save(updatedUser: UserProfile) {
         throw new Error('User not authenticated');
       }
       console.log('Updating payment method:', { id, type, name });
-      const { errors } = await this.client.models.PaymentMethod.update({ id, type, name });
+      const { errors } = await this.client.models.PaymentMethod.update({ id, type, name }, { authMode: 'userPool' });
       console.log('Update payment method response:', { errors });
       if (errors) {
         throw new Error(`Payment method update failed: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
@@ -300,7 +304,7 @@ async save(updatedUser: UserProfile) {
         throw new Error('User not authenticated');
       }
       console.log('Deleting payment method:', id);
-      const deleteResp = await this.client.models.PaymentMethod.delete({ id });
+      const deleteResp = await this.client.models.PaymentMethod.delete({ id }, { authMode: 'userPool' });
       console.log('Delete payment method response:', deleteResp);
       if (deleteResp.errors) {
         throw new Error(`Payment method deletion failed: ${deleteResp.errors.map((e: { message: string }) => e.message).join(', ')}`);
@@ -311,24 +315,24 @@ async save(updatedUser: UserProfile) {
     }
   }
 
-async uploadProfileImage(file: File): Promise<string | null> {
-  try {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens || !session.identityId) {
-      throw new Error('User not authenticated or identityId missing');
+  async uploadProfileImage(file: File): Promise<string | null> {
+    try {
+      const session = await fetchAuthSession();
+      console.log('Auth session:', session);
+      if (!session.tokens || !session.identityId) {
+        throw new Error('User not authenticated or identityId missing');
+      }
+      const path = `profile/${session.identityId}/profile.jpg`;
+      console.log('Uploading to path:', path);
+      const uploadTask = uploadData({ path, data: file });
+      const { path: uploadedPath } = await uploadTask.result;
+      console.log('Upload success, key:', uploadedPath);
+      return uploadedPath;
+    } catch (error) {
+      console.error('Upload error:', error);
+      this.error.set('Failed to upload profile image');
+      return null;
     }
-    const path = `profile/${session.identityId}/profile.jpg`;
-    console.log('Uploading to path:', path);
-    const uploadTask = uploadData({ path, data: file });
-    const { path: uploadedPath } = await uploadTask.result;
-    console.log('Upload success, key:', uploadedPath);
-    return uploadedPath;
-  } catch (error) {
-    console.error('Upload error:', error);
-    this.error.set('Failed to upload profile image');
-    return null;
   }
-}
 
 }
