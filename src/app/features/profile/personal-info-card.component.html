@@ -39,10 +39,10 @@
           <label class="block text-sm text-muted-foreground">Email</label>
           <input formControlName="email" type="email" class="w-full p-2 border border-border rounded bg-background text-foreground" />
         </div>
-        <div class="col-span-2">
+        <!-- <div class="col-span-2">
           <label class="block text-sm text-muted-foreground">Access Level</label>
           <input formControlName="accessLevel" class="w-full p-2 border border-border rounded bg-muted text-foreground" />
-        </div>
+        </div> -->
       </div>
       <div class="mt-4 flex justify-end gap-2">
         <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
@@ -56,7 +56,7 @@
         <div><strong class="text-muted-foreground">Last Name: </strong> <span class="text-foreground">{{ user.lastName }}</span></div>
         <div><strong class="text-muted-foreground">Username: </strong> <span class="text-foreground">{{ user.username }}</span></div>
         <div><strong class="text-muted-foreground">Email: </strong> <span class="text-foreground">{{ user.email }}</span></div>
-        <div class="col-span-2"><strong class="text-muted-foreground">Access Level: </strong> <span class="text-foreground">{{ user.accessLevel }}</span></div>
+        <!-- <div class="col-span-2"><strong class="text-muted-foreground">Access Level: </strong> <span class="text-foreground">{{ user.accessLevel }}</span></div> -->
       </div>
     }
     <div class="mt-4 flex justify-start">

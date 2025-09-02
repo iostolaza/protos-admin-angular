@@ -23,7 +23,7 @@ export class PersonalInfoCardComponent {
       lastName: ['', Validators.required],
       username: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      accessLevel: [''],
+      // accessLevel: [''],
     });
     effect(() => {
       const u = this.userService.user$();

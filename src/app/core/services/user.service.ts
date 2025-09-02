@@ -15,7 +15,7 @@ export interface UserProfile {
   lastName: string;
   username: string;
   email: string;
-  accessLevel: "basic" | "premium" | "admin";
+  // accessLevel: "basic" | "premium" | "admin";
   address: { line1: string; city: string; state: string; zip: string; country: string };
   contactPrefs: { email: boolean; push: boolean; sms?: boolean };
   emergencyContact: { name: string; phone: string; email: string; address: string };
@@ -55,7 +55,7 @@ export class UserService {
         const createResp = await this.client.models.User.create({
           username: email.split('@')[0] || 'defaultUser',
           email,
-          accessLevel: 'basic',
+          // accessLevel: 'basic',
           firstName: 'First Name',
           lastName: 'Last Name',
           address: { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
@@ -84,7 +84,7 @@ export class UserService {
           lastName: userModel.lastName,
           username: userModel.username,
           email: userModel.email,
-          accessLevel: userModel.accessLevel ?? 'basic',
+          // accessLevel: userModel.accessLevel ?? 'basic',
           address: userModel.address ?? { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
           contactPrefs: {
             email: userModel.contactPrefs?.email ?? false,
@@ -144,7 +144,7 @@ export class UserService {
           lastName: userModel.lastName,
           username: userModel.username,
           email: userModel.email,
-          accessLevel: userModel.accessLevel ?? 'basic',
+          // accessLevel: userModel.accessLevel ?? 'basic',
           address: userModel.address ?? { line1: 'N/A', city: 'N/A', state: 'N/A', zip: '00000', country: 'N/A' },
           contactPrefs: {
             email: userModel.contactPrefs?.email ?? false,
@@ -195,14 +195,14 @@ async save(updatedUser: UserProfile) {
     }
     // Optimistic update
     this.user$.set(updatedUser);
-    const { id, firstName, lastName, username, email, accessLevel, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
+    const { id, firstName, lastName, username, email, address, contactPrefs, emergencyContact, vehicle, profileImageKey } = updatedUser;
     const updateResp = await this.client.models.User.update({
       id,
       firstName,
       lastName,
       username,
       email,
-      accessLevel,
+      // accessLevel,
       address,
       contactPrefs,
       emergencyContact,

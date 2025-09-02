@@ -10,7 +10,7 @@ const schema = a.schema({
       email: a.string().required(),
       profileImageKey: a.string(),
       status: a.ref('UserStatus'),
-      accessLevel: a.ref('UserAccessLevel'),
+      // accessLevel: a.ref('UserAccessLevel'),
       address: a.ref('UserAddress'),
       contactPrefs: a.ref('UserContactPrefs'),
       emergencyContact: a.ref('UserEmergencyContact'),
@@ -161,7 +161,7 @@ const schema = a.schema({
       allow.authenticated().to(['read', 'create', 'update'])
     ]),
 
-  UserAccessLevel: a.enum(['basic', 'premium', 'admin'] as const),
+  // UserAccessLevel: a.enum(['basic', 'premium', 'admin'] as const),
   UserStatus: a.enum(['online', 'offline', 'away'] as const),
   ChannelType: a.enum(['direct', 'group'] as const),
   TicketStatus: a.enum(['open', 'in_progress', 'closed'] as const),
