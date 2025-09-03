@@ -87,7 +87,7 @@ const schema = a.schema({
     updatedAt: a.datetime(),
   }).secondaryIndexes(index => [index('channelId').sortKeys(['timestamp'])])
     .authorization(allow => [allow.authenticated()]),
-});
+}).authorization(allow => [allow.resource(postConfirmation)]);
 
 export type Schema = ClientSchema<typeof schema>;
 
