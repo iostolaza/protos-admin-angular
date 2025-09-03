@@ -52,6 +52,7 @@
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/postcss": "^4.1.12",
     "@tailwindcss/typography": "^0.5.16",
+    "@types/aws-lambda": "^8.10.152",
     "@types/jasmine": "^5.1.8",
     "autoprefixer": "^10.4.21",
     "aws-cdk-lib": "^2.204.0",

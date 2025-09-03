@@ -48,6 +48,21 @@ export class UserService {
         user = users[0];
       }
 
+      if (!user && email) {
+        // Temp manual creation for existing users
+        const { errors } = await this.client.models.User.create({
+          cognitoId: userId,
+          email,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        if (errors) throw new Error(errors.map(e => e.message).join(', '));
+        
+        // Re-fetch after creation
+        const { data: newUser } = await this.client.models.User.get({ cognitoId: userId });
+        user = newUser;
+      }
+
       if (!user) return;
 
       const profileImageUrl = await this.getProfileImageUrlFromKey(user.profileImageKey);

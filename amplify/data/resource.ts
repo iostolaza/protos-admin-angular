@@ -1,4 +1,5 @@
 import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
+import { postConfirmation } from '../auth/post-confirmation/resource'; 
 
 const schema = a.schema({
   User: a.model({
@@ -39,8 +40,8 @@ const schema = a.schema({
     .identifier(['cognitoId']) 
     .secondaryIndexes(index => [index('email')])
     .authorization(allow => [
-    allow.owner().to(['read', 'update', 'delete']),
-    allow.authenticated().to(['read']),
+     allow.ownerDefinedIn('cognitoId').to(['read', 'update', 'delete']),
+     allow.authenticated().to(['read'])
   ]),
 
   PaymentMethod: a.model({
