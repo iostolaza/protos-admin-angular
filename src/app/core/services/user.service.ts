@@ -29,18 +29,18 @@ export class UserService {
     await this.loadCurrentUser();
   }
 
-  private async loadCurrentUser() {
+private async loadCurrentUser() {
     try {
       const { userId, signInDetails } = await getCurrentUser();
       const email = signInDetails?.loginId;
 
-      // 🔹 Fetch by cognitoId
+      // Fetch by cognitoId
       const { data: userData, errors } = await this.client.models.User.get({ cognitoId: userId });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
 
       let user = userData;
 
-      // 🔹 Fallback by email
+      // Fallback by email
       if (!user && email) {
         const { data: users } = await this.client.models.User.list({
           filter: { email: { eq: email } },
@@ -48,26 +48,26 @@ export class UserService {
         user = users[0];
       }
 
-      // Remove or comment out temp creation after Lambda is working
-      // if (!user && email) {
-      //   const { errors } = await this.client.models.User.create({
-      //     cognitoId: userId,
-      //     email,
-      //     createdAt: new Date().toISOString(),
-      //     updatedAt: new Date().toISOString(),
-      //   });
-      //   if (errors) throw new Error(errors.map(e => e.message).join(', '));
+      // Temp creation if not exists (fallback if Lambda fails)
+      if (!user && email) {
+        const { errors } = await this.client.models.User.create({
+          cognitoId: userId,
+          email,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+        if (errors) throw new Error(errors.map(e => e.message).join(', '));
         
-      //   const { data: newUser } = await this.client.models.User.get({ cognitoId: userId });
-      //   user = newUser;
-      // }
+        const { data: newUser } = await this.client.models.User.get({ cognitoId: userId });
+        user = newUser;
+      }
 
       if (!user) return;
 
       const profileImageUrl = await this.getProfileImageUrlFromKey(user.profileImageKey);
       this.user.set({ ...user, profileImageUrl });
 
-      // 🔹 Observe changes
+      // Observe changes for real-time
       this.client.models.User.observeQuery({ filter: { cognitoId: { eq: userId } } })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -77,7 +77,7 @@ export class UserService {
           error: (err) => console.error('ObserveQuery error:', err),
         });
     } catch (error) {
-      console.error('Load user error:', error);
+      console.error('Load user error:', error);  // Enhanced logging
     }
   }
 

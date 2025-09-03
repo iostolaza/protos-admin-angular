@@ -12,6 +12,21 @@ export interface ContactPrefs {
   push?: boolean | null;
 }
 
+export interface Vehicle {
+  make?: string | null;
+  model?: string | null;
+  color?: string | null;
+  license?: string | null;
+  year?: number | null;
+}
+
+export interface EmergencyContact {
+  name?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+}
+
 export interface InputContact {
   cognitoId: string;  
   firstName: string;
@@ -26,4 +41,6 @@ export interface InputContact {
   updatedAt?: string | null;
   address?: Address | null;
   contactPrefs?: ContactPrefs | null;
+  vehicle?: Vehicle | null;
+  emergencyContact?: EmergencyContact | null;
 }

@@ -11,39 +11,44 @@
  * Iteration 3: Async loadPayments, populate on edit.
  * Best: Track $index for loops, flex justify-end buttons.
  -->
-<div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
-  <h2 class="text-xl font-bold mb-4 text-primary">Payment Methods</h2>
-  @if (editMode()) {
-    <form [formGroup]="form" (ngSubmit)="save()">
-      <div formArrayName="paymentMethods">
-        @for (method of paymentMethods.controls; track $index) {
-          <div class="grid grid-cols-2 gap-4 mb-4" [formGroupName]="$index">
-            <div>
-              <label class="block text-sm text-muted-foreground">Type</label>
-              <input formControlName="type" class="w-full p-2 border border-border rounded bg-background text-foreground" />
-            </div>
-            <div>
-              <label class="block text-sm text-muted-foreground">Name</label>
-              <input formControlName="name" class="w-full p-2 border border-border rounded bg-background text-foreground" />
-            </div>
-            <button type="button" (click)="removeMethod($index)" class="px-2 py-1 bg-destructive text-destructive-foreground rounded hover:bg-destructive/90">Remove</button>
-          </div>
-        }
-      </div>
-      <button type="button" (click)="addMethod()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Add Method</button>
-      <div class="mt-4 flex justify-end gap-2">
-        <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
-        <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
-      </div>
-    </form>
+<!-- src/app/features/profile/payment-card.component.html -->
+<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
+  <h2 class="text-xl font-bold mb-4 text-primary">Payment Information</h2>
+  @if (loading()) {
+    <p class="text-muted-foreground">Loading payments...</p>
   } @else {
-    <div class="grid grid-cols-2 gap-4 text-foreground">
-      @for (method of paymentMethodsList(); track $index) {
-        <div><strong class="text-muted-foreground">{{ method.type }}:</strong> <span class="text-foreground">{{ method.name }}</span></div>
+    <div class="mb-4">
+      @for (payment of payments(); track payment.id) {
+        <div class="flex justify-between items-center mb-2 border-b border-border pb-2">
+          <span class="text-foreground">{{ payment.type }}: {{ payment.name }}</span>
+          <div>
+            <button (click)="editPayment(payment)" class="text-primary mr-2">Edit</button>
+            <button (click)="deletePayment(payment.id)" class="text-destructive">Delete</button>
+          </div>
+        </div>
+      } @empty {
+        <p class="text-muted-foreground">No payment methods added.</p>
       }
     </div>
-    <div class="mt-4 flex justify-start">
-    <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
-    </div>
+    @if (editMode()) {
+      <form [formGroup]="form" (ngSubmit)="savePayment()">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-muted-foreground">Type</label>
+            <input formControlName="type" class="w-full p-2 border border-border rounded bg-background text-foreground" placeholder="Enter payment type (e.g., Credit Card)" />
+          </div>
+          <div>
+            <label class="block text-sm text-muted-foreground">Name</label>
+            <input formControlName="name" class="w-full p-2 border border-border rounded bg-background text-foreground" placeholder="Enter payment name (e.g., Visa ****1234)" />
+          </div>
+        </div>
+        <div class="mt-4 flex justify-end gap-2">
+          <button type="button" (click)="toggleEdit()" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-muted">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
+        </div>
+      </form>
+    } @else {
+      <button (click)="toggleEdit(true)" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Add Payment</button>
+    }
   }
 </div>

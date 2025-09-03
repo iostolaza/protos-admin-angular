@@ -1,16 +1,17 @@
-<div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
-  <h2 class="text-xl font-bold mb-4 text-primary">Contact Preferences</h2>
+<!-- src/app/features/profile/contact-prefs-card.component.html -->
 
+<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
+  <h2 class="text-xl font-bold mb-4 text-primary">Contact Preferences</h2>
   @if (editMode()) {
     <form [formGroup]="form" (ngSubmit)="save()">
-      <div class="grid grid-cols-2 gap-4">
+      <div class="flex flex-col gap-4">
         <div class="flex items-center">
-          <input type="checkbox" formControlName="email" class="mr-2 border-border" />
-          <label class="text-foreground">Email</label>
+          <input type="checkbox" formControlName="email" id="email-pref" class="mr-2" />
+          <label for="email-pref" class="text-sm text-muted-foreground">Email Notifications</label>
         </div>
         <div class="flex items-center">
-          <input type="checkbox" formControlName="push" class="mr-2 border-border" />
-          <label class="text-foreground">Push Notifications</label>
+          <input type="checkbox" formControlName="push" id="push-pref" class="mr-2" />
+          <label for="push-pref" class="text-sm text-muted-foreground">Push Notifications</label>
         </div>
       </div>
       <div class="mt-4 flex justify-end gap-2">
@@ -18,21 +19,17 @@
         <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
       </div>
     </form>
-  } @else if (user) {
-    <div class="grid grid-cols-2 gap-4 text-foreground">
-      <div>
-        <strong class="text-muted-foreground">Email: </strong>
-        <span class="text-foreground">{{ user.contactPrefs?.email ? 'Enabled' : 'Disabled' }}</span>
+  } @else {
+    @if (user?.contactPrefs) {
+      <div class="grid grid-cols-2 gap-4 text-foreground">
+        <div><strong class="text-muted-foreground">Email: </strong> <span class="text-foreground">{{ user?.contactPrefs?.email ? 'Enabled' : 'Disabled' }}</span></div>
+        <div><strong class="text-muted-foreground">Push: </strong> <span class="text-foreground">{{ user?.contactPrefs?.push ? 'Enabled' : 'Disabled' }}</span></div>
       </div>
-      <div>
-        <strong class="text-muted-foreground">Push Notifications: </strong>
-        <span class="text-foreground">{{ user.contactPrefs?.push ? 'Enabled' : 'Disabled' }}</span>
-      </div>
-    </div>
+    } @else {
+      <p class="text-muted-foreground">No preferences set.</p>
+    }
     <div class="mt-4 flex justify-start">
-      <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">
-        Edit
-      </button>
+      <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
     </div>
   }
 </div>

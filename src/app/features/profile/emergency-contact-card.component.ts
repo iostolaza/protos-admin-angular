@@ -1,10 +1,10 @@
-/* Edited emergency contact card. */
- 
+// src/app/features/profile/emergency-contact-card.component.ts
+
 import { Component, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { UserService, UserProfile } from '../../core/services/user.service';
- 
+
 @Component({
   selector: 'app-emergency-contact-card',
   standalone: true,
@@ -15,31 +15,28 @@ export class EmergencyContactCardComponent {
   editMode = signal(false);
   form: FormGroup;
   user: UserProfile | null = null;
- 
-constructor(private fb: FormBuilder, private userService: UserService) {
-  this.form = this.fb.group({
-    name: ['', Validators.required],
-    phone: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    address: ['', Validators.required],
-  });
-  effect(() => {
-    
-    const u = this.userService.user();
-    this.user = u;
-    this.form.patchValue(u?.emergencyContact || {});
-  });
-}
- 
+
+  constructor(private fb: FormBuilder, private userService: UserService) {
+    this.form = this.fb.group({
+      name: [''],
+      phone: [''],
+      email: ['', Validators.email],
+      address: [''],
+    });
+    effect(() => {
+      const u = this.userService.user();
+      this.user = u;
+      this.form.patchValue(u?.emergencyContact || {});
+    });
+  }
+
   toggleEdit() {
     this.editMode.update(m => !m);
   }
- 
+
   async save() {
-    if (this.form.valid && this.user) {
-      const updatedContact = { ...this.user.emergencyContact, ...this.form.value };
-      const updated = { ...this.user, emergencyContact: updatedContact };
-      await this.userService.save(updated);
+    if (this.form.valid) {
+      await this.userService.updateUser({ emergencyContact: this.form.value });
       this.toggleEdit();
     }
   }

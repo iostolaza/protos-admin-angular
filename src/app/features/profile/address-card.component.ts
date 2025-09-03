@@ -1,12 +1,10 @@
-/* Edited address card. */
- 
+// src/app/features/profile/address-card.component.ts
+
 import { Component, effect, signal } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { UserService, UserProfile } from '../../core/services/user.service';
-import { computed } from '@angular/core'; // Added import for computed
- 
- 
+
 @Component({
   selector: 'app-address-card',
   standalone: true,
@@ -16,34 +14,30 @@ import { computed } from '@angular/core'; // Added import for computed
 export class AddressCardComponent {
   editMode = signal(false);
   form: FormGroup;
-  user = computed(() => this.userService.user()); // Changed to computed for reactivity
- 
- 
- 
-// In class:
-constructor(private fb: FormBuilder, private userService: UserService) {
-  this.form = this.fb.group({
-    line1: ['', Validators.required],
-    city: ['', Validators.required],
-    state: ['', Validators.required],
-    zip: ['', Validators.required],
-    country: ['', Validators.required],
-  });
-  effect(() => {
-    const u = this.user();
-    this.form.patchValue(u?.address || {});
-  });
-}
- 
+  user: UserProfile | null = null;
+
+  constructor(private fb: FormBuilder, private userService: UserService) {
+    this.form = this.fb.group({
+      line1: [''],
+      city: [''],
+      state: [''],
+      zip: [''],
+      country: [''],
+    });
+    effect(() => {
+      const u = this.userService.user();
+      this.user = u;
+      this.form.patchValue(u?.address || {});
+    });
+  }
+
   toggleEdit() {
     this.editMode.update(m => !m);
   }
- 
+
   async save() {
-    if (this.form.valid && this.user()) {
-      const updatedAddress = { ...this.user()!.address, ...this.form.value };
-      const updated = { ...this.user()!, address: updatedAddress };
-      await this.userService.save(updated);
+    if (this.form.valid) {
+      await this.userService.updateUser({ address: this.form.value });
       this.toggleEdit();
     }
   }

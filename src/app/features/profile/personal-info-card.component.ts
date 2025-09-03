@@ -1,10 +1,10 @@
-/* Edited personal info card: Semantic classes, image upload. */
- 
+
+// src/app/features/profile/personal-info-card.component.ts
 import { Component, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { UserService, UserProfile } from '../../core/services/user.service';
- 
+
 @Component({
   selector: 'app-personal-info-card',
   standalone: true,

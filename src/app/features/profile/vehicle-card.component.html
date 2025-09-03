@@ -3,37 +3,32 @@
  * =====================================================================
  * Vehicle: bg-card p-10, inputs bg-background border-border.
  * Updated: Buttons match (primary/secondary), labels text-muted-foreground, values text-foreground, strong text-muted-foreground.
- * References:
- * - Angular forms: https://angular.dev/guide/forms/reactive-forms.
- * Iteration 1: Form/display toggle.
- * Iteration 2: Grid cols-2 for fields.
- * Iteration 3: Hover bg-primary/90 for save.
- * Best: Flex justify-end for buttons.
  -->
-<div class="bg-card text-card-foreground p-10 rounded-lg shadow-custom border border-border flex flex-col h-full">
-  <h2 class="text-xl font-bold mb-4 text-primary">Vehicle Information</h2>
+<!-- src/app/features/profile/vehicle-card.component.html -->
+<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
+  <h2 class="text-xl font-bold mb-4 text-primary">Vehicle Details</h2>
   @if (editMode()) {
     <form [formGroup]="form" (ngSubmit)="save()">
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm text-muted-foreground">Make</label>
-          <input formControlName="make" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+          <input formControlName="make" class="w-full p-2 border border-border rounded bg-background text-foreground" placeholder="Enter make (e.g., Toyota)" />
         </div>
         <div>
           <label class="block text-sm text-muted-foreground">Model</label>
-          <input formControlName="model" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+          <input formControlName="model" class="w-full p-2 border border-border rounded bg-background text-foreground" placeholder="Enter model (e.g., Camry)" />
         </div>
         <div>
           <label class="block text-sm text-muted-foreground">Color</label>
-          <input formControlName="color" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+          <input formControlName="color" class="w-full p-2 border border-border rounded bg-background text-foreground" placeholder="Enter color (e.g., Blue)" />
         </div>
         <div>
-          <label class="block text-sm text-muted-foreground">License Number</label>
-          <input formControlName="license" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+          <label class="block text-sm text-muted-foreground">License</label>
+          <input formControlName="license" class="w-full p-2 border border-border rounded bg-background text-foreground" placeholder="Enter license plate" />
         </div>
         <div>
           <label class="block text-sm text-muted-foreground">Year</label>
-          <input formControlName="year" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+          <input formControlName="year" type="number" class="w-full p-2 border border-border rounded bg-background text-foreground" placeholder="Enter year (e.g., 2020)" />
         </div>
       </div>
       <div class="mt-4 flex justify-end gap-2">
@@ -42,15 +37,19 @@
       </div>
     </form>
   } @else {
-    <div class="grid grid-cols-2 gap-4 text-foreground">
-      <div><strong class="text-muted-foreground">Make: </strong> <span class="text-foreground">{{ user?.vehicle?.make }}</span></div>
-      <div><strong class="text-muted-foreground">Model: </strong> <span class="text-foreground">{{ user?.vehicle?.model }}</span></div>
-      <div><strong class="text-muted-foreground">Color: </strong> <span class="text-foreground">{{ user?.vehicle?.color }}</span></div>
-      <div><strong class="text-muted-foreground">License Number: </strong> <span class="text-foreground">{{ user?.vehicle?.license }}</span></div>
-      <div><strong class="text-muted-foreground">Year: </strong> <span class="text-foreground">{{ user?.vehicle?.year }}</span></div>
-    </div>
+    @if (user?.vehicle) {
+      <div class="grid grid-cols-2 gap-4 text-foreground">
+        <div><strong class="text-muted-foreground">Make: </strong> <span class="text-foreground">{{ user?.vehicle?.make || 'Not set' }}</span></div>
+        <div><strong class="text-muted-foreground">Model: </strong> <span class="text-foreground">{{ user?.vehicle?.model || 'Not set' }}</span></div>
+        <div><strong class="text-muted-foreground">Color: </strong> <span class="text-foreground">{{ user?.vehicle?.color || 'Not set' }}</span></div>
+        <div><strong class="text-muted-foreground">License: </strong> <span class="text-foreground">{{ user?.vehicle?.license || 'Not set' }}</span></div>
+        <div><strong class="text-muted-foreground">Year: </strong> <span class="text-foreground">{{ user?.vehicle?.year || 'Not set' }}</span></div>
+      </div>
+    } @else {
+      <p class="text-muted-foreground">No vehicle details set.</p>
+    }
     <div class="mt-4 flex justify-start">
-    <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
+      <button (click)="toggleEdit()" class="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Edit</button>
     </div>
   }
 </div>

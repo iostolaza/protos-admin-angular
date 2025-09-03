@@ -1,3 +1,5 @@
+// src/app/features/profile/contact-prefs-card.component.ts
+
 import { Component, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
@@ -19,14 +21,10 @@ export class ContactPrefsCardComponent {
       email: [false],
       push: [false],
     });
-
-    // 👇 fix: subscribe/effect to update this.user correctly
     effect(() => {
-      const u = this.userService.user(); // assuming user is a signal
+      const u = this.userService.user();
       this.user = u;
-      if (u?.contactPrefs) {
-        this.form.patchValue(u.contactPrefs);
-      }
+      this.form.patchValue(u?.contactPrefs || {});
     });
   }
 
@@ -35,10 +33,8 @@ export class ContactPrefsCardComponent {
   }
 
   async save() {
-    if (this.form.valid && this.user) {
-      const updatedPrefs = { ...this.user.contactPrefs, ...this.form.value };
-      const updated = { ...this.user, contactPrefs: updatedPrefs };
-      await this.userService.save(updated);
+    if (this.form.valid) {
+      await this.userService.updateUser({ contactPrefs: this.form.value });
       this.toggleEdit();
     }
   }
