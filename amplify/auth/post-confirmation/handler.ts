@@ -1,6 +1,6 @@
-import type { PostConfirmationTriggerHandler } from 'aws-lambda';
+import type { PostConfirmationTriggerHandler } from 'aws-lambda'; // @types/aws-lambda ^8.10.145 (latest)
 import { type Schema } from '../../data/resource';
-import { Amplify } from 'aws-amplify';
+import { Amplify } from 'aws-amplify'; // aws-amplify ^6.6.3 (latest)
 import { generateClient } from 'aws-amplify/data';
 import { env } from '$amplify/env/post-confirmation';
 
@@ -22,6 +22,9 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
   const firstName = event.request.userAttributes.given_name || '';
   const lastName = event.request.userAttributes.family_name || '';
 
+  const { data: existing } = await client.models.User.get({ cognitoId: sub });
+  if (existing) return event;
+
   const { errors } = await client.models.User.create({
     cognitoId: sub,
     email,
@@ -32,11 +35,7 @@ export const handler: PostConfirmationTriggerHandler = async (event) => {
     updatedAt: new Date().toISOString(),
   });
 
-  if (errors) {
-    console.error('Error creating user:', errors);
-    throw new Error('Failed to create user profile');
-  }
+  if (errors) throw new Error(`Failed to create user: ${errors.map(e => e.message).join(', ')}`);
 
-  console.log(`User created: ${sub}`);
   return event;
 };

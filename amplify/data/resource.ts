@@ -41,7 +41,7 @@ const schema = a.schema({
     .secondaryIndexes(index => [index('email')])
     .authorization(allow => [
      allow.ownerDefinedIn('cognitoId').to(['read', 'update', 'delete']),
-     allow.authenticated().to(['read'])
+     allow.authenticated().to(['create', 'read']), // Temp for migration; remove 'create' post-deploy if desired
   ]),
 
   PaymentMethod: a.model({
