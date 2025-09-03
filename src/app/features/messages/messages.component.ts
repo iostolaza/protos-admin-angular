@@ -104,7 +104,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.chatSub = this.messageService.subscribeMessages(channelId, (newMsg: Schema['Message']['type']) => {
           this.messages.update((msgs: Message[]) => {
             const updated = [...msgs, {
-              text: newMsg.content,
+              text: newMsg.content ?? '', // Fixed with ?? ''
               sender: newMsg.senderId,
               isSelf: newMsg.senderId === this.currentUserId,
               timestamp: new Date(newMsg.timestamp),

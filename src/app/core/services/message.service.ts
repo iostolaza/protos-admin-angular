@@ -1,5 +1,5 @@
 import { Injectable, signal } from '@angular/core';
-import { generateClient } from 'aws-amplify/api';
+import { generateClient } from 'aws-amplify/data';
 import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
@@ -113,7 +113,7 @@ export class MessageService {
     if (!session.tokens) {
       throw new Error('User not authenticated');
     }
-    const { data, errors } = await this.client.models.Message.messagesByChannelAndTimestamp(
+    const { data, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp(
       { channelId },
       { sortDirection: 'DESC', limit: 1 }
     );
@@ -133,7 +133,7 @@ export class MessageService {
         return {
           id: channel.id,
           name: `${otherUser.firstName} ${otherUser.lastName}`,
-          snippet: lastMsg?.content,
+          snippet: lastMsg?.content ?? '',
           avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
           timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
         };
@@ -155,7 +155,7 @@ export class MessageService {
         messages.map(async (msg) => {
           const sender = await this.getUserById(msg.senderId);
           return {
-            text: msg.content,
+            text: msg.content ?? '',
             sender: `${sender.firstName} ${sender.lastName}`,
             senderAvatar: await this.getAvatarUrl(sender.profileImageKey || ''),
             isSelf: msg.senderId === currentUserId,
@@ -183,7 +183,7 @@ export class MessageService {
         return {
           id: channel.id,
           name: `${otherUser.firstName} ${otherUser.lastName}`,
-          snippet: lastMsg?.content,
+          snippet: lastMsg?.content ?? '',
           avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
           timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
         };
@@ -356,8 +356,8 @@ export class MessageService {
       console.log('User channels for deletion:', { userChannels, errors });
       this.handleErrors(errors, 'List user channels failed');
       if (userChannels.length > 0) {
-        const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ id: userChannels[0].id });
-        console.log('Delete user channel response:', { id: userChannels[0].id, errors: deleteErrors });
+        const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ userId: userChannels[0].userId, channelId: userChannels[0].channelId });
+        console.log('Delete user channel response:', { userId: userChannels[0].userId, channelId: userChannels[0].channelId, errors: deleteErrors });
         this.handleErrors(deleteErrors, 'Delete user channel failed');
       }
       await this.loadRecentChats();

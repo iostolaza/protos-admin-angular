@@ -4,6 +4,7 @@ import { Component, effect, signal } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { UserService, UserProfile } from '../../core/services/user.service';
+import { computed } from '@angular/core'; // Added import for computed
  
  
 @Component({
@@ -15,7 +16,7 @@ import { UserService, UserProfile } from '../../core/services/user.service';
 export class AddressCardComponent {
   editMode = signal(false);
   form: FormGroup;
-  user: UserProfile | null = null;
+  user = computed(() => this.userService.user()); // Changed to computed for reactivity
  
  
  
@@ -29,8 +30,7 @@ constructor(private fb: FormBuilder, private userService: UserService) {
     country: ['', Validators.required],
   });
   effect(() => {
-    const u = this.userService.user$();
-    this.user = u;
+    const u = this.user();
     this.form.patchValue(u?.address || {});
   });
 }
@@ -40,9 +40,9 @@ constructor(private fb: FormBuilder, private userService: UserService) {
   }
  
   async save() {
-    if (this.form.valid && this.user) {
-      const updatedAddress = { ...this.user.address, ...this.form.value };
-      const updated = { ...this.user, address: updatedAddress };
+    if (this.form.valid && this.user()) {
+      const updatedAddress = { ...this.user()!.address, ...this.form.value };
+      const updated = { ...this.user()!, address: updatedAddress };
       await this.userService.save(updated);
       this.toggleEdit();
     }

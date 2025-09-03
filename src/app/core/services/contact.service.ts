@@ -1,3 +1,4 @@
+// src/app/core/services/contact.service.ts
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
@@ -14,10 +15,11 @@ type UserChannelType = Schema['UserChannel']['type'];
 export class ContactService {
   private client = generateClient<Schema>();
 
-  async getFriends(userId: string) {
+  async getFriends(userId: string, nextToken: string | null = null) {
     try {
       const { data, nextToken: newToken, errors } = await this.client.models.Friend.list({
         filter: { userId: { eq: userId } },
+        nextToken: nextToken ?? undefined,
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
       const friendsWithDate = await Promise.all(
@@ -26,19 +28,19 @@ export class ContactService {
             id: f.friendId,
           });
           if (userErrors) throw new Error(userErrors.map((e: any) => e.message).join(', '));
-          return { ...userData, createdAt: f.createdAt };
+          return { ...userData, createdAt: f.createdAt } as NonNullable<UserType>;
         })
       );
-      return { data: friendsWithDate, nextToken: newToken };
+      return { friends: friendsWithDate, nextToken: newToken ?? null };
     } catch (error: unknown) {
       console.error('Get friends error:', error);
-      return { data: [], nextToken: null };
+      return { friends: [], nextToken: null };
     }
   }
 
   async getUsers(searchText: string, nextToken: string | null = null) {
     try {
-      const { data, nextToken: newToken, errors } = await this.client.models.User.list({
+      const { data: users, nextToken: newToken, errors } = await this.client.models.User.list({
         filter: searchText
           ? {
               or: [
@@ -52,16 +54,16 @@ export class ContactService {
         nextToken: nextToken ?? undefined,
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
-      const usersPicked = data.map((u: UserType) => ({
+      const usersPicked = users.map((u: UserType) => ({
         id: u.id,
-        firstName: u.firstName,
-        lastName: u.lastName,
-        username: u.username,
+        firstName: u.firstName ?? '',
+        lastName: u.lastName ?? '',
+        username: u.username ?? '',
         email: u.email,
-        profileImageKey: u.profileImageKey,
+        profileImageKey: u.profileImageKey ?? null,
         createdAt: u.createdAt,
       }));
-      return { users: usersPicked, nextToken: newToken };
+      return { users: usersPicked, nextToken: newToken ?? null };
     } catch (error: unknown) {
       console.error('Get users error:', error);
       return { users: [], nextToken: null };
@@ -129,7 +131,7 @@ export class ContactService {
   async getContacts(nextToken: string | null = null) {
     try {
       const { userId } = await getCurrentUser();
-      return await this.getFriends(userId);
+      return await this.getFriends(userId, nextToken); // Updated to getFriends with nextToken
     } catch (error) {
       console.error('Get contacts error:', error);
       return { friends: [], nextToken: null };

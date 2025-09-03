@@ -1,7 +1,5 @@
-/* Fixed: Add import { inject } from '@angular/core'; Remove changeDetection if not needed. */
-
-
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+// src/app/layouts/top-menu/profile-menu/profile-menu.component.ts
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { animate, state, style, transition, trigger } from '@angular/animations';
@@ -9,7 +7,7 @@ import { MenuService } from '../../../core/services/menu.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { UserService } from '../../../core/services/user.service';
-
+import { computed, signal } from '@angular/core';
 
 type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; route?: string; action?: 'logout' };
 
@@ -30,25 +28,20 @@ type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; rout
 export class ProfileMenuComponent implements OnInit {
   private router = inject(Router);
   private menuService = inject(MenuService);
-
   private userService = inject(UserService);
-  user = this.userService.user$;
+  user = computed(() => this.userService.user()); // Changed to computed signal
   fullName = computed(() => {
     const u = this.user();
     return u ? `${u.firstName} ${u.lastName}`.trim() || u.username || 'User' : 'User';
   });
-
   getIconPath = getIconPath;
-
   isOpen = signal(false);
   profileMenu = signal<ProfileItem[]>([
     { title: 'Profile', icon: 'user-circle', route: '/main-layout/profile' },
     { title: 'Settings', icon: 'cog', route: '/main-layout/settings' },
     { title: 'Logout', icon: 'logout', action: 'logout' }
   ]);
-
   toggleMenu() { this.isOpen.update((v) => !v); }
-
   onMenuItemClick(item: ProfileItem) {
     if (item.route) {
       this.router.navigate([item.route]);
@@ -57,11 +50,10 @@ export class ProfileMenuComponent implements OnInit {
     }
     this.isOpen.set(false);
   }
-  
+ 
   ngOnInit() {
     if (!this.user()) {
       this.userService.load().catch(err => console.warn('Failed to load user profile:', err));
     }
   }
-
 }

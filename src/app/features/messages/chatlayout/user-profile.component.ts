@@ -2,6 +2,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '../../../core/services/user.service';
+import { computed } from '@angular/core';
 
 @Component({
   selector: 'app-user-profile',
@@ -12,7 +13,7 @@ import { UserService } from '../../../core/services/user.service';
 
 export class UserProfileComponent implements OnInit {
   private userService = inject(UserService);
-  user = this.userService.user$;
+  user = computed(() => this.userService.user());
 
   async ngOnInit() {
     await this.userService.load(); // Ensure user data is loaded
