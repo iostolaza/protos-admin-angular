@@ -11,25 +11,25 @@ describe('UserService', () => {
   let service: UserService;
   let mockClient: any;
 
-  beforeEach(() => {
+  beforeEach() => {
     mockClient = {
       models: {
         User: {
           get: jasmine.createSpy('get').and.returnValue(Promise.resolve({
-            data: { id: 'test', profileImageKey: null, username: 'testuser' } as Schema['User']['type'],
+            data: { id: 'test', profileImageKey: null, username: 'testuser' } as Schema['models']['User']['type'],
             errors: undefined,
           })),
           update: jasmine.createSpy('update').and.returnValue(Promise.resolve({
-            data: { id: 'test', username: 'testuser' } as Schema['User']['type'],
+            data: { id: 'test', username: 'testuser' } as Schema['models']['User']['type'],
             errors: undefined,
           })),
           observeQuery: jasmine.createSpy('observeQuery').and.returnValue(
-            of({ items: [{ id: 'test', username: 'testuser' } as Schema['User']['type']] })
+            of({ items: [{ id: 'test', username: 'testuser' } as Schema['models']['User']['type']] })
           ),
         },
         PaymentMethod: {
           list: jasmine.createSpy('list').and.returnValue(Promise.resolve({
-            data: [] as Schema['PaymentMethod']['type'][],
+            data: [] as Schema['models']['PaymentMethod']['type'][],
             errors: undefined,
           })),
           create: jasmine.createSpy('create').and.returnValue(Promise.resolve({ errors: undefined })),
@@ -52,7 +52,7 @@ describe('UserService', () => {
       ],
     });
     service = TestBed.inject(UserService);
-  });
+  };
 
   it('should be created', () => {
     expect(service).toBeTruthy();
