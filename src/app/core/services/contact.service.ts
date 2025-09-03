@@ -25,7 +25,7 @@ export class ContactService {
       const friendsWithDate = await Promise.all(
         data.map(async (f: FriendType) => {
           const { data: userData, errors: userErrors } = await this.client.models.User.get({
-            id: f.friendId,
+            cognitoId: f.friendId, // 🔹 FIXED
           });
           if (userErrors) throw new Error(userErrors.map((e: any) => e.message).join(', '));
           return { ...userData, createdAt: f.createdAt } as NonNullable<UserType>;
@@ -55,7 +55,7 @@ export class ContactService {
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
       const usersPicked = users.map((u: UserType) => ({
-        id: u.id,
+        cognitoId: u.cognitoId, // 🔹 FIXED
         firstName: u.firstName ?? '',
         lastName: u.lastName ?? '',
         username: u.username ?? '',
@@ -120,30 +120,29 @@ export class ContactService {
 
   async deleteUser(userId: string) {
     try {
-      const { errors } = await this.client.models.User.delete({ id: userId });
+      const { errors } = await this.client.models.User.delete({
+        cognitoId: userId, // 🔹 FIXED
+      });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Delete user error:', error);
     }
   }
 
-  // Added to match ContactsComponent usage
   async getContacts(nextToken: string | null = null) {
     try {
       const { userId } = await getCurrentUser();
-      return await this.getFriends(userId, nextToken); // Updated to getFriends with nextToken
+      return await this.getFriends(userId, nextToken);
     } catch (error) {
       console.error('Get contacts error:', error);
       return { friends: [], nextToken: null };
     }
   }
 
-  // Added to match ContactsComponent usage
   async searchPool(searchQuery: string, nextToken: string | null = null) {
     return await this.getUsers(searchQuery, nextToken);
   }
 
-  // Added to match ContactsComponent usage
   async addContact(contactId: string) {
     try {
       const { userId } = await getCurrentUser();
@@ -153,7 +152,6 @@ export class ContactService {
     }
   }
 
-  // Added to match ContactsComponent usage
   async deleteContact(contactId: string) {
     try {
       const { userId } = await getCurrentUser();

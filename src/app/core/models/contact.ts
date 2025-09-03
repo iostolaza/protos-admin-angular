@@ -1,3 +1,4 @@
+// src/app/core/models/contact.ts
 export interface Address {
   line1?: string | null;
   city?: string | null;
@@ -12,7 +13,7 @@ export interface ContactPrefs {
 }
 
 export interface InputContact {
-  id: string;
+  cognitoId: string;  
   firstName: string;
   lastName: string;
   username: string;

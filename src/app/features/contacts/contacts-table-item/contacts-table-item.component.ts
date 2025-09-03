@@ -19,7 +19,7 @@ export class ContactsTableItemComponent {
 
   deleteContact(): void {
     if (confirm('Delete this contact?')) {
-      this.deleted.emit(this.contact.id);
+      this.deleted.emit(this.contact.cognitoId);
     }
   }
 }

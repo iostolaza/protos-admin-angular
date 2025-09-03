@@ -88,7 +88,7 @@ export class MessageService {
     if (!session.tokens) {
       throw new Error('User not authenticated');
     }
-    const { data, errors } = await this.client.models.User.get({ id: userId });
+    const { data, errors } = await this.client.models.User.get({ cognitoId: userId });
     console.log('User by ID response:', { userId, data, errors });
     this.handleErrors(errors, 'Get user failed');
     if (!data) throw new Error('User not found');
@@ -210,7 +210,7 @@ export class MessageService {
     const { data, errors } = await this.client.models.User.list();
     console.log('Get contacts response:', { data, errors });
     this.handleErrors(errors, 'List users failed');
-    return data.filter(user => user.id !== currentUserId);
+    return data.filter(user => user.cognitoId !== currentUserId);
   }
 
   async getOrCreateChannel(contactId: string): Promise<Schema['Channel']['type']> {

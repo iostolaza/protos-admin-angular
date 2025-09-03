@@ -23,7 +23,7 @@ export class PaymentCardComponent {
       paymentMethods: this.fb.array([]),
     });
     effect(() => {
-      const u = this.userService.user$();
+      const u = this.userService.user();
       this.user = u;
       this.loadPayments();
     });

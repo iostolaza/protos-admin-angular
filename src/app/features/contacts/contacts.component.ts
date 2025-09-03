@@ -86,8 +86,8 @@ export class ContactsComponent implements OnInit, OnDestroy {
       this.searchResults = [];
       do {
         const { users, nextToken: newToken } = await this.contactsService.searchPool(this.searchQuery, nextToken);
-        const existingIds = new Set(this.contacts.map((c) => c.id));
-        const filtered = users.filter((u) => !existingIds.has(u.id));
+        const existingIds = new Set(this.contacts.map((c) => c.cognitoId));
+        const filtered = users.filter((u) => !existingIds.has(u.cognitoId));
         const extendedFiltered = await Promise.all(
           filtered.map(async (u) => {
             let imageUrl: string | undefined;
@@ -136,10 +136,10 @@ export class ContactsComponent implements OnInit, OnDestroy {
 
   async addContact(user: InputContact): Promise<void> {
     try {
-      await this.contactsService.addContact(user.id);
+      await this.contactsService.addContact(user.cognitoId);
       const extendedUser = { ...user, dateAdded: new Date().toISOString() };
       this.contacts.push(extendedUser);
-      this.searchResults = this.searchResults.filter((u) => u.id !== user.id);
+      this.searchResults = this.searchResults.filter((u) => u.cognitoId !== user.cognitoId);
       this.updateSummary();
       console.log('Contact added:', user);
     } catch (err) {
@@ -150,7 +150,7 @@ export class ContactsComponent implements OnInit, OnDestroy {
   async onDelete(id: string): Promise<void> {
     try {
       await this.contactsService.deleteContact(id);
-      this.contacts = this.contacts.filter((c) => c.id !== id);
+      this.contacts = this.contacts.filter((c) => c.cognitoId !== id);
       this.updateSummary();
       console.log('Contact deleted:', id);
     } catch (err) {

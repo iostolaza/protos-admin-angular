@@ -26,7 +26,7 @@ export class PersonalInfoCardComponent {
       // accessLevel: [''],
     });
     effect(() => {
-      const u = this.userService.user$();
+      const u = this.userService.user();
       this.user = u;
       this.form.patchValue(u || {});
       this.profileImageUrl = u?.profileImageUrl || '/assets/profile/avatar-default.svg';

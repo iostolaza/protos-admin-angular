@@ -2,6 +2,7 @@ import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
 
 const schema = a.schema({
   User: a.model({
+    cognitoId: a.string().required(), 
     firstName: a.string(),
     lastName: a.string(),
     username: a.string(),
@@ -34,7 +35,10 @@ const schema = a.schema({
     status: a.string(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
-  }).authorization(allow => [
+  })
+    .identifier(['cognitoId']) 
+    .secondaryIndexes(index => [index('email')])
+    .authorization(allow => [
     allow.owner().to(['read', 'update', 'delete']),
     allow.authenticated().to(['read']),
   ]),

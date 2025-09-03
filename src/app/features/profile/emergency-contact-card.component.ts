@@ -24,7 +24,8 @@ constructor(private fb: FormBuilder, private userService: UserService) {
     address: ['', Validators.required],
   });
   effect(() => {
-    const u = this.userService.user$();
+    
+    const u = this.userService.user();
     this.user = u;
     this.form.patchValue(u?.emergencyContact || {});
   });

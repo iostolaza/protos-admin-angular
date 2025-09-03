@@ -25,7 +25,7 @@ constructor(private fb: FormBuilder, private userService: UserService) {
     year: [''],
   });
   effect(() => {
-    const u = this.userService.user$();
+    const u = this.userService.user();
     this.user = u;
     this.form.patchValue(u?.vehicle || {});
   });
