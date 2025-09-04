@@ -54,7 +54,7 @@ export const Menu = {
       separator: false,
       items: [
         { label: 'Settings', icon: 'cog', route: '/main-layout/settings' },
-        { label: 'Logout', icon: 'logout', route: '/logout' }
+        { label: 'Logout', icon: 'arrow-right-on-rectangle', route: '/logout' }
       ],
     }
   ] as MenuItem[],

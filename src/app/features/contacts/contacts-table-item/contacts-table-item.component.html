@@ -11,11 +11,11 @@
 <td class="py-3 text-right text-muted-foreground">{{ contact.dateAdded | date:'short' }}</td>
 <td class="py-3 text-right"> <!-- NEW: Message td -->
   <button (click)="startMessage()" class="rounded-full bg-transparent p-1 hover:bg-primary/10">
-    <svg-icon [src]="getIconPath('inbox')" svgClass="h-4 w-4 text-primary"></svg-icon> <!-- Assume heroicon 'message-square' -->
+    <svg-icon [src]="getIconPath('chat-bubble-oval-left')" svgClass="h-4 w-4 text-primary"></svg-icon> <!-- Assume heroicon 'message-square' -->
   </button>
 </td>
 <td class="py-3 text-right">
   <button (click)="deleteContact()" class="rounded-full bg-transparent p-1 hover:bg-destructive/10">
-    <svg-icon [src]="getIconPath('x')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+    <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
   </button>
 </td>
