@@ -1,17 +1,16 @@
-// src/app/core/services/user.service.ts
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { Observable, Subject, from } from 'rxjs';
-import { takeUntil } from 'rxjs';
+import { takeUntil } from 'rxjs/operators'; // UPDATED: Added operators import for consistency.
 
 type Models = Schema;
 type UserType = Models['User']['type'];
 type PaymentMethodType = Models['PaymentMethod']['type'];
 
-export type UserProfile = UserType & { profileImageUrl?: string };
+export type UserProfile = UserType & { profileImageUrl?: string }; // UPDATED: Kept as is, but consider Omit if extras added.
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +28,7 @@ export class UserService {
     await this.loadCurrentUser();
   }
 
-private async loadCurrentUser() {
+  private async loadCurrentUser() {
     try {
       const { userId, signInDetails } = await getCurrentUser();
       const email = signInDetails?.loginId;
@@ -57,7 +56,7 @@ private async loadCurrentUser() {
           updatedAt: new Date().toISOString(),
         });
         if (errors) throw new Error(errors.map(e => e.message).join(', '));
-        
+       
         const { data: newUser } = await this.client.models.User.get({ cognitoId: userId });
         user = newUser;
       }
@@ -83,7 +82,7 @@ private async loadCurrentUser() {
 
   private async getProfileImageUrlFromKey(key: string | null | undefined): Promise<string | undefined> {
     if (!key) return undefined;
-    const { url } = await getUrl({ path: key });
+    const { url } = await getUrl({ path: key, options: { expiresIn: 3600 } }); // UPDATED: Added expiresIn for signed URL best practice.
     return url.toString();
   }
 
@@ -98,7 +97,11 @@ private async loadCurrentUser() {
   }
 
   async save(updated: Partial<UserProfile>) {
-    await this.updateUser(updated);
+    // NEW: Filter to valid fields to avoid "field not defined" error.
+    const validUpdated: Partial<UserType> = Object.fromEntries(
+      Object.entries(updated).filter(([key]) => key in ({} as UserType) && key !== 'cognitoId' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'profileImageUrl')
+    );
+    await this.updateUser(validUpdated);
   }
 
   async updateUser(updatedData: Partial<UserType>) {
@@ -117,9 +120,12 @@ private async loadCurrentUser() {
   async uploadProfileImage(file: File): Promise<string> {
     try {
       const { userId } = await getCurrentUser();
-      const path = `profile-pictures/${userId}/${file.name}`;
-      const { path: uploadedPath } = await uploadData({ path, data: file }).result;
-      const key = uploadedPath;
+      // UPDATED: Use path as function for auto identityId, protected level.
+      const result = await uploadData({
+        path: ({ identityId }) => `protected/${identityId}/profile-pictures/${userId}/${file.name}`,
+        data: file
+      }).result;
+      const key = result.path; // Full path with protected/{identityId}/...
       await this.updateUser({ profileImageKey: key });
       return key;
     } catch (error: unknown) {

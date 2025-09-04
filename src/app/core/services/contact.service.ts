@@ -1,8 +1,8 @@
-// src/app/core/services/contact.service.ts
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { getCurrentUser } from 'aws-amplify/auth';
+import { Observable } from 'rxjs'; // NEW: Import for Observable.
 
 type FriendType = Schema['Friend']['type'];
 type UserType = Schema['User']['type'];
@@ -159,5 +159,16 @@ export class ContactService {
     } catch (error) {
       console.error('Delete contact error:', error);
     }
+  }
+
+  // NEW: Real-time observation for Friend model changes.
+  observeContacts(): Observable<void> {
+    return new Observable(observer => {
+      const sub = this.client.models.Friend.observeQuery().subscribe({
+        next: () => observer.next(),
+        error: (err) => observer.error(err),
+      });
+      return () => sub.unsubscribe();
+    });
   }
 }

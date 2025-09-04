@@ -39,6 +39,7 @@ export class ContactsComponent implements OnInit, OnDestroy {
     await this.userService.load();
     await this.loadContacts();
     this.setupSearch();
+    this.setupRealTime(); // NEW: Added real-time subscription.
   }
 
   private async loadContacts(): Promise<void> {
@@ -168,6 +169,15 @@ export class ContactsComponent implements OnInit, OnDestroy {
 
   private computeUpdatedAgo(): string {
     return '37 minutes ago'; // Replace with actual logic if needed
+  }
+
+  // NEW: Setup real-time observation for contacts changes.
+  private setupRealTime() {
+    this.contactsService.observeContacts()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.loadContacts(); // Refresh on change.
+      });
   }
 
   ngOnDestroy() {
