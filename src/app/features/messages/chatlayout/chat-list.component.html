@@ -8,7 +8,7 @@
       </div>
       <span class="ml-auto text-xs text-muted-foreground">{{ chat.timestamp | date:'shortTime' }}</span>
       <button (click)="chatDeleted.emit(chat.id); $event.stopPropagation()" class="delete-btn" aria-label="Delete chat">
-        <svg-icon [src]="getIconPath('x')" class="h-4 w-4 stroke-current fill-current text-inherit"></svg-icon>
+        <svg-icon [src]="getIconPath('x-mark')" class="h-4 w-4 stroke-current fill-current text-inherit"></svg-icon>
       </button>
     </li>
   </ul>

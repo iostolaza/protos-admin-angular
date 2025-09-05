@@ -9,7 +9,7 @@ import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { UserService } from '../../../core/services/user.service';
 import { computed, signal } from '@angular/core';
 
-type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'logout'; route?: string; action?: 'logout' };
+type ProfileItem = { title: string; icon: 'user-circle' | 'cog' | 'arrow-right-on-rectangle'; route?: string; action?: 'logout' };
 
 @Component({
   selector: 'app-profile-menu',
@@ -39,7 +39,7 @@ export class ProfileMenuComponent implements OnInit {
   profileMenu = signal<ProfileItem[]>([
     { title: 'Profile', icon: 'user-circle', route: '/main-layout/profile' },
     { title: 'Settings', icon: 'cog', route: '/main-layout/settings' },
-    { title: 'Logout', icon: 'logout', action: 'logout' }
+    { title: 'Logout', icon: 'arrow-right-on-rectangle', action: 'logout' }
   ]);
   toggleMenu() { this.isOpen.update((v) => !v); }
   onMenuItemClick(item: ProfileItem) {
