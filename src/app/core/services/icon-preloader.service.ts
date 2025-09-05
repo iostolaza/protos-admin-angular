@@ -202,7 +202,7 @@ export const ICONS = {
   'h1': 'assets/icons/heroicons/outline/h1.svg',
   'h2': 'assets/icons/heroicons/outline/h2.svg',
   'h3': 'assets/icons/heroicons/outline/h3.svg',
-    'hand-raised': 'assets/icons/heroicons/outline/hand-raised.svg',
+  'hand-raised': 'assets/icons/heroicons/outline/hand-raised.svg',
   'hand-thumb-down': 'assets/icons/heroicons/outline/hand-thumb-down.svg',
   'hand-thumb-up': 'assets/icons/heroicons/outline/hand-thumb-up.svg',
   'hashtag': 'assets/icons/heroicons/outline/hashtag.svg',

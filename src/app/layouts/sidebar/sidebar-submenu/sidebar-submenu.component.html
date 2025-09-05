@@ -26,9 +26,9 @@
             </a>
             <button [ngClass]="{ hidden: !menuService.showSideBar }" class="text-muted-foreground flex cursor-pointer items-center justify-end px-2 transition-all duration-500 dark:text-foreground">
               @if (!sub.expanded) {
-                <svg-icon [src]="getIconPath('plus')" svgClass="h-4 w-4"></svg-icon>
+                <svg-icon [src]="getIconPath('plus')" svgClass="h-4 w-4 text-success"></svg-icon>
               } @else {
-                <svg-icon [src]="getIconPath('minus')" svgClass="h-4 w-4"></svg-icon>
+                <svg-icon [src]="getIconPath('minus')" svgClass="h-4 w-4 text-destructive"></svg-icon>
               }
             </button>
           </ng-template>

@@ -9,7 +9,7 @@
       <span class="text-foreground text-xs font-semibold">Color</span>
       <div class="mt-2 grid grid-cols-2 gap-2">
         @for (item of themeColors; track $index) {
-          <div (click)="toggleThemeColor(item.name)" [ngClass]="{ 'border-muted-foreground/30 bg-card': item.name == themeService.theme().color }" class="focus-visible:ring-ring border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs inline-flex h-8 cursor-pointer items-center justify-start space-x-2 whitespace-nowrap rounded-md border border-dashed px-3 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50">
+          <div (click)="toggleThemeColor(item.name)" [ngClass]="{ 'border-muted-foreground/30 bg-background': item.name == themeService.theme().color }" class="focus-visible:ring-ring border-border bg-background text-muted-foreground hover:bg-muted-foreground hover:text-foreground shadow-xs inline-flex h-8 cursor-pointer items-center justify-start space-x-2 whitespace-nowrap rounded-md border border-dashed px-3 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50">
             <span [style.backgroundColor]="item.code" class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"></span>
             <p class="capitalize">{{ item.name }}</p>
           </div>
@@ -25,8 +25,8 @@
       <span class="text-foreground text-xs font-semibold">Mode</span>
       <div class="mt-2 grid grid-cols-2 gap-2">
         @for (item of themeMode; track $index) {
-          <div (click)="toggleThemeMode()" [ngClass]="{ 'border-muted-foreground/30 bg-card': item == themeService.theme().mode }" class="focus-visible:ring-ring border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs inline-flex h-8 cursor-pointer items-center justify-start space-x-2 whitespace-nowrap rounded-md border border-dashed px-3 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50">
-            <svg-icon [src]="item == 'light' ? 'assets/icons/heroicons/outline/sun.svg' : 'assets/icons/heroicons/outline/moon.svg'" [svgClass]="'h-5 w-5 text-muted-foreground dark:text-foreground'"></svg-icon> <!-- CHANGE: Added dark:text-foreground -->
+          <div (click)="toggleThemeMode()" [ngClass]="{ 'border-muted-foreground/30 bg-background': item == themeService.theme().mode }" class="focus-visible:ring-ring border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs inline-flex h-8 cursor-pointer items-center justify-start space-x-2 whitespace-nowrap rounded-md border border-dashed px-3 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50">
+            <svg-icon [src]="item == 'light' ? 'assets/icons/heroicons/outline/sun.svg' : 'assets/icons/heroicons/outline/moon.svg'" [svgClass]="'h-5 w-5 text-muted-foreground dark:text-foreground'"></svg-icon> 
             <p class="capitalize">{{ item }}</p>
           </div>
         }
@@ -53,7 +53,7 @@
           <p class="text-destructive text-sm">Passwords don't match</p>
         }
       </div>
-      <button type="submit" class="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90">Save</button>
+      <button type="submit" class="px-4 py-2 bg-primary text-foreground rounded hover:bg-primary/90">Save</button>
     </form>
     <div class="mt-4">
       <label class="block text-sm text-muted-foreground">2FA</label>
