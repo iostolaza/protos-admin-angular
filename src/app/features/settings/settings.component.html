@@ -1,5 +1,5 @@
 
-<!-- Edited settings: Theme sections with provided HTML, bg-card. -->
+<!-- src/app/features/settings/settings.component.html -->
 
 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 bg-background">
   <!-- Theme Color -->
@@ -19,14 +19,14 @@
   </div>
 
   <!-- Theme Mode -->
-  <div class="bg-card p-6 rounded-lg shadow-custom">
+  <div class="bg-card p-6 rounded-lg shadow-custom"> 
     <h2 class="text-lg font-semibold mb-4 text-foreground">Theme Mode</h2>
     <div class="mx-4 my-2">
       <span class="text-foreground text-xs font-semibold">Mode</span>
       <div class="mt-2 grid grid-cols-2 gap-2">
         @for (item of themeMode; track $index) {
           <div (click)="toggleThemeMode()" [ngClass]="{ 'border-muted-foreground/30 bg-card': item == themeService.theme().mode }" class="focus-visible:ring-ring border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground shadow-xs inline-flex h-8 cursor-pointer items-center justify-start space-x-2 whitespace-nowrap rounded-md border border-dashed px-3 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-1 disabled:pointer-events-none disabled:opacity-50">
-            <svg-icon [src]="item == 'light' ? 'assets/icons/heroicons/outline/sun.svg' : 'assets/icons/heroicons/outline/moon.svg'" [svgClass]="'h-5 w-5 text-muted-foreground/50'"></svg-icon>
+            <svg-icon [src]="item == 'light' ? 'assets/icons/heroicons/outline/sun.svg' : 'assets/icons/heroicons/outline/moon.svg'" [svgClass]="'h-5 w-5 text-muted-foreground dark:text-foreground'"></svg-icon> <!-- CHANGE: Added dark:text-foreground -->
             <p class="capitalize">{{ item }}</p>
           </div>
         }
@@ -35,7 +35,7 @@
   </div>
 
   <!-- Security -->
-  <div class="bg-card p-6 rounded-lg shadow-custom">
+  <div class="bg-card p-6 rounded-lg shadow-custom"> 
     <h2 class="text-lg font-semibold mb-4 text-foreground">Security</h2>
     <form [formGroup]="passwordForm" (ngSubmit)="savePassword()">
       <div class="mb-4">
@@ -62,7 +62,7 @@
   </div>
 
   <!-- Timezone -->
-  <div class="bg-card p-6 rounded-lg shadow-custom">
+  <div class="bg-card p-6 rounded-lg shadow-custom"> 
     <h2 class="text-lg font-semibold mb-4 text-foreground">Timezone</h2>
     <select (change)="setTimezone($event)" class="w-full p-2 border border-border rounded bg-background text-foreground">
       <option>UTC</option>

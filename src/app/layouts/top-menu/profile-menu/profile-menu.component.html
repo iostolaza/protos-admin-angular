@@ -1,5 +1,6 @@
 
-<!-- Profile menu without theme sections (moved to settings). -->
+
+<!-- src/app/layouts/top-menu/profile-menu/profile-menu.component.html -->
 
 <div class="relative ml-3">
   <button (click)="toggleMenu()" class="bg-background relative flex rounded-full text-sm" type="button">
@@ -13,14 +14,14 @@
       </div>
       <div class="text-foreground overflow-hidden px-2 text-sm font-semibold">
         {{ fullName() }}
-        <p class="text-muted-foreground truncate text-ellipsis text-xs font-semibold">{{ user()?.email || 'email@example.com' }}</p>
+        <p class="text-muted-foreground truncate text-ellipsis text-xs font-semibold">{{ user()?.email || 'my_name@email.com' }}</p>
       </div>
     </div>
     <div class="border-border border-b border-dashed"></div>
     <ul class="my-2 mx-2 flex flex-col">
       @for (item of profileMenu(); track $index) {
         <li (click)="onMenuItemClick(item)" class="text-muted-foreground hover:bg-muted hover:text-primary inline-flex cursor-pointer items-center gap-2 rounded-full px-2 py-2 text-xs font-semibold">
-          <svg-icon [src]="getIconPath(item.icon)" [svgClass]="'h-5 w-5 text-muted-foreground/50'"> </svg-icon>
+          <svg-icon [src]="getIconPath(item.icon)" [svgClass]="'h-5 w-5 text-muted-foreground dark:text-foreground'"> </svg-icon> 
           {{ item.title }}
         </li>
       }

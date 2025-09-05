@@ -1,18 +1,7 @@
-<!-- =====================================================================
- * PAYMENT CARD COMPONENT TEMPLATE
- * =====================================================================
- * Payment methods: bg-card p-10, form array for dynamic methods, remove bg-destructive.
- * Updated: Add/remove/save buttons match (primary/secondary/destructive), inputs bg-background.
- * Labels text-muted-foreground, values text-foreground.
- * References:
- * - Angular FormArray: https://angular.dev/guide/forms/reactive-forms#formarray (dynamic controls).
- * Iteration 1: FormArray with add/remove.
- * Iteration 2: Grid cols-2 mb-4 per method.
- * Iteration 3: Async loadPayments, populate on edit.
- * Best: Track $index for loops, flex justify-end buttons.
- -->
+
 <!-- src/app/features/profile/payment-card.component.html -->
-<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
+
+<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom flex flex-col h-full"> 
   <h2 class="text-xl font-bold mb-4 text-primary">Payment Information</h2>
   @if (loading()) {
     <p class="text-muted-foreground">Loading payments...</p>

@@ -366,7 +366,7 @@
   }
 
   .user-profile {
-    @apply mb-4 p-4 bg-card rounded-lg shadow-custom border border-border;
+    @apply mb-4 p-4 bg-card rounded-lg shadow-custom; /* CHANGE: Removed border, standardized rounded/shadow */
   }
 
   .chat-search {
@@ -380,15 +380,4 @@
   .chat-header {
     @apply bg-card p-4 border-b border-border flex items-center gap-3 shadow-sm;
   }
-}
-
-/* =====================================================================
- * 7. LOCAL/INLINE STYLES (Non-Tailwind)
- * ===================================================================== */
-.example-element-row td {
-  border-bottom-width: 0;
-}
-
-.detail-row {
-  height: 0;
 }

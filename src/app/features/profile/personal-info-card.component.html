@@ -1,12 +1,7 @@
-<!-- =====================================================================
- * PERSONAL INFO CARD COMPONENT TEMPLATE
- * =====================================================================
- * Personal info: bg-card p-15 (consistent padding), inputs bg-background border-border.
- * Updated: Edit button bg-primary text-primary-foreground hover:bg-primary/90, cancel bg-secondary hover:bg-muted.
- * Labels text-muted-foreground, values text-foreground, strong text-muted-foreground.
- -->
+
 <!-- src/app/features/profile/personal-info-card.component.html -->
-<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
+ 
+<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom flex flex-col h-full"> 
   <h2 class="text-xl font-bold mb-4 text-primary">Personal Information</h2>
   <div class="mb-4">
     <img [src]="profileImageUrl || '/assets/profile/avatar-default.svg'" alt="Profile" class="w-20 h-20 rounded-full" aria-label="Profile image">

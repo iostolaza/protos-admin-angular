@@ -11,10 +11,18 @@ export interface Theme {
 export class ThemeService {
   public theme = signal<Theme>({ mode: 'light', color: 'base' });
   constructor() {
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    this.theme.update(t => ({ ...t, mode: prefersDark ? 'dark' : 'light' }));
-    this.loadTheme();
+    this.loadTheme(); // CHANGE: Load first to prioritize localStorage
+    if (!localStorage.getItem('theme')) { // CHANGE: Only set prefers if no local
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      this.theme.update(t => ({ ...t, mode: prefersDark ? 'dark' : 'light' }));
+    }
     effect(() => this.setConfig());
+    // CHANGE: Add listener for system changes, but only apply if no local theme set
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+      if (!localStorage.getItem('theme')) {
+        this.theme.update(t => ({ ...t, mode: e.matches ? 'dark' : 'light' }));
+      }
+    });
   }
 
   private loadTheme() {
