@@ -15,6 +15,7 @@
  * 2. PLUGINS & IMPORTS
  * ===================================================================== */
 @import 'tailwindcss';
+@source inline("{group-hover:}hidden {group-hover:}block"); /* Safelist for hover variants */
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 @plugin "tailwind-scrollbar";

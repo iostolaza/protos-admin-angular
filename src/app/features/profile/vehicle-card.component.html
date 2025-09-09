@@ -5,7 +5,7 @@
  * Updated: Buttons match (primary/secondary), labels text-muted-foreground, values text-foreground, strong text-muted-foreground.
  -->
 <!-- src/app/features/profile/vehicle-card.component.html -->
-<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom border border-border flex flex-col h-full">
+<div class="bg-card text-card-foreground p-15 rounded-lg shadow-custom flex flex-col h-full">
   <h2 class="text-xl font-bold mb-4 text-primary">Vehicle Details</h2>
   @if (editMode()) {
     <form [formGroup]="form" (ngSubmit)="save()">

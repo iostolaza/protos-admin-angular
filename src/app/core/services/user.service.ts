@@ -119,7 +119,9 @@ export class UserService {
 
   async save(updated: Partial<UserProfile>) {
     const validUpdated: Partial<UserType> = Object.fromEntries(
-      Object.entries(updated).filter(([key]) => key in ({} as UserType) && key !== 'cognitoId' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'profileImageUrl')
+      Object.entries(updated).filter(([key]) => 
+        key !== 'cognitoId' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'profileImageUrl'
+      )
     );
     await this.updateUser(validUpdated);
   }
