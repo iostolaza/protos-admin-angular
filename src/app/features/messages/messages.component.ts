@@ -16,7 +16,7 @@ import { MessageInputComponent } from './chatlayout/message-input.component';
 import { ActivatedRoute } from '@angular/router';
 
 interface ChatItem { id: string; name: string; snippet?: string; avatar?: string; timestamp?: Date; }
-interface Message { text: string; sender: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
+interface Message { id: string; text: string; sender: string; senderAvatar?: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }  // Added id
 interface Conversation {
   channel: { id: string };
   otherUser: { id: string; name: string; avatar?: string; email: string };
@@ -63,14 +63,13 @@ export class MessagesComponent implements OnInit, OnDestroy {
     try {
       this.currentUserId = await this.messageService.getCurrentUserId();
       await this.messageService.loadRecentChats();
-      // Map to Conversation for compatibility
+      // Map to Conversation
       this.conversations.set(this.messageService.getRecentChats()().map((chat: ChatItem) => ({
         channel: { id: chat.id },
         otherUser: { id: '', name: chat.name, avatar: chat.avatar, email: '' },
         lastMessage: { content: chat.snippet || '', timestamp: chat.timestamp?.toISOString() || '' } as Schema['Message']['type']
       })));
       
-      // Handle route parameter to auto-select conversation
       const channelId = this.route.snapshot.paramMap.get('channelId');
       if (channelId) {
         let chat = this.messageService.getRecentChats()().find(c => c.id === channelId);
@@ -81,7 +80,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         }
       }
       
-      // Real-time for all
+      // Global sub only for recent chats updates
       this.subscriptions.push(this.messageService.subscribeMessages(null, (newMsg: Schema['Message']['type']) => {
         this.updateConversationsOnNewMessage(newMsg);
       }).pipe(takeUntil(this.destroy$)).subscribe());
@@ -102,7 +101,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.chatSub = null;
       }
       this.selectedConversation.set(conv);
-      this.loadingMessages.set(false);
+      this.loadingMessages.set(true);
       try {
         const channelId = conv.channel.id;
         if (this.messageCache.has(channelId)) {
@@ -113,19 +112,9 @@ export class MessagesComponent implements OnInit, OnDestroy {
           this.messages.set(loadedMessages);
           this.messageCache.set(channelId, loadedMessages);
         }
-        this.chatSub = this.messageService.subscribeMessages(channelId, (newMsg: Schema['Message']['type']) => {
-          this.messages.update((msgs: Message[]) => {
-            const updated = [...msgs, {
-              text: newMsg.content ?? '',
-              sender: newMsg.senderId,
-              isSelf: newMsg.senderId === this.currentUserId,
-              timestamp: new Date(newMsg.timestamp),
-              read: newMsg.readBy?.includes(this.currentUserId)
-            }];
-            this.messageCache.set(channelId, updated);
-            return updated;
-          });
-        }).pipe(takeUntil(this.destroy$)).subscribe();
+        // Channel-specific sub sets full messages from snapshot
+        this.chatSub = this.messageService.subscribeMessages(channelId, () => {})  // No onNewMessage, as tap handles set
+          .pipe(takeUntil(this.destroy$)).subscribe();
       } catch (error) {
         console.error('Load messages error:', error);
       } finally {
