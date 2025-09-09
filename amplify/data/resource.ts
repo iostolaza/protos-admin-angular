@@ -34,8 +34,8 @@ const schema = a.schema({
       push: a.boolean(),
     }),
     status: a.string(),
-    createdAt: a.datetime().required(),
-    updatedAt: a.datetime().required(),
+    createdAt: a.datetime(),  // Removed .required() for auto-population
+    updatedAt: a.datetime(),  // Removed .required() for auto-population
   })
     .identifier(['cognitoId'])
     .secondaryIndexes(index => [index('email')])
@@ -48,31 +48,31 @@ const schema = a.schema({
     userId: a.id().required(),
     type: a.string().required(),
     name: a.string().required(),
-    createdAt: a.datetime().required(),
-    updatedAt: a.datetime().required(),
+    createdAt: a.datetime(),  // Removed .required()
+    updatedAt: a.datetime(),  // Removed .required()
   }).secondaryIndexes(index => [index('userId')])
     .authorization(allow => [allow.ownerDefinedIn('userId')]),
 
   Friend: a.model({
     userId: a.id().required(),
     friendId: a.id().required(),
-    createdAt: a.datetime().required(),
-    updatedAt: a.datetime().required(),
+    createdAt: a.datetime(),  // Removed .required()
+    updatedAt: a.datetime(),  // Removed .required()
   }).identifier(['userId', 'friendId'])
     .secondaryIndexes(index => [index('userId')])
     .authorization(allow => [allow.ownerDefinedIn('userId')]),
 
   Channel: a.model({
     name: a.string(),
-    createdAt: a.datetime().required(),
-    updatedAt: a.datetime().required(),
+    createdAt: a.datetime(),  // Removed .required()
+    updatedAt: a.datetime(),  // Removed .required()
   }).authorization(allow => [allow.authenticated()]),
 
   UserChannel: a.model({
     userId: a.id().required(),
     channelId: a.id().required(),
-    createdAt: a.datetime().required(),
-    updatedAt: a.datetime().required(),
+    createdAt: a.datetime(),  // Removed .required()
+    updatedAt: a.datetime(),  // Removed .required()
   }).identifier(['userId', 'channelId'])
     .secondaryIndexes(index => [index('userId'), index('channelId')]) 
     .authorization(allow => [
@@ -87,8 +87,8 @@ const schema = a.schema({
     timestamp: a.datetime().required(),
     attachment: a.string(),
     readBy: a.string().array(),
-    createdAt: a.datetime().required(),
-    updatedAt: a.datetime().required(),
+    createdAt: a.datetime(),  // Removed .required()
+    updatedAt: a.datetime(),  // Removed .required()
   }).secondaryIndexes(index => [index('channelId').sortKeys(['timestamp'])]) 
     .authorization(allow => [allow.authenticated()]),
 }).authorization(allow => [allow.resource(postConfirmation)]);

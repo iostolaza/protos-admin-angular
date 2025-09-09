@@ -25,7 +25,7 @@ export class ContactService {
       const friendsWithDate = await Promise.all(
         data.map(async (f: FriendType) => {
           const { data: userData, errors: userErrors } = await this.client.models.User.get({
-            cognitoId: f.friendId, // 🔹 FIXED
+            cognitoId: f.friendId,
           });
           if (userErrors) throw new Error(userErrors.map((e: any) => e.message).join(', '));
           return { ...userData, createdAt: f.createdAt } as NonNullable<UserType>;
@@ -55,7 +55,7 @@ export class ContactService {
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
       const usersPicked = users.map((u: UserType) => ({
-        cognitoId: u.cognitoId, // 🔹 FIXED
+        cognitoId: u.cognitoId,
         firstName: u.firstName ?? '',
         lastName: u.lastName ?? '',
         username: u.username ?? '',
@@ -72,7 +72,7 @@ export class ContactService {
 
   async addFriend(userId: string, friendId: string) {
     try {
-      const { errors } = await this.client.models.Friend.create({ userId, friendId });
+      const { errors } = await this.client.models.Friend.create({ userId, friendId }); // Amplify auto-populates timestamps
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Add friend error:', error);
@@ -107,10 +107,10 @@ export class ContactService {
       }
       const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({
         name: `Chat with ${friendId}`,
-      });
+      }); // Amplify auto-populates timestamps
       if (createErrors) throw new Error(createErrors.map((e: any) => e.message).join(', '));
-      await this.client.models.UserChannel.create({ userId: currentUserId, channelId: newChannel!.id });
-      await this.client.models.UserChannel.create({ userId: friendId, channelId: newChannel!.id });
+      await this.client.models.UserChannel.create({ userId: currentUserId, channelId: newChannel!.id }); // Auto-timestamps
+      await this.client.models.UserChannel.create({ userId: friendId, channelId: newChannel!.id }); // Auto-timestamps
       return newChannel!;
     } catch (error: unknown) {
       console.error('Get or create channel error:', error);
@@ -121,7 +121,7 @@ export class ContactService {
   async deleteUser(userId: string) {
     try {
       const { errors } = await this.client.models.User.delete({
-        cognitoId: userId, // 🔹 FIXED
+        cognitoId: userId,
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
