@@ -1,10 +1,12 @@
 import { Component, Output, EventEmitter, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AngularSvgIconModule } from 'angular-svg-icon';
+import { getIconPath } from '../../../core/services/icon-preloader.service';
 
 @Component({
   selector: 'app-message-input',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AngularSvgIconModule],
   templateUrl: './message-input.component.html',
 })
 export class MessageInputComponent {
@@ -13,6 +15,7 @@ export class MessageInputComponent {
   disabled = input<boolean>(false);
   @Output() send = new EventEmitter<string>();
   @Output() sendWithFile = new EventEmitter<{text: string, file: File}>();
+  getIconPath = getIconPath;
 
   onSend() {
     if (this.disabled()) return;
@@ -24,7 +27,6 @@ export class MessageInputComponent {
     this.newMessage = '';
     this.file = null;
   }
-
   onFileChange(event: Event) {
     if (this.disabled()) return;
     const target = event.target as HTMLInputElement;

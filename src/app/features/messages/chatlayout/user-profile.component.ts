@@ -10,10 +10,16 @@ import { computed } from '@angular/core';
   imports: [CommonModule],
   templateUrl: './user-profile.component.html',
 })
-
 export class UserProfileComponent implements OnInit {
   private userService = inject(UserService);
   user = computed(() => this.userService.user());
+  truncatedEmail = computed(() => {
+    const email = this.user()?.email ?? '';
+    if (email.length > 20 && email.includes('@')) {
+      return email.split('@')[0];  
+    }
+    return email;
+  });
 
   async ngOnInit() {
     await this.userService.load(); 

@@ -9,5 +9,9 @@ module.exports = {
       },
     },
   },
+  safelist: [
+    'group-hover:hidden',
+    'group-hover:block',
+  ],
   plugins: [],
 };

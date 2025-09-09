@@ -1,8 +1,11 @@
+
 // src/app/features/messages/chatlayout/chat-messages.component.ts
+
 import { Component, input } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 
 interface Message {
+  id: string; 
   text: string;
   sender: string;
   senderAvatar?: string;
@@ -19,7 +22,7 @@ interface Message {
 })
 export class ChatMessagesComponent {
   messages = input<Message[]>([]);
-  trackByTimestamp(index: number, msg: Message): Date | undefined {
-    return msg.timestamp;
+  trackById(index: number, msg: Message): string {
+    return msg.id;  
   }
 }
