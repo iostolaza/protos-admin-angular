@@ -16,6 +16,6 @@ export class UserProfileComponent implements OnInit {
   user = computed(() => this.userService.user());
 
   async ngOnInit() {
-    await this.userService.load(); // Ensure user data is loaded
+    await this.userService.load(); 
   }
 }

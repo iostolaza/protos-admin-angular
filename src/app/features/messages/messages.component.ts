@@ -1,4 +1,3 @@
-// src/app/features/messages/messages.component.ts
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -14,6 +13,7 @@ import { ChatListComponent } from './chatlayout/chat-list.component';
 import { ChatHeaderComponent } from './chatlayout/chat-header.component';
 import { ChatMessagesComponent } from './chatlayout/chat-messages.component';
 import { MessageInputComponent } from './chatlayout/message-input.component';
+import { ActivatedRoute } from '@angular/router';
 
 interface ChatItem { id: string; name: string; snippet?: string; avatar?: string; timestamp?: Date; }
 interface Message { text: string; sender: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
@@ -34,6 +34,7 @@ interface Conversation {
 export class MessagesComponent implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private userService = inject(UserService);
+  private route = inject(ActivatedRoute);
   conversations = signal<Conversation[]>([]);
   filteredConversations = computed(() => this.conversations().filter((conv: Conversation) =>
     conv.otherUser.name.toLowerCase().includes(this.searchQuery().toLowerCase()) ||
@@ -68,6 +69,18 @@ export class MessagesComponent implements OnInit, OnDestroy {
         otherUser: { id: '', name: chat.name, avatar: chat.avatar, email: '' },
         lastMessage: { content: chat.snippet || '', timestamp: chat.timestamp?.toISOString() || '' } as Schema['Message']['type']
       })));
+      
+      // Handle route parameter to auto-select conversation
+      const channelId = this.route.snapshot.paramMap.get('channelId');
+      if (channelId) {
+        let chat = this.messageService.getRecentChats()().find(c => c.id === channelId);
+        if (chat) {
+          await this.selectConversation(chat);
+        } else {
+          console.error('Channel not found:', channelId);
+        }
+      }
+      
       // Real-time for all
       this.subscriptions.push(this.messageService.subscribeMessages(null, (newMsg: Schema['Message']['type']) => {
         this.updateConversationsOnNewMessage(newMsg);
@@ -76,7 +89,6 @@ export class MessagesComponent implements OnInit, OnDestroy {
       console.error('Init error:', error);
     }
   }
-  
 
   onSearch(value: string) {
     this.searchQuery.set(value);
@@ -90,7 +102,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.chatSub = null;
       }
       this.selectedConversation.set(conv);
-      this.loadingMessages.set(true);
+      this.loadingMessages.set(false);
       try {
         const channelId = conv.channel.id;
         if (this.messageCache.has(channelId)) {
@@ -104,7 +116,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.chatSub = this.messageService.subscribeMessages(channelId, (newMsg: Schema['Message']['type']) => {
           this.messages.update((msgs: Message[]) => {
             const updated = [...msgs, {
-              text: newMsg.content ?? '', // Fixed with ?? ''
+              text: newMsg.content ?? '',
               sender: newMsg.senderId,
               isSelf: newMsg.senderId === this.currentUserId,
               timestamp: new Date(newMsg.timestamp),
@@ -116,7 +128,6 @@ export class MessagesComponent implements OnInit, OnDestroy {
         }).pipe(takeUntil(this.destroy$)).subscribe();
       } catch (error) {
         console.error('Load messages error:', error);
-        // TODO: Add toast notification
       } finally {
         this.loadingMessages.set(false);
       }

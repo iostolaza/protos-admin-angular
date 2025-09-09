@@ -39,10 +39,12 @@ export const routes: Routes = [
       // Profile page lazy-loaded
       { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
       
-      // Messages variants (incoming/outgoing) using same component
+// Messages variants (incoming/outgoing) using same component
       { path: 'messages', redirectTo: 'messages/incoming', pathMatch: 'full' },
       { path: 'messages/incoming', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
+      { path: 'messages/incoming/:channelId', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
       { path: 'messages/outgoing', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
+      { path: 'messages/outgoing/:channelId', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
       
       // Contacts variants (new/favorites/online) using same component
       { path: 'contacts', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
@@ -58,12 +60,8 @@ export const routes: Routes = [
       { path: 'timesheet/pending', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
       { path: 'timesheet/approved', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
   
-     
       // Calendar page lazy-loaded
       { path: 'schedule/calendar', loadComponent: () => import('./features/calendar/calendar.component').then(m => m.Calendar) },
-      
-      // // Schedule page lazy-loaded
-      // { path: 'schedule', loadComponent: () => import('./features/schedule/schedule.component').then(m => m.Schedule) },
       
       // Settings page lazy-loaded
       { path: 'settings', loadComponent: () => import('./features/settings/settings.component').then(m => m.SettingsComponent) },

@@ -4,7 +4,9 @@ import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, takeUntil, debounceTime } from 'rxjs/operators'; // Add debounceTime
+import { Subject } from 'rxjs';
+import { Hub } from 'aws-amplify/utils'; 
 
 interface ChatItem { id: string; name: string; snippet?: string; avatar?: string; timestamp?: Date; }
 interface Message { text: string; sender: string; senderAvatar?: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
@@ -19,6 +21,23 @@ export class MessageService {
   private searchQuery = signal<string>('');
   private selectedChannel = signal<string | null>(null);
   private userCache = new Map<string, Schema['User']['type']>();
+  private destroy$ = new Subject<void>();
+  private reloadSubject = new Subject<void>(); // For debounce
+
+  constructor() {
+    this.setupRealTimeSubscriptions();
+    this.monitorConnectionState();
+    this.reloadSubject.pipe(debounceTime(500), takeUntil(this.destroy$)).subscribe(() => this.loadRecentChats()); // Debounce reloads
+  }
+
+  private monitorConnectionState() {
+    Hub.listen('api', (data: any) => {
+      const { payload } = data;
+      if (payload.event === 'CONNECTION_STATE_CHANGE') {
+        console.log('API connection state:', payload.data.connectionState);
+      }
+    });
+  }
 
   getRecentChats() { return this.recentChats.asReadonly(); }
   getMessages() { return this.messages.asReadonly(); }
@@ -49,39 +68,43 @@ export class MessageService {
     if (!session.tokens) {
       throw new Error('User not authenticated');
     }
-    const { data: userChannels, errors } = await this.client.models.UserChannel.list({ filter: { userId: { eq: userId } } });
+    const { data: userChannels, errors } = await this.client.models.UserChannel.listUserChannelByUserId({ userId }); // Fixed: singular model name
     console.log('User channels response:', { userChannels, errors });
     this.handleErrors(errors, 'List user channels failed');
-    const channelIds = userChannels.map(uc => uc.channelId);
+    const channelIds = userChannels.map((uc: Schema['UserChannel']['type']) => uc.channelId);
     const channels: Schema['Channel']['type'][] = [];
     for (const id of channelIds) {
       const { data, errors: getErrors } = await this.client.models.Channel.get({ id });
-      console.log('Channel get response:', { id, data, errors: getErrors });
+      console.log('Channel get response:', { id, data, getErrors });
       if (getErrors?.length) {
         console.warn(`Get channel failed for ID ${id}: ${getErrors.map(e => e.message).join(', ')}`);
         continue;
       }
-      if (data && data.name !== undefined && data.name !== null) {
+      if (data && data.name) { // Check defined
         channels.push(data);
       }
     }
     return channels;
   }
 
-  async getOtherUserId(channelId: string, currentUserId: string): Promise<string> {
+  async getOtherUserId(channelId: string, currentUserId: string): Promise<string | null> {
     const session = await fetchAuthSession();
     console.log('Auth session:', session);
     if (!session.tokens) {
       throw new Error('User not authenticated');
     }
-    const { data: userChannels, errors } = await this.client.models.UserChannel.list({ filter: { channelId: { eq: channelId } } });
+    const { data: userChannels, errors } = await this.client.models.UserChannel.listUserChannelByChannelId({ channelId }); // Fixed: singular model name
     console.log('Other user channels response:', { userChannels, errors });
     this.handleErrors(errors, 'List user channels failed');
-    const userIds = userChannels.map(uc => uc.userId);
-    return userIds.find(id => id !== currentUserId) || '';
+    const userIds = userChannels.map((uc: Schema['UserChannel']['type']) => uc.userId);
+    const otherId = userIds.find((id: string) => id !== currentUserId);
+    return otherId || null;
   }
 
   async getUserById(userId: string): Promise<Schema['User']['type']> {
+    if (!userId) {
+      throw new Error('Invalid user ID: cannot be empty');
+    }
     if (this.userCache.has(userId)) return this.userCache.get(userId)!;
     const session = await fetchAuthSession();
     console.log('Auth session:', session);
@@ -113,10 +136,7 @@ export class MessageService {
     if (!session.tokens) {
       throw new Error('User not authenticated');
     }
-    const { data, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp(
-      { channelId },
-      { sortDirection: 'DESC', limit: 1 }
-    );
+    const { data, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp({ channelId }, { sortDirection: 'DESC', limit: 1 });
     console.log('Last message response:', { channelId, data, errors });
     this.handleErrors(errors, 'List messages failed');
     return data?.[0] ?? null;
@@ -126,19 +146,24 @@ export class MessageService {
     try {
       const userId = await this.getCurrentUserId();
       const channels = await this.getUserChannels(userId);
-      const chats: ChatItem[] = await Promise.all(channels.map(async (channel) => {
+      const chats: ChatItem[] = [];
+      for (const channel of channels) {
         const otherUserId = await this.getOtherUserId(channel.id, userId);
+        if (!otherUserId) {
+          console.warn(`Skipping invalid channel ${channel.id}: no other user found`);
+          continue;
+        }
         const otherUser = await this.getUserById(otherUserId);
         const lastMsg = await this.getLastMessage(channel.id);
-        return {
+        chats.push({
           id: channel.id,
-          name: `${otherUser.firstName} ${otherUser.lastName}`,
+          name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`,
           snippet: lastMsg?.content ?? '',
           avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
           timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
-        };
-      }));
-      chats.sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+        });
+      }
+      chats.sort((a: ChatItem, b: ChatItem) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0)); // Fixed: typed params
       console.log('Recent chats loaded:', chats);
       this.recentChats.set(chats);
     } catch (error) {
@@ -176,24 +201,26 @@ export class MessageService {
     try {
       const userId = await this.getCurrentUserId();
       const channels = await this.getUserChannels(userId);
-      const chats: ChatItem[] = await Promise.all(channels.map(async (channel) => {
+      const chats: ChatItem[] = [];
+      for (const channel of channels) {
         const otherUserId = await this.getOtherUserId(channel.id, userId);
+        if (!otherUserId) continue;
         const otherUser = await this.getUserById(otherUserId);
         const lastMsg = await this.getLastMessage(channel.id);
-        return {
+        chats.push({
           id: channel.id,
           name: `${otherUser.firstName} ${otherUser.lastName}`,
           snippet: lastMsg?.content ?? '',
           avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
           timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
-        };
-      }));
+        });
+      }
       const filteredChats = chats.filter(chat =>
         chat.name.toLowerCase().includes(query.toLowerCase()) ||
         (chat.snippet && chat.snippet.toLowerCase().includes(query.toLowerCase()))
       );
       console.log('Search chats result:', filteredChats);
-      return filteredChats.sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+      return filteredChats.sort((a: ChatItem, b: ChatItem) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0)); // Fixed: typed params
     } catch (error) {
       console.error('Search chats error:', error);
       return [];
@@ -220,6 +247,12 @@ export class MessageService {
       throw new Error('User not authenticated');
     }
     const currentUserId = await this.getCurrentUserId();
+    // Validate
+    try {
+      await this.getUserById(contactId);
+    } catch (err) {
+      throw new Error('Contact ID invalid or not found');
+    }
     const { data: userChannels, errors } = await this.client.models.UserChannel.list({
       filter: { or: [{ userId: { eq: currentUserId } }, { userId: { eq: contactId } }] },
     });
@@ -232,18 +265,40 @@ export class MessageService {
     const channelId = Object.keys(potentialChannel).find(id => potentialChannel[id] === 2);
     if (channelId) {
       const { data, errors: getErrors } = await this.client.models.Channel.get({ id: channelId });
-      console.log('Existing channel response:', { channelId, data, errors: getErrors });
+      console.log('Existing channel response:', { channelId, data, getErrors });
       this.handleErrors(getErrors, 'Get channel failed');
       if (!data) throw new Error('Channel not found');
       return data;
     }
-    const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({ name: `Chat with ${contactId}` });
-    console.log('Create channel response:', { newChannel, errors: createErrors });
-    this.handleErrors(createErrors, 'Create channel failed');
-    if (!newChannel) throw new Error('Failed to create channel');
-    await this.client.models.UserChannel.create({ userId: currentUserId, channelId: newChannel.id });
-    await this.client.models.UserChannel.create({ userId: contactId, channelId: newChannel.id });
-    return newChannel;
+    // Create with retry
+    let attempts = 3;
+    while (attempts > 0) {
+      try {
+        const now = new Date().toISOString();
+        const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({ name: `Chat with ${contactId}`, createdAt: now, updatedAt: now });
+        console.log('Create channel response:', { newChannel, createErrors });
+        this.handleErrors(createErrors, 'Create channel failed');
+        if (!newChannel) throw new Error('Failed to create channel');
+        const { errors: senderErr } = await this.client.models.UserChannel.create({ userId: currentUserId, channelId: newChannel.id, createdAt: now, updatedAt: now });
+        this.handleErrors(senderErr, 'Create sender UserChannel failed');
+        const { errors: receiverErr } = await this.client.models.UserChannel.create({ userId: contactId, channelId: newChannel.id, createdAt: now, updatedAt: now });
+        this.handleErrors(receiverErr, 'Create receiver UserChannel failed');
+        // Verify
+        const { data: verify } = await this.client.models.UserChannel.list({ filter: { channelId: { eq: newChannel.id } } });
+        if (verify.length === 2) {
+          await this.client.models.Channel.update({ id: newChannel.id, name: newChannel.name, updatedAt: new Date().toISOString() }); // Touch
+          return newChannel;
+        } else {
+          throw new Error('Verification failed');
+        }
+      } catch (err) {
+        console.error('Channel create attempt failed:', err);
+        attempts--;
+        if (attempts === 0) throw err;
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay retry
+      }
+    }
+    throw new Error('Failed after retries');
   }
 
   async fetchMessages(channelId: string): Promise<Schema['Message']['type'][]> {
@@ -253,9 +308,7 @@ export class MessageService {
       throw new Error('User not authenticated');
     }
     const currentUserId = await this.getCurrentUserId();
-    const { data: messages, errors } = await this.client.models.Message.list({
-      filter: { channelId: { eq: channelId } },
-    });
+    const { data: messages, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp({ channelId }, { sortDirection: 'ASC' }); // Enhanced: explicit sort
     console.log('Fetch messages response:', { channelId, messages, errors });
     this.handleErrors(errors, 'List messages failed');
     for (const msg of messages) {
@@ -263,18 +316,19 @@ export class MessageService {
         const { errors: updateErrors } = await this.client.models.Message.update({
           id: msg.id,
           readBy: [...(msg.readBy || []), currentUserId],
+          updatedAt: new Date().toISOString(),
         });
-        console.log('Update message readBy response:', { id: msg.id, errors: updateErrors });
+        console.log('Update message readBy response:', { id: msg.id, updateErrors });
         this.handleErrors(updateErrors, 'Update message failed');
       }
     }
-    return messages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    return messages; // No need for client-side sort now
   }
 
   subscribeMessages(channelId: string | null, onNewMessage: (msg: Schema['Message']['type']) => void): Observable<{ items: Schema['Message']['type'][] }> {
     const filter = channelId ? { channelId: { eq: channelId } } : undefined;
     return this.client.models.Message.observeQuery({ filter }).pipe(
-      tap((snapshot: { items: Schema['Message']['type'][] }) => {
+      tap((snapshot: { items: Schema['Message']['type'][], isSynced: boolean }) => {
         const newMsg = snapshot.items[snapshot.items.length - 1];
         if (newMsg) {
           console.log('New message received:', newMsg);
@@ -291,13 +345,16 @@ export class MessageService {
       throw new Error('User not authenticated');
     }
     const currentUserId = await this.getCurrentUserId();
+    const now = new Date().toISOString();
     const { errors } = await this.client.models.Message.create({
       content,
       senderId: currentUserId,
       channelId,
-      timestamp: new Date().toISOString(),
+      timestamp: now,
       attachment,
       readBy: [currentUserId],
+      createdAt: now,
+      updatedAt: now,
     });
     console.log('Send message response:', { channelId, content, errors });
     this.handleErrors(errors, 'Create message failed');
@@ -350,19 +407,45 @@ export class MessageService {
         throw new Error('User not authenticated');
       }
       const userId = await this.getCurrentUserId();
-      const { data: userChannels, errors } = await this.client.models.UserChannel.list({
-        filter: { userId: { eq: userId }, channelId: { eq: channelId } },
-      });
-      console.log('User channels for deletion:', { userChannels, errors });
-      this.handleErrors(errors, 'List user channels failed');
-      if (userChannels.length > 0) {
-        const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ userId: userChannels[0].userId, channelId: userChannels[0].channelId });
-        console.log('Delete user channel response:', { userId: userChannels[0].userId, channelId: userChannels[0].channelId, errors: deleteErrors });
+      const { data: userChannel, errors } = await this.client.models.UserChannel.get({ userId, channelId }); // Optimized: use get for composite PK
+      console.log('User channel for deletion:', { userChannel, errors });
+      this.handleErrors(errors, 'Get user channel failed');
+      if (userChannel) {
+        const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ userId, channelId });
+        console.log('Delete user channel response:', { userId, channelId, deleteErrors });
         this.handleErrors(deleteErrors, 'Delete user channel failed');
       }
-      await this.loadRecentChats();
+      this.reloadSubject.next(); // Trigger reload
     } catch (error) {
       console.error('Delete chat error:', error);
     }
+  }
+
+  // UPDATED: Real-time subscription with client filter, no server filter
+  private setupRealTimeSubscriptions() {
+    const userIdPromise = this.getCurrentUserId();
+    userIdPromise.then(userId => {
+      this.client.models.UserChannel.observeQuery({}) // No filter
+        .pipe(
+          takeUntil(this.destroy$)
+        )
+        .subscribe({
+          next: (snapshot: { items: Schema['UserChannel']['type'][], isSynced: boolean }) => {
+            const filteredItems = snapshot.items.filter(item => item.userId === userId);
+            if (snapshot.isSynced) {
+              console.log('Synced UserChannel snapshot received (client filtered); reloading recent chats');
+              this.reloadSubject.next(); // Debounced reload
+            } else {
+              console.log('Partial UserChannel snapshot (client filtered)');
+            }
+          },
+          error: (err) => console.error('UserChannel observeQuery error:', JSON.stringify(err, null, 2)),
+        });
+    }).catch(err => console.error('Failed to get userId for subscription:', err));
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

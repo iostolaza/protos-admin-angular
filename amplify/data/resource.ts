@@ -3,7 +3,7 @@ import { postConfirmation } from '../auth/post-confirmation/resource';
 
 const schema = a.schema({
   User: a.model({
-    cognitoId: a.string().required(), 
+    cognitoId: a.string().required(),
     firstName: a.string(),
     lastName: a.string(),
     username: a.string(),
@@ -34,47 +34,51 @@ const schema = a.schema({
       push: a.boolean(),
     }),
     status: a.string(),
-    createdAt: a.datetime(),
-    updatedAt: a.datetime(),
+    createdAt: a.datetime().required(),
+    updatedAt: a.datetime().required(),
   })
-    .identifier(['cognitoId']) 
+    .identifier(['cognitoId'])
     .secondaryIndexes(index => [index('email')])
     .authorization(allow => [
-     allow.ownerDefinedIn('cognitoId').to(['read', 'update', 'delete']),
-     allow.authenticated().to(['create', 'read']), // Temp for migration; remove 'create' post-deploy if desired
-  ]),
+      allow.ownerDefinedIn('cognitoId').to(['read', 'update', 'delete']),
+      allow.authenticated().to(['create', 'read']), 
+    ]),
 
   PaymentMethod: a.model({
     userId: a.id().required(),
     type: a.string().required(),
     name: a.string().required(),
-    createdAt: a.datetime(),
-    updatedAt: a.datetime(),
+    createdAt: a.datetime().required(),
+    updatedAt: a.datetime().required(),
   }).secondaryIndexes(index => [index('userId')])
     .authorization(allow => [allow.ownerDefinedIn('userId')]),
 
   Friend: a.model({
     userId: a.id().required(),
     friendId: a.id().required(),
-    createdAt: a.datetime(),
-    updatedAt: a.datetime(),
+    createdAt: a.datetime().required(),
+    updatedAt: a.datetime().required(),
   }).identifier(['userId', 'friendId'])
     .secondaryIndexes(index => [index('userId')])
     .authorization(allow => [allow.ownerDefinedIn('userId')]),
 
   Channel: a.model({
     name: a.string(),
-    createdAt: a.datetime(),
-    updatedAt: a.datetime(),
+    createdAt: a.datetime().required(),
+    updatedAt: a.datetime().required(),
   }).authorization(allow => [allow.authenticated()]),
 
   UserChannel: a.model({
     userId: a.id().required(),
     channelId: a.id().required(),
-    createdAt: a.datetime(),
-    updatedAt: a.datetime(),
+    createdAt: a.datetime().required(),
+    updatedAt: a.datetime().required(),
   }).identifier(['userId', 'channelId'])
-    .authorization(allow => [allow.ownerDefinedIn('userId')]),
+    .secondaryIndexes(index => [index('userId'), index('channelId')]) 
+    .authorization(allow => [
+      allow.authenticated().to(['create', 'read']), 
+      allow.ownerDefinedIn('userId').to(['update', 'delete']),
+    ]),
 
   Message: a.model({
     content: a.string(),
@@ -83,9 +87,9 @@ const schema = a.schema({
     timestamp: a.datetime().required(),
     attachment: a.string(),
     readBy: a.string().array(),
-    createdAt: a.datetime(),
-    updatedAt: a.datetime(),
-  }).secondaryIndexes(index => [index('channelId').sortKeys(['timestamp'])])
+    createdAt: a.datetime().required(),
+    updatedAt: a.datetime().required(),
+  }).secondaryIndexes(index => [index('channelId').sortKeys(['timestamp'])]) 
     .authorization(allow => [allow.authenticated()]),
 }).authorization(allow => [allow.resource(postConfirmation)]);
 

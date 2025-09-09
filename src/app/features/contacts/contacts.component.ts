@@ -82,6 +82,7 @@ export class ContactsComponent implements OnInit, OnDestroy {
               lastName: f.lastName ?? '',
               username: f.username ?? '',
               createdAt: f.createdAt ?? null,
+              dateAdded: f.createdAt ?? new Date().toISOString(),
             } as InputContact;
           })
         );
@@ -179,32 +180,44 @@ export class ContactsComponent implements OnInit, OnDestroy {
     }
   }
 
-  async onMessage(id: string): Promise<void> { // NEW: Handle message navigation
+async onMessage(id: string): Promise<void> { // NEW: Handle message navigation
     try {
       const channel = await this.contactsService.getOrCreateChannel(id);
-      this.router.navigate(['/messages', channel.id]); // Assume route; adjust as needed
+      this.router.navigate(['/main-layout/messages/incoming', channel.id]); // UPDATED: Use correct absolute path with parameter
     } catch (err) {
       console.error('Start message error:', err);
     }
   }
-
-  private updateSummary(): void {
-    this.onlineContacts = this.contacts().filter((c) => c.status === 'online').length; // UPDATED: Use signal()
+  
+private updateSummary(): void {
+    this.onlineContacts = this.contacts().filter((c) => c.status === 'online').length;
     this.recentContacts = this.contacts()
       .slice()
       .sort((a, b) => new Date(b.dateAdded || '').getTime() - new Date(a.dateAdded || '').getTime())
       .slice(0, 3);
+    this.updatedAgo = this.computeUpdatedAgo();  
   }
 
-  private computeUpdatedAgo(): string {
-    return '37 minutes ago'; // Replace with actual logic if needed
+ private computeUpdatedAgo(): string {
+    const contacts = this.contacts();
+    if (contacts.length === 0) return 'never';
+    const maxDate = Math.max(...contacts.map(c => new Date(c.dateAdded || '0').getTime()));
+    const diffMs = Date.now() - maxDate;
+    const diffSecs = Math.floor(diffMs / 1000);
+    if (diffSecs < 60) return 'a moment ago';
+    const diffMins = Math.floor(diffSecs / 60);
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   }
 
   private setupRealTime() {
     this.contactsService.observeContacts()
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        this.loadContacts(); // Refresh full (safe with signal set)
+        this.loadContacts();
       });
   }
 

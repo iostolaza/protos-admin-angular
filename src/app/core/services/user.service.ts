@@ -2,26 +2,52 @@ import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
-import { getCurrentUser } from 'aws-amplify/auth';
+import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth'; // Fixed: added fetchAuthSession
 import { Observable, Subject, from } from 'rxjs';
-import { takeUntil } from 'rxjs/operators'; // UPDATED: Added operators import for consistency.
+import { takeUntil } from 'rxjs/operators';
+import { Hub } from 'aws-amplify/utils'; 
 
 type Models = Schema;
 type UserType = Models['User']['type'];
 type PaymentMethodType = Models['PaymentMethod']['type'];
 
-export type UserProfile = UserType & { profileImageUrl?: string }; // UPDATED: Kept as is, but consider Omit if extras added.
+export type UserProfile = UserType & { profileImageUrl?: string };
 
 @Injectable({
   providedIn: 'root',
 })
 export class UserService {
   private client = generateClient<Schema>();
-  user = signal<UserProfile | null>(null);
+  public user = signal<UserProfile | null>(null); // Make public
   private destroy$ = new Subject<void>();
 
   constructor() {
-    this.loadCurrentUser();
+    this.setupAuthListener();
+  }
+
+  private setupAuthListener() {
+    Hub.listen('auth', ({ payload }) => {
+      switch (payload.event) {
+        case 'signedIn':
+        case 'tokenRefresh':
+          console.log('Auth event:', payload.event);
+          this.loadCurrentUser();
+          break;
+        case 'signedOut':
+          this.user.set(null);
+          break;
+      }
+    });
+
+    // Initial check
+    (async () => {
+      try {
+        await fetchAuthSession(); // Await to ensure session
+        await this.loadCurrentUser();
+      } catch {
+        console.log('No initial user');
+      }
+    })();
   }
 
   async load() {
@@ -33,27 +59,23 @@ export class UserService {
       const { userId, signInDetails } = await getCurrentUser();
       const email = signInDetails?.loginId;
 
-      // Fetch by cognitoId
       const { data: userData, errors } = await this.client.models.User.get({ cognitoId: userId });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
 
       let user = userData;
 
-      // Fallback by email
       if (!user && email) {
-        const { data: users } = await this.client.models.User.list({
-          filter: { email: { eq: email } },
-        });
+        const { data: users } = await this.client.models.User.listUserByEmail({ email }); // Fixed: singular model name
         user = users[0];
       }
 
-      // Temp creation if not exists (fallback if Lambda fails)
       if (!user && email) {
+        const now = new Date().toISOString();
         const { errors } = await this.client.models.User.create({
           cognitoId: userId,
           email,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          createdAt: now,
+          updatedAt: now,
         });
         if (errors) throw new Error(errors.map(e => e.message).join(', '));
        
@@ -66,7 +88,6 @@ export class UserService {
       const profileImageUrl = await this.getProfileImageUrlFromKey(user.profileImageKey);
       this.user.set({ ...user, profileImageUrl });
 
-      // Observe changes for real-time
       this.client.models.User.observeQuery({ filter: { cognitoId: { eq: userId } } })
         .pipe(takeUntil(this.destroy$))
         .subscribe({
@@ -76,13 +97,13 @@ export class UserService {
           error: (err) => console.error('ObserveQuery error:', err),
         });
     } catch (error) {
-      console.error('Load user error:', error);  // Enhanced logging
+      console.error('Load user error:', error);
     }
   }
 
   private async getProfileImageUrlFromKey(key: string | null | undefined): Promise<string | undefined> {
     if (!key) return undefined;
-    const { url } = await getUrl({ path: key, options: { expiresIn: 3600 } }); // UPDATED: Added expiresIn for signed URL best practice.
+    const { url } = await getUrl({ path: key, options: { expiresIn: 3600 } });
     return url.toString();
   }
 
@@ -97,7 +118,6 @@ export class UserService {
   }
 
   async save(updated: Partial<UserProfile>) {
-    // NEW: Filter to valid fields to avoid "field not defined" error.
     const validUpdated: Partial<UserType> = Object.fromEntries(
       Object.entries(updated).filter(([key]) => key in ({} as UserType) && key !== 'cognitoId' && key !== 'createdAt' && key !== 'updatedAt' && key !== 'profileImageUrl')
     );
@@ -111,6 +131,7 @@ export class UserService {
     const { data: updated, errors } = await this.client.models.User.update({
       cognitoId: currentUser.cognitoId,
       ...updatedData,
+      updatedAt: new Date().toISOString(),
     });
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     if (!updated) throw new Error('Updated user is null');
@@ -120,12 +141,11 @@ export class UserService {
   async uploadProfileImage(file: File): Promise<string> {
     try {
       const { userId } = await getCurrentUser();
-      // UPDATED: Use path as function for auto identityId, protected level.
       const result = await uploadData({
         path: ({ identityId }) => `protected/${identityId}/profile-pictures/${userId}/${file.name}`,
         data: file
       }).result;
-      const key = result.path; // Full path with protected/{identityId}/...
+      const key = result.path;
       await this.updateUser({ profileImageKey: key });
       return key;
     } catch (error: unknown) {
@@ -141,9 +161,7 @@ export class UserService {
   async getPaymentMethods(): Promise<PaymentMethodType[]> {
     try {
       const { userId } = await getCurrentUser();
-      const { data, errors } = await this.client.models.PaymentMethod.list({
-        filter: { userId: { eq: userId } },
-      });
+      const { data, errors } = await this.client.models.PaymentMethod.listPaymentMethodByUserId({ userId }); // Fixed: singular model name
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
       return data;
     } catch (error: unknown) {
@@ -155,7 +173,8 @@ export class UserService {
   async addPaymentMethod(type: string, name: string) {
     try {
       const { userId } = await getCurrentUser();
-      const { errors } = await this.client.models.PaymentMethod.create({ userId, type, name });
+      const now = new Date().toISOString();
+      const { errors } = await this.client.models.PaymentMethod.create({ userId, type, name, createdAt: now, updatedAt: now });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Add payment error:', error);
@@ -164,7 +183,7 @@ export class UserService {
 
   async updatePaymentMethod(id: string, type: string, name: string) {
     try {
-      const { errors } = await this.client.models.PaymentMethod.update({ id, type, name });
+      const { errors } = await this.client.models.PaymentMethod.update({ id, type, name, updatedAt: new Date().toISOString() });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Update payment error:', error);
