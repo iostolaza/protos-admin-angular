@@ -1,10 +1,11 @@
 
 <!-- src/app/features/ticket-management/generate-team/generate-team.component.html -->
-
+ 
 <div class="p-4 bg-card rounded-lg shadow-custom">
   <div class="mx-auto text-center">
     <h1 class="text-2xl font-bold mb-4 text-foreground">Create Team</h1>
     <div *ngIf="errorMessage()" class="text-destructive mb-4">{{ errorMessage() }}</div>
+    <div *ngIf="successMessage()" class="text-green-600 mb-4">{{ successMessage() }}</div>
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
       <div class="flex items-start">
         <label class="text-sm font-semibold text-foreground mr-4 w-1/4">*Name:</label>
@@ -17,7 +18,7 @@
       <div class="flex items-start">
         <label class="text-sm font-semibold text-foreground mr-4 w-1/4">Invite Users:</label>
         <div class="w-3/4 space-y-2">
-          <div formArrayName="inviteUserIds"> <!-- Fixed: Add formArrayName -->
+          <div formArrayName="inviteUserIds">
             <div *ngFor="let invite of inviteUserIds.controls; let i = index" class="flex items-center gap-2">
               <select [formControlName]="i" class="flex-1 p-2 border border-border rounded bg-background text-foreground">
                 <option value="">Select User</option>
@@ -31,9 +32,9 @@
           <button type="button" (click)="addInvite()" class="text-primary hover:text-primary/80">
             <svg-icon [src]="getIconPath('plus')" svgClass="h-5 w-5"></svg-icon> Add Invite
           </button>
-          <div *ngIf="loadingUsers()" class="text-muted-foreground text-xs">Loading users...</div> <!-- New: Loading -->
-          <div *ngIf="!loadingUsers() && users().length === 0" class="text-destructive text-xs">No users available. Add users in Cognito first.</div> <!-- New: Empty state -->
-          <div *ngIf="!loadingUsers() && inviteUserIds.controls.length === 0" class="text-muted-foreground text-xs">No invites added yet.</div> <!-- New: Empty invites -->
+          <div *ngIf="loadingUsers()" class="text-muted-foreground text-xs">Loading users...</div>
+          <div *ngIf="!loadingUsers() && users().length === 0" class="text-destructive text-xs">No users available. Add users in Cognito first.</div>
+          <div *ngIf="!loadingUsers() && inviteUserIds.controls.length === 0" class="text-muted-foreground text-xs">No invites added yet.</div>
         </div>
       </div>
       <div class="text-center">

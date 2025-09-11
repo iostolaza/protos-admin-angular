@@ -11,22 +11,21 @@
         </tr>
       </thead>
       <tbody>
-        <tr
-          *ngFor="let team of teams(); trackBy: trackById"
-          class="border-b border-dashed border-border hover:bg-card"
-        >
-          <td class="py-3 text-left">{{ team.name }}</td>
-          <td class="py-3 text-left">{{ team.teamLeadName }}</td>
-          <td class="py-3 text-center">{{ team.memberCount }}</td>
-          <td class="py-3 text-right flex gap-2">
-            <button (click)="editTeam(team)" class="rounded-full bg-transparent p-1 hover:bg-primary/10"> 
-              <svg-icon [src]="getIconPath('pencil')" svgClass="h-4 w-4 text-primary"></svg-icon>
-            </button>
-            <button (click)="deleteTeam(team.id)" class="rounded-full bg-transparent p-1 hover:bg-destructive/10">
-              <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
-            </button>
-          </td>
-        </tr>
+        @for (team of teams(); track team.id) {
+          <tr class="border-b border-dashed border-border hover:bg-card">
+            <td class="py-3 text-left">{{ team.name }}</td>
+            <td class="py-3 text-left">{{ team.teamLeadName }}</td>
+            <td class="py-3 text-center">{{ team.memberCount }}</td>
+            <td class="py-3 text-right flex gap-2">
+              <button (click)="editTeam(team)" class="rounded-full bg-transparent p-1 hover:bg-primary/10">
+                <svg-icon [src]="getIconPath('pencil')" svgClass="h-4 w-4 text-primary"></svg-icon>
+              </button>
+              <button (click)="deleteTeam(team.id)" class="rounded-full bg-transparent p-1 hover:bg-destructive/10">
+                <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+              </button>
+            </td>
+          </tr>
+        }
       </tbody>
     </table>
   </div>
