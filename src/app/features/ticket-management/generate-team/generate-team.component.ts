@@ -29,8 +29,8 @@ export class GenerateTeamComponent implements OnInit {
   ) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(4)]],
-      description: [''],
-      inviteUserIds: this.fb.array([], { validators: this.uniqueInvitesValidator }), // Fix: Pass validator as reference
+      // Remove description field
+      inviteUserIds: this.fb.array([], { validators: this.uniqueInvitesValidator }),
     });
   }
 
@@ -89,12 +89,11 @@ export class GenerateTeamComponent implements OnInit {
       const values = this.form.value;
       const team = {
         name: values.name,
-        description: values.description || null,
         teamLeadId: userId,
-      };
+      }; // Remove description
       const newTeam = await this.ticketService.createTeam(team);
       if (newTeam) {
-        await this.ticketService.addTeamMember(newTeam.id, userId); // Add lead as member
+        await this.ticketService.addTeamMember(newTeam.id, userId);
         if (values.inviteUserIds.length > 0) {
           for (const inviteId of values.inviteUserIds) {
             await this.ticketService.addTeamMember(newTeam.id, inviteId);

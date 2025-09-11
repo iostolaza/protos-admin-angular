@@ -1,9 +1,6 @@
-
-// src/app/features/ticket-management/generate-tickets/generate-tickets.component.ts
-
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { CommonModule, NgIf } from '@angular/common'; // Explicit NgIf import to resolve linter error
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { CommonModule, NgIf } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
 import { TicketService, FlatTeam } from '../../../core/services/ticket.service';
 import { getCurrentUser } from 'aws-amplify/auth';
 import { Subject, takeUntil } from 'rxjs';
@@ -12,7 +9,7 @@ import type { Schema } from '../../../../../amplify/data/resource';
 @Component({
   selector: 'app-generate-tickets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgIf], // Add NgIf explicitly if linter persists
+  imports: [CommonModule, ReactiveFormsModule, NgIf],
   templateUrl: './generate-tickets.component.html',
 })
 export class GenerateTicketsComponent implements OnInit, OnDestroy {
@@ -20,10 +17,11 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
   teams = signal<FlatTeam[]>([]);
   members = signal<Schema['User']['type'][]>([]);
   errorMessage = signal('');
-  loadingTeams = signal(true); // New: For loading state
-  loadingMembers = signal(false); // New: For assignee loading
+  successMessage = signal('');
+  loadingTeams = signal(true);
+  loadingMembers = signal(false);
   private destroy$ = new Subject<void>();
-  private currentUserId = '';  
+  private currentUserId = '';
 
   constructor(private fb: FormBuilder, private ticketService: TicketService) {
     this.form = this.fb.group({
@@ -32,16 +30,22 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
       description: ['', Validators.required],
       teamId: ['', Validators.required],
       assigneeId: [''],
-      estimated: ['', Validators.required],
+      estimated: ['', [Validators.required, this.futureDateValidator]],
     });
   }
+
+  futureDateValidator = (control: AbstractControl): ValidationErrors | null => {
+    const date = new Date(control.value);
+    const now = new Date();
+    return date > now ? null : { pastDate: true };
+  };
 
   async ngOnInit() {
     try {
       const { userId } = await getCurrentUser();
-      this.currentUserId = userId;  
-      console.log('Current User ID:', this.currentUserId); // Test: Log user ID
-      await this.loadTeams();  
+      this.currentUserId = userId;
+      console.log('Current User ID:', this.currentUserId);
+      await this.loadTeams();
     } catch (err) {
       console.error('Init error:', err);
       this.errorMessage.set('Failed to initialize form');
@@ -50,13 +54,13 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
     this.form.get('teamId')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(async (teamId) => {
-        console.log('Team ID changed:', teamId); // Test: Log team selection
+        console.log('Team ID changed:', teamId);
         if (teamId) {
           this.loadingMembers.set(true);
           try {
             const members = await this.ticketService.getTeamMembers(teamId);
             this.members.set(members);
-            console.log('Members loaded for team:', members); // Test: Log loaded members
+            console.log('Members loaded for team:', members);
           } catch (err) {
             console.error('Load members error:', err);
             this.errorMessage.set('Failed to load members');
@@ -71,18 +75,18 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
     this.ticketService.observeTeams()
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
-        console.log('Teams real-time update triggered'); 
+        console.log('Teams real-time update triggered');
         this.loadTeams();
       });
   }
 
-  private async loadTeams(): Promise<void> { 
+  private async loadTeams(): Promise<void> {
     this.loadingTeams.set(true);
     try {
-      console.log('Calling getUserTeams with userId:', this.currentUserId); 
-      const teams = await this.ticketService.getUserTeams(this.currentUserId);
+      console.log('Calling getTeams'); // Test log
+      const { teams } = await this.ticketService.getTeams(); // Change to getTeams
       this.teams.set(teams);
-      console.log('Teams loaded:', teams); 
+      console.log('Teams loaded:', teams); // Test log
     } catch (err) {
       console.error('Load teams error:', err);
       this.errorMessage.set('Failed to load teams');
@@ -93,9 +97,17 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
 
   async submit() {
     if (this.form.invalid) {
-      this.errorMessage.set('Form invalid');
+      const errors = [];
+      if (this.form.get('title')?.errors) errors.push('Title is required and must be at least 4 characters');
+      if (this.form.get('description')?.errors) errors.push('Description is required');
+      if (this.form.get('teamId')?.errors) errors.push('Team is required');
+      if (this.form.get('estimated')?.hasError('pastDate')) errors.push('Estimated date must be in the future');
+      this.errorMessage.set(`Form invalid: ${errors.join(', ')}`);
+      console.log('Form invalid, value:', this.form.value);
       return;
     }
+    this.successMessage.set('');
+    this.errorMessage.set('');
     try {
       const { userId } = await getCurrentUser();
       const values = this.form.value;
@@ -105,16 +117,14 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
         description: values.description,
         status: 'OPEN' as const,
         estimated: values.estimated,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
         requesterId: userId,
         assigneeId: values.assigneeId || null,
         teamId: values.teamId,
       };
       await this.ticketService.createTicket(ticket);
       this.form.reset();
-      this.errorMessage.set('');
-      console.log('Ticket created successfully'); // Test: Log success
+      this.successMessage.set('Ticket created successfully');
+      console.log('Ticket created successfully');
     } catch (err) {
       console.error('Submit error:', err);
       this.errorMessage.set('Failed to create ticket');

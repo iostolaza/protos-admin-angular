@@ -1,3 +1,6 @@
+
+// src/app/core/services/ticket.service.ts
+
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
@@ -100,9 +103,7 @@ export class TicketService {
       if (!ticket.teamId) throw new Error('Missing ticket team ID');
       const { data, errors } = await this.client.models.Ticket.create({
         ...ticket,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as TicketType);
+      } as TicketType); 
       if (errors) throw new Error(`Failed to create ticket: ${errors.map(e => e.message).join(', ')}`);
       console.log('Ticket created:', data);
       return data;
@@ -224,14 +225,12 @@ export class TicketService {
       if (!team.teamLeadId) throw new Error('Missing team lead ID');
       const { data, errors } = await this.client.models.Team.create({
         ...team,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      } as TeamType);
+      } as TeamType); // Remove createdAt/updatedAt - managed by Amplify
       if (errors) throw new Error(`Failed to create team: ${errors.map(e => e.message).join(', ')}`);
       console.log('Team created:', data);
       return data;
-    } catch (Error) {
-      console.error('Create team error:', Error);
+    } catch (error) {
+      console.error('Create team error:', error);
       return null;
     }
   }
