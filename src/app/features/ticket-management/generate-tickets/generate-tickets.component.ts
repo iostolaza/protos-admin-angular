@@ -1,3 +1,6 @@
+
+// src/app/features/ticket-management/generate-tickets/generate-tickets.component.ts
+
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';

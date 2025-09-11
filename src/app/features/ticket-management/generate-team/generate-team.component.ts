@@ -1,3 +1,6 @@
+
+// src/app/features/ticket-management/generate-team/generate-team.component.ts
+
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';

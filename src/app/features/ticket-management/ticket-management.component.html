@@ -23,11 +23,16 @@
       </div>
     </div>
     <!-- Tabs -->
-    <div class="flex gap-4">
+    <div class="flex gap-4 mb-4">
       <button (click)="switchTab('tickets')" [class.font-bold]="tab() === 'tickets'" class="text-primary hover:text-primary/80">Tickets</button>
       <button (click)="switchTab('teams')" [class.font-bold]="tab() === 'teams'" class="text-primary hover:text-primary/80">Teams</button>
-      <button (click)="switchTab('create-ticket')" class="text-primary hover:text-primary/80">Create Ticket</button>
-      <button (click)="switchTab('create-team')" class="text-primary hover:text-primary/80">Create Team</button>
+      <button (click)="switchTab('create-ticket')" [class.font-bold]="tab() === 'create-ticket'" class="text-primary hover:text-primary/80">Create Ticket</button>
+      <button (click)="switchTab('create-team')" [class.font-bold]="tab() === 'create-team'" class="text-primary hover:text-primary/80">Create Team</button>
     </div>
+    <!-- Conditional Sub-Content (no router) -->
+    <app-ticket-list *ngIf="tab() === 'tickets'"></app-ticket-list>
+    <app-team-list *ngIf="tab() === 'teams'"></app-team-list>
+    <app-generate-tickets *ngIf="tab() === 'create-ticket'"></app-generate-tickets>
+    <app-generate-team *ngIf="tab() === 'create-team'"></app-generate-team>
   </div>
 </div>

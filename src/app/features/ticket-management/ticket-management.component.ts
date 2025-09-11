@@ -1,18 +1,27 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { TicketService, FlatTicket, FlatTeam } from '../../core/services/ticket.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../core/services/icon-preloader.service';
+import { TicketListComponent } from './ticket-list/ticket-list.component';  
+import { TeamListComponent } from './team-list/team-list.component';  
+import { GenerateTicketsComponent } from './generate-tickets/generate-tickets.component'; 
+import { GenerateTeamComponent } from './generate-team/generate-team.component'; 
 
 @Component({
   selector: 'app-ticket-management',
   templateUrl: './ticket-management.component.html',
-  // styleUrl: './ticket-management.component.scss',
   standalone: true,
-  imports: [CommonModule, AngularSvgIconModule],
+  imports: [
+    CommonModule, 
+    AngularSvgIconModule, 
+    TicketListComponent,  
+    TeamListComponent,  
+    GenerateTicketsComponent, 
+    GenerateTeamComponent  
+  ],
 })
 export class TicketManagementComponent implements OnInit, OnDestroy {
   tickets = signal<FlatTicket[]>([]);
@@ -23,7 +32,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   recentTickets = signal<FlatTicket[]>([]);
   private destroy$ = new Subject<void>();
 
-  constructor(private ticketService: TicketService, private router: Router) {}
+  constructor(private ticketService: TicketService) {}  // Remove Router
 
   getIconPath = getIconPath;
 
@@ -46,8 +55,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   switchTab(newTab: string) {
-    this.tab.set(newTab);
-    this.router.navigate([`/main-layout/ticket-management/${newTab}`]);
+    this.tab.set(newTab);  // Just update signal; no navigate
   }
 
   private updateSummary(): void {
