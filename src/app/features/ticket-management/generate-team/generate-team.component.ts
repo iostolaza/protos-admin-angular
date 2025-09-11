@@ -1,11 +1,10 @@
-
-// src/app/features/ticket-management/generate-team/generate-team.component.ts
-
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
+import { UserService } from '../../../core/services/user.service';
 import { getCurrentUser } from 'aws-amplify/auth';
+import type { Schema } from '../../../../../amplify/data/resource';
 
 @Component({
   selector: 'app-generate-team',
@@ -13,15 +12,26 @@ import { getCurrentUser } from 'aws-amplify/auth';
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './generate-team.component.html',
 })
-export class GenerateTeamComponent {
+export class GenerateTeamComponent implements OnInit {
   form!: FormGroup;
+  users = signal<Schema['User']['type'][]>([]);
   errorMessage = signal('');
 
-  constructor(private fb: FormBuilder, private ticketService: TicketService) {
+  constructor(private fb: FormBuilder, private ticketService: TicketService, private userService: UserService) {
     this.form = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(4)]],
       description: [''],
+      inviteUserId: [''],
     });
+  }
+
+  async ngOnInit() {
+    try {
+      const users = await this.userService.getAllUsers();
+      this.users.set(users);
+    } catch (err) {
+      console.error('Load users error:', err);
+    }
   }
 
   async submit() {
@@ -37,7 +47,10 @@ export class GenerateTeamComponent {
         description: values.description || null,
         teamLeadId: userId,
       };
-      await this.ticketService.createTeam(team);
+      const newTeam = await this.ticketService.createTeam(team);
+      if (newTeam && values.inviteUserId) {
+        await this.ticketService.addTeamMember(newTeam.id, values.inviteUserId);  // UPDATED: Use service method
+      }
       this.form.reset();
       this.errorMessage.set('');
     } catch (err) {

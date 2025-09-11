@@ -106,7 +106,10 @@ const schema = a.schema({
     teamLead: a.belongsTo('User', 'teamLeadId'),
     members: a.hasMany('TeamMember', 'teamId'),
     tickets: a.hasMany('Ticket', 'teamId'),
-  }).authorization(allow => [allow.groups(['admin', 'team_lead']), allow.authenticated().to(['read'])]),
+  }).authorization(allow => [
+    allow.authenticated().to(['create', 'read']),  
+    allow.groups(['admin', 'team_lead']).to(['update', 'delete']),  
+  ]),
 
   TeamMember: a.model({
       teamId: a.id().required(),
@@ -129,7 +132,7 @@ const schema = a.schema({
     completionDate: a.datetime(),
     requesterId: a.string().required(), 
     requester: a.belongsTo('User', 'requesterId'),
-    assigneeId: a.string(),
+    assigneeId: a.string(),  // Not required, can be null
     assignee: a.belongsTo('User', 'assigneeId'),
     teamId: a.id().required(),
     team: a.belongsTo('Team', 'teamId'),

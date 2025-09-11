@@ -14,7 +14,13 @@
         <label class="block text-sm font-semibold mb-1 text-foreground">Description:</label>
         <textarea formControlName="description" class="w-full p-2 border border-border rounded bg-background text-foreground h-24"></textarea>
       </div>
-      <!-- Add select for invite if needed -->
+      <div>  <!-- NEW: Invite select -->
+        <label class="block text-sm font-semibold mb-1 text-foreground">Invite User:</label>
+        <select formControlName="inviteUserId" class="w-full p-2 border border-border rounded bg-background text-foreground">
+          <option value="">None</option>
+          <option *ngFor="let user of users()" [value]="user.cognitoId">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
+        </select>
+      </div>
       <div>
         <button type="submit" class="bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90">Create</button>
       </div>

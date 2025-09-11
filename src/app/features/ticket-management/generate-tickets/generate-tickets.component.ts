@@ -21,6 +21,7 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
   members = signal<Schema['User']['type'][]>([]);
   errorMessage = signal('');
   private destroy$ = new Subject<void>();
+  private currentUserId = '';  
 
   constructor(private fb: FormBuilder, private ticketService: TicketService) {
     this.form = this.fb.group({
@@ -36,8 +37,8 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     try {
       const { userId } = await getCurrentUser();
-      const teams = await this.ticketService.getUserTeams(userId);
-      this.teams.set(teams);
+      this.currentUserId = userId;  
+      await this.loadTeams();  
     } catch (err) {
       console.error('Init error:', err);
       this.errorMessage.set('Failed to load teams');
@@ -58,6 +59,15 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
           this.members.set([]);
         }
       });
+
+    this.ticketService.observeTeams()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.loadTeams());
+  }
+
+  private async loadTeams(): Promise<void> { 
+    const teams = await this.ticketService.getUserTeams(this.currentUserId);
+    this.teams.set(teams);
   }
 
   async submit() {
@@ -72,7 +82,7 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
         title: values.title,
         labels: values.labels ? [values.labels] : [],
         description: values.description,
-        status: 'OPEN' as const,  // Explicit enum literal
+        status: 'OPEN' as const,
         estimated: values.estimated,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

@@ -128,6 +128,7 @@ export class TicketService {
     try {
       const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserId({ userId });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
+      if (!members) return []; 
       const teams = await Promise.all(members.map(async (m: TeamMemberType) => {
         const teamRes = await m.team();
         const team = teamRes.data;
@@ -169,6 +170,17 @@ export class TicketService {
       return data;
     } catch (error) {
       console.error('Create team error:', error);
+      return null;
+    }
+  }
+
+  async addTeamMember(teamId: string, userId: string): Promise<TeamMemberType | null> {  
+    try {
+      const { data, errors } = await this.client.models.TeamMember.create({ teamId, userId });
+      if (errors) throw new Error(errors.map(e => e.message).join(', '));
+      return data;
+    } catch (error) {
+      console.error('Add team member error:', error);
       return null;
     }
   }

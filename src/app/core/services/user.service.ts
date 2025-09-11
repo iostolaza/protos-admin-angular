@@ -126,6 +126,23 @@ export class UserService {
     await this.updateUser(validUpdated);
   }
 
+    async getAllUsers(nextToken: string | null = null): Promise<UserType[]> {  
+      try {
+        const accumulated: UserType[] = [];
+        let token = nextToken;
+        do {
+          const { data, nextToken: newToken, errors } = await this.client.models.User.list({ nextToken: token ?? undefined });
+          if (errors) throw new Error(errors.map(e => e.message).join(', '));
+          accumulated.push(...data);
+          token = newToken ?? null;
+        } while (token);
+        return accumulated;
+      } catch (error) {
+        console.error('Get all users error:', error);
+        return [];
+      }
+    }
+
   async updateUser(updatedData: Partial<UserType>) {
     const currentUser = this.user();
     if (!currentUser?.cognitoId) return;
