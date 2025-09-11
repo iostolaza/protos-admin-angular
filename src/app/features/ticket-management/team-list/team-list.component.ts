@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TicketService, FlatTeam } from '../../../core/services/ticket.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -12,6 +12,8 @@ import { getIconPath } from '../../../core/services/icon-preloader.service';
 })
 export class TeamListComponent implements OnInit {
   teams = signal<FlatTeam[]>([]);
+  @Output() edit = new EventEmitter<FlatTeam>(); 
+
   constructor(private ticketService: TicketService) {}
 
   getIconPath = getIconPath;
@@ -24,6 +26,10 @@ export class TeamListComponent implements OnInit {
   async deleteTeam(id: string) {
     await this.ticketService.deleteTeam(id);
     this.teams.update(ts => ts.filter(t => t.id !== id));
+  }
+
+  editTeam(team: FlatTeam) {
+    this.edit.emit(team);
   }
 
   trackById(index: number, item: FlatTeam): string {

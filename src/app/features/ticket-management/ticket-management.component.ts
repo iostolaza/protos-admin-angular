@@ -1,3 +1,4 @@
+
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TicketService, FlatTicket, FlatTeam } from '../../core/services/ticket.service';
@@ -9,6 +10,8 @@ import { TicketListComponent } from './ticket-list/ticket-list.component';
 import { TeamListComponent } from './team-list/team-list.component';  
 import { GenerateTicketsComponent } from './generate-tickets/generate-tickets.component'; 
 import { GenerateTeamComponent } from './generate-team/generate-team.component'; 
+import { TeamEditComponent } from './edit-team/edit-team.component'; 
+
 
 @Component({
   selector: 'app-ticket-management',
@@ -20,19 +23,21 @@ import { GenerateTeamComponent } from './generate-team/generate-team.component';
     TicketListComponent,  
     TeamListComponent,  
     GenerateTicketsComponent, 
-    GenerateTeamComponent  
+    GenerateTeamComponent,
+    TeamEditComponent 
   ],
 })
 export class TicketManagementComponent implements OnInit, OnDestroy {
   tickets = signal<FlatTicket[]>([]);
   teams = signal<FlatTeam[]>([]);
+  selectedTeam = signal<FlatTeam | null>(null);
   tab = signal('tickets'); // Default tab
   updatedAgo = signal('a moment ago');
   openTickets = signal(0);
   recentTickets = signal<FlatTicket[]>([]);
   private destroy$ = new Subject<void>();
 
-  constructor(private ticketService: TicketService) {}  // Remove Router
+  constructor(private ticketService: TicketService) {}  
 
   getIconPath = getIconPath;
 
@@ -55,7 +60,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   }
 
   switchTab(newTab: string) {
-    this.tab.set(newTab);  // Just update signal; no navigate
+    this.tab.set(newTab); 
+  }
+
+  editTeam(team: FlatTeam) {  
+    this.selectedTeam.set(team);
+    this.switchTab('edit-team');
   }
 
   private updateSummary(): void {

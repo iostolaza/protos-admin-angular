@@ -29,10 +29,11 @@
       <button (click)="switchTab('create-ticket')" [class.font-bold]="tab() === 'create-ticket'" class="text-primary hover:text-primary/80">Create Ticket</button>
       <button (click)="switchTab('create-team')" [class.font-bold]="tab() === 'create-team'" class="text-primary hover:text-primary/80">Create Team</button>
     </div>
-    <!-- Conditional Sub-Content (no router) -->
+    <!-- Conditional Sub-Content -->
     <app-ticket-list *ngIf="tab() === 'tickets'"></app-ticket-list>
     <app-team-list *ngIf="tab() === 'teams'"></app-team-list>
     <app-generate-tickets *ngIf="tab() === 'create-ticket'"></app-generate-tickets>
     <app-generate-team *ngIf="tab() === 'create-team'"></app-generate-team>
+    <app-team-edit *ngIf="tab() === 'edit-team'" [team]="selectedTeam()!"></app-team-edit> 
   </div>
 </div>

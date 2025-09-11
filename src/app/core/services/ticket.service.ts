@@ -174,6 +174,18 @@ export class TicketService {
     }
   }
 
+  async updateTeam(team: Partial<TeamType>): Promise<TeamType | null> {  // NEW
+    try {
+      if (!team.id) throw new Error('ID required for update');
+      const { data, errors } = await this.client.models.Team.update(team as TeamType);
+      if (errors) throw new Error(errors.map(e => e.message).join(', '));
+      return data;
+    } catch (error) {
+      console.error('Update team error:', error);
+      return null;
+    }
+  }
+
   async addTeamMember(teamId: string, userId: string): Promise<TeamMemberType | null> {  
     try {
       const { data, errors } = await this.client.models.TeamMember.create({ teamId, userId });
@@ -184,6 +196,23 @@ export class TicketService {
       return null;
     }
   }
+  
+  async deleteTeamMember(teamId: string, userId: string): Promise<void> {
+    try {
+      // lookup the TeamMember by keys
+      const { data, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId({ teamId });
+      if (errors) throw new Error(errors.map(e => e.message).join(', '));
+
+      const target = data.find(m => m.userId === userId);
+      if (!target) return;
+
+      const { errors: delErrors } = await this.client.models.TeamMember.delete({ id: target.id });
+      if (delErrors) throw new Error(delErrors.map(e => e.message).join(', '));
+    } catch (error) {
+      console.error('Delete team member error:', error);
+    }
+  }
+
 
   async deleteTeam(id: string): Promise<void> {
     try {
