@@ -74,3 +74,4 @@ export const routes: Routes = [
   // Wildcard redirect for unknown paths
   { path: '**', redirectTo: 'sign-in' }
 ];
+ 
