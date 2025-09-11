@@ -37,6 +37,7 @@ const schema = a.schema({
     createdAt: a.datetime(),
     updatedAt: a.datetime(), 
     teams: a.hasMany('TeamMember', 'userId'), 
+    ledTeams: a.hasMany('Team', 'teamLeadId'), 
     ticketsRequested: a.hasMany('Ticket', 'requesterId'),
     ticketsAssigned: a.hasMany('Ticket', 'assigneeId'),
     comments: a.hasMany('Comment', 'userId'),
