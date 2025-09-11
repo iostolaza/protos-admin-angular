@@ -1,0 +1,26 @@
+<div class="rounded-lg bg-card px-8 py-8 shadow-custom">
+  <h3 class="text-md font-bold text-foreground mb-4">Tickets</h3>
+  <div class="relative overflow-x-auto">
+    <table class="w-full table-auto">
+      <thead class="text-xs uppercase text-muted-foreground">
+        <tr>
+          <th class="py-3 text-left">Title</th>
+          <th class="py-3 text-left">Description</th>
+          <th class="py-3 text-left">Status</th>
+          <th class="py-3 text-left">Assignee</th>
+          <th class="py-3 text-center">Estimated</th>
+          <th class="py-3 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let ticket of tickets(); trackBy: trackById"
+          ticket-list-item
+          [ticket]="ticket"
+          (deleted)="onDelete($event)"
+          class="border-b border-dashed border-border hover:bg-card"
+        ></tr>
+      </tbody>
+    </table>
+  </div>
+</div>

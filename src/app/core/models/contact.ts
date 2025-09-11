@@ -1,4 +1,5 @@
 // src/app/core/models/contact.ts
+
 export interface Address {
   line1?: string | null;
   city?: string | null;
@@ -44,3 +45,5 @@ export interface InputContact {
   vehicle?: Vehicle | null;
   emergencyContact?: EmergencyContact | null;
 }
+
+export type { InputContact as User };

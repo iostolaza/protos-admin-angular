@@ -1,0 +1,44 @@
+
+<!-- src/app/features/ticket-management/generate-tickets/generate-tickets.component.html -->
+
+<div class="p-4 bg-card rounded-lg shadow-custom">
+  <div class="mx-auto text-center">
+    <h1 class="text-2xl font-bold mb-4 text-foreground">Create Ticket</h1>
+    <div *ngIf="errorMessage()" class="text-destructive mb-4">{{ errorMessage() }}</div>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">*Title:</label>
+        <input formControlName="title" type="text" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">Label:</label>
+        <input formControlName="labels" type="text" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">*Description:</label>
+        <textarea formControlName="description" class="w-full p-2 border border-border rounded bg-background text-foreground h-24"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">*Team:</label>
+        <select formControlName="teamId" class="w-full p-2 border border-border rounded bg-background text-foreground">
+          <option value="">Select Team</option>
+          <option *ngFor="let team of teams()" [value]="team.id">{{ team.name }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">Assignee:</label>
+        <select formControlName="assigneeId" class="w-full p-2 border border-border rounded bg-background text-foreground">
+          <option value="">None</option>
+          <option *ngFor="let member of members()" [value]="member.cognitoId">{{ member.firstName }} {{ member.lastName }}</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">*Estimated Date:</label>
+        <input formControlName="estimated" type="date" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+      </div>
+      <div>
+        <button type="submit" class="bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90">Create</button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+
+<!-- src/app/features/ticket-management/generate-team/generate-team.component.html -->
+
+<div class="p-4 bg-card rounded-lg shadow-custom">
+  <div class="mx-auto text-center">
+    <h1 class="text-2xl font-bold mb-4 text-foreground">Create Team</h1>
+    <div *ngIf="errorMessage()" class="text-destructive mb-4">{{ errorMessage() }}</div>
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">*Name:</label>
+        <input formControlName="name" type="text" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">Description:</label>
+        <textarea formControlName="description" class="w-full p-2 border border-border rounded bg-background text-foreground h-24"></textarea>
+      </div>
+      <!-- Add select for invite if needed -->
+      <div>
+        <button type="submit" class="bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90">Create</button>
+      </div>
+    </form>
+  </div>
+</div>

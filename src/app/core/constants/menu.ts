@@ -31,6 +31,16 @@ export const Menu = {
       group: 'Productivity',
       separator: true,
       items: [
+        {
+          label: 'Ticket Management', icon: 'ticket', route: null,
+          children: [
+            { label: 'Tickets', route: '/main-layout/ticket-management/tickets' },
+            { label: 'Teams', route: '/main-layout/ticket-management/teams' },
+            { label: 'Create Ticket', route: '/main-layout/ticket-management/create-ticket' },
+            { label: 'Create Team', route: '/main-layout/ticket-management/create-team' },
+          ],
+        },
+        { label: 'Documents', icon: 'document-text', route: '/main-layout/documents' },
 
         { label: 'Analytics', icon: 'chart-bar', route: '/main-layout/analytics' },
         { 

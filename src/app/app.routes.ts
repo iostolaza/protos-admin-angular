@@ -1,5 +1,3 @@
-// src/app/app.routes.ts
-
 /*
 Description: 
 Defines application routes with lazy-loading for features. 
@@ -39,7 +37,7 @@ export const routes: Routes = [
       // Profile page lazy-loaded
       { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
       
-// Messages variants (incoming/outgoing) using same component
+      // Messages variants (incoming/outgoing) using same component
       { path: 'messages', redirectTo: 'messages/incoming', pathMatch: 'full' },
       { path: 'messages/incoming', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
       { path: 'messages/incoming/:channelId', loadComponent: () => import('./features/messages/messages.component').then(m => m.MessagesComponent) },
@@ -51,9 +49,21 @@ export const routes: Routes = [
       { path: 'contacts/new', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
       { path: 'contacts/favorites', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
       { path: 'contacts/online', loadComponent: () => import('./features/contacts/contacts.component').then(m => m.ContactsComponent) },
-      
-         // Analytics page lazy-loaded
-      { path: 'analytics', loadComponent: () => import('./features/analytics/analytics.component').then(m => m.Analytics) },
+
+      // Ticket management with sub-routes
+      {
+        path: 'ticket-management',
+        loadComponent: () => import('./features/ticket-management/ticket-management.component').then(m => m.TicketManagementComponent),
+        children: [
+          { path: '', redirectTo: 'tickets', pathMatch: 'full' },
+          { path: 'tickets', loadComponent: () => import('./features/ticket-management/ticket-list/ticket-list.component').then(m => m.TicketListComponent) },
+          { path: 'teams', loadComponent: () => import('./features/ticket-management/team-list/team-list.component').then(m => m.TeamListComponent) },
+          { path: 'create-ticket', loadComponent: () => import('./features/ticket-management/generate-tickets/generate-tickets.component').then(m => m.GenerateTicketsComponent) },
+          { path: 'create-team', loadComponent: () => import('./features/ticket-management/generate-team/generate-team.component').then(m => m.GenerateTeamComponent) },
+        ]
+      },
+
+      { path: 'documents', loadComponent: () => import('./features/documents/documents.component').then(m => m.DocumentsComponent) },
       
       // Timesheet variants (submitted/inprogress/approved) using same component
       { path: 'timesheet/submitted', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
@@ -74,4 +84,3 @@ export const routes: Routes = [
   // Wildcard redirect for unknown paths
   { path: '**', redirectTo: 'sign-in' }
 ];
- 

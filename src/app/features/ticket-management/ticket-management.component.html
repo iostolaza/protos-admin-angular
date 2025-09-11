@@ -1,0 +1,33 @@
+<div class="pt-[5%] flex flex-col gap-6">
+  <!-- Summary Card -->
+  <div class="rounded-lg bg-card px-8 py-8 shadow-custom">
+    <div class="mb-4 flex items-center justify-between">
+      <div class="flex-col items-center">
+        <h3 class="text-md font-bold text-foreground">Ticket Management</h3>
+        <span class="text-xs text-muted-foreground">Updated {{ updatedAgo() }}</span>
+      </div>
+    </div>
+    <!-- Summary Pills -->
+    <div class="mb-4 flex gap-4">
+      <div class="flex-1 rounded-md bg-blue-100 px-4 py-2 text-center">
+        <div class="text-lg font-bold text-blue-800">{{ tickets().length }}</div>
+        <div class="text-xs text-blue-600">Total Tickets</div>
+      </div>
+      <div class="flex-1 rounded-md bg-orange-100 px-4 py-2 text-center">
+        <div class="text-lg font-bold text-orange-800">{{ openTickets() }}</div>
+        <div class="text-xs text-orange-600">Open Tickets</div>
+      </div>
+      <div class="flex-1 rounded-md bg-green-100 px-4 py-2 text-center">
+        <div class="text-lg font-bold text-green-800">{{ recentTickets().length }}</div>
+        <div class="text-xs text-green-600">Recent Tickets</div>
+      </div>
+    </div>
+    <!-- Tabs -->
+    <div class="flex gap-4">
+      <button (click)="switchTab('tickets')" [class.font-bold]="tab() === 'tickets'" class="text-primary hover:text-primary/80">Tickets</button>
+      <button (click)="switchTab('teams')" [class.font-bold]="tab() === 'teams'" class="text-primary hover:text-primary/80">Teams</button>
+      <button (click)="switchTab('create-ticket')" class="text-primary hover:text-primary/80">Create Ticket</button>
+      <button (click)="switchTab('create-team')" class="text-primary hover:text-primary/80">Create Team</button>
+    </div>
+  </div>
+</div>

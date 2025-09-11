@@ -1,0 +1,12 @@
+<td class="py-3 text-left">
+  <span class="font-medium text-foreground">{{ ticket.title }}</span>
+</td>
+<td class="py-3 text-left text-foreground">{{ ticket.description | slice:0:50 }}...</td>
+<td class="py-3 text-left text-foreground">{{ ticket.status }}</td>
+<td class="py-3 text-left text-foreground">{{ ticket.assigneeName }}</td>
+<td class="py-3 text-center text-foreground">{{ ticket.estimated | date:'short' }}</td>
+<td class="py-3 text-right">
+  <button (click)="deleteTicket()" class="rounded-full bg-transparent p-1 hover:bg-destructive/10">
+    <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+  </button>
+</td>
