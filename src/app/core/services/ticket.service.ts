@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
-import { getCurrentUser } from 'aws-amplify/auth';
 import { Observable } from 'rxjs';
 
 type TicketType = Schema['Ticket']['type'];
@@ -31,6 +30,7 @@ export class TicketService {
       const accumulated: FlatTicket[] = [];
       let token = nextToken;
       do {
+        console.log('Fetching tickets with nextToken:', token); 
         const { data, nextToken: newToken, errors } = await this.client.models.Ticket.list({ nextToken: token ?? undefined });
         if (errors) throw new Error(errors.map(e => e.message).join(', '));
         const extended = await Promise.all(
@@ -52,6 +52,7 @@ export class TicketService {
         accumulated.push(...extended);
         token = newToken ?? null;
       } while (token);
+      console.log('All tickets fetched:', accumulated); 
       return { tickets: accumulated, nextToken: null };
     } catch (error) {
       console.error('Get tickets error:', error);
@@ -99,6 +100,7 @@ export class TicketService {
       const accumulated: FlatTeam[] = [];
       let token = nextToken;
       do {
+        console.log('Fetching teams with nextToken:', token);
         const { data, nextToken: newToken, errors } = await this.client.models.Team.list({ nextToken: token ?? undefined });
         if (errors) throw new Error(errors.map(e => e.message).join(', '));
         const extended = await Promise.all(
@@ -117,6 +119,7 @@ export class TicketService {
         accumulated.push(...extended);
         token = newToken ?? null;
       } while (token);
+      console.log('All teams fetched:', accumulated);
       return { teams: accumulated, nextToken: null };
     } catch (error) {
       console.error('Get teams error:', error);
@@ -126,9 +129,13 @@ export class TicketService {
 
   async getUserTeams(userId: string): Promise<FlatTeam[]> {
     try {
+      console.log('Fetching user teams for userId:', userId);
       const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserId({ userId });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
-      if (!members) return []; 
+      if (!members) {
+        console.log('No team members found for userId:', userId);
+        return [];
+      }
       const teams = await Promise.all(members.map(async (m: TeamMemberType) => {
         const teamRes = await m.team();
         const team = teamRes.data;
@@ -140,7 +147,9 @@ export class TicketService {
           teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`,
         } as FlatTeam;
       }));
-      return teams.filter((t): t is FlatTeam => t !== null);
+      const filteredTeams = teams.filter((t): t is FlatTeam => t !== null);
+      console.log('User teams fetched:', filteredTeams);
+      return filteredTeams;
     } catch (error) {
       console.error('Get user teams error:', error);
       return [];
@@ -149,16 +158,38 @@ export class TicketService {
 
   async getTeamMembers(teamId: string): Promise<UserType[]> {
     try {
+      console.log('Fetching members for teamId:', teamId);
       const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId({ teamId });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
       const users = await Promise.all(members.map(async (m: TeamMemberType) => {
         const userRes = await m.user();
         return userRes.data;
       }));
-      return users.filter((u): u is UserType => u !== null);
+      const filteredUsers = users.filter((u): u is UserType => u !== null);
+      console.log('Team members fetched:', filteredUsers);
+      return filteredUsers;
     } catch (error) {
       console.error('Get team members error:', error);
       return [];
+    }
+  }
+
+  async getAllUsers(nextToken: string | null = null): Promise<{ users: UserType[]; nextToken: string | null }> {
+    try {
+      const accumulated: UserType[] = [];
+      let token = nextToken;
+      do {
+        console.log('Fetching users with nextToken:', token);
+        const { data, nextToken: newToken, errors } = await this.client.models.User.list({ nextToken: token ?? undefined });
+        if (errors) throw new Error(errors.map(e => e.message).join(', '));
+        accumulated.push(...data);
+        token = newToken ?? null;
+      } while (token);
+      console.log('All users fetched:', accumulated);
+      return { users: accumulated, nextToken: null };
+    } catch (error) {
+      console.error('Get users error:', error);
+      return { users: [], nextToken: null };
     }
   }
 
@@ -174,7 +205,7 @@ export class TicketService {
     }
   }
 
-  async updateTeam(team: Partial<TeamType>): Promise<TeamType | null> {  // NEW
+  async updateTeam(team: Partial<TeamType>): Promise<TeamType | null> {
     try {
       if (!team.id) throw new Error('ID required for update');
       const { data, errors } = await this.client.models.Team.update(team as TeamType);
@@ -196,23 +227,19 @@ export class TicketService {
       return null;
     }
   }
-  
+
   async deleteTeamMember(teamId: string, userId: string): Promise<void> {
     try {
-      // lookup the TeamMember by keys
       const { data, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId({ teamId });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
-
       const target = data.find(m => m.userId === userId);
       if (!target) return;
-
       const { errors: delErrors } = await this.client.models.TeamMember.delete({ id: target.id });
       if (delErrors) throw new Error(delErrors.map(e => e.message).join(', '));
     } catch (error) {
       console.error('Delete team member error:', error);
     }
   }
-
 
   async deleteTeam(id: string): Promise<void> {
     try {

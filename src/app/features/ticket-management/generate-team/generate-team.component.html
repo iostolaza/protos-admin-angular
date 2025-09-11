@@ -17,18 +17,23 @@
       <div class="flex items-start">
         <label class="text-sm font-semibold text-foreground mr-4 w-1/4">Invite Users:</label>
         <div class="w-3/4 space-y-2">
-          <div *ngFor="let invite of inviteUserIds.controls; let i = index" class="flex items-center gap-2">
-            <select [formControlName]="i" class="flex-1 p-2 border border-border rounded bg-background text-foreground">
-              <option value="">Select User</option>
-              <option *ngFor="let user of users()" [value]="user.cognitoId">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
-            </select>
-            <button type="button" (click)="removeInvite(i)" class="text-destructive hover:text-destructive/80">
-              <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5"></svg-icon>
-            </button>
+          <div formArrayName="inviteUserIds"> <!-- Fixed: Add formArrayName -->
+            <div *ngFor="let invite of inviteUserIds.controls; let i = index" class="flex items-center gap-2">
+              <select [formControlName]="i" class="flex-1 p-2 border border-border rounded bg-background text-foreground">
+                <option value="">Select User</option>
+                <option *ngFor="let user of users()" [value]="user.cognitoId">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
+              </select>
+              <button type="button" (click)="removeInvite(i)" class="text-destructive hover:text-destructive/80">
+                <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5"></svg-icon>
+              </button>
+            </div>
           </div>
           <button type="button" (click)="addInvite()" class="text-primary hover:text-primary/80">
             <svg-icon [src]="getIconPath('plus')" svgClass="h-5 w-5"></svg-icon> Add Invite
           </button>
+          <div *ngIf="loadingUsers()" class="text-muted-foreground text-xs">Loading users...</div> <!-- New: Loading -->
+          <div *ngIf="!loadingUsers() && users().length === 0" class="text-destructive text-xs">No users available. Add users in Cognito first.</div> <!-- New: Empty state -->
+          <div *ngIf="!loadingUsers() && inviteUserIds.controls.length === 0" class="text-muted-foreground text-xs">No invites added yet.</div> <!-- New: Empty invites -->
         </div>
       </div>
       <div class="text-center">

@@ -2,7 +2,7 @@
 // src/app/features/ticket-management/generate-tickets/generate-tickets.component.ts
 
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common'; // Explicit NgIf import to resolve linter error
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
 import { TicketService, FlatTeam } from '../../../core/services/ticket.service';
 import { getCurrentUser } from 'aws-amplify/auth';
@@ -12,7 +12,7 @@ import type { Schema } from '../../../../../amplify/data/resource';
 @Component({
   selector: 'app-generate-tickets',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, NgIf], // Add NgIf explicitly if linter persists
   templateUrl: './generate-tickets.component.html',
 })
 export class GenerateTicketsComponent implements OnInit, OnDestroy {
@@ -20,6 +20,8 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
   teams = signal<FlatTeam[]>([]);
   members = signal<Schema['User']['type'][]>([]);
   errorMessage = signal('');
+  loadingTeams = signal(true); // New: For loading state
+  loadingMembers = signal(false); // New: For assignee loading
   private destroy$ = new Subject<void>();
   private currentUserId = '';  
 
@@ -38,22 +40,28 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
     try {
       const { userId } = await getCurrentUser();
       this.currentUserId = userId;  
+      console.log('Current User ID:', this.currentUserId); // Test: Log user ID
       await this.loadTeams();  
     } catch (err) {
       console.error('Init error:', err);
-      this.errorMessage.set('Failed to load teams');
+      this.errorMessage.set('Failed to initialize form');
     }
 
     this.form.get('teamId')?.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(async (teamId) => {
+        console.log('Team ID changed:', teamId); // Test: Log team selection
         if (teamId) {
+          this.loadingMembers.set(true);
           try {
             const members = await this.ticketService.getTeamMembers(teamId);
             this.members.set(members);
+            console.log('Members loaded for team:', members); // Test: Log loaded members
           } catch (err) {
             console.error('Load members error:', err);
             this.errorMessage.set('Failed to load members');
+          } finally {
+            this.loadingMembers.set(false);
           }
         } else {
           this.members.set([]);
@@ -62,12 +70,25 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
 
     this.ticketService.observeTeams()
       .pipe(takeUntil(this.destroy$))
-      .subscribe(() => this.loadTeams());
+      .subscribe(() => {
+        console.log('Teams real-time update triggered'); 
+        this.loadTeams();
+      });
   }
 
   private async loadTeams(): Promise<void> { 
-    const teams = await this.ticketService.getUserTeams(this.currentUserId);
-    this.teams.set(teams);
+    this.loadingTeams.set(true);
+    try {
+      console.log('Calling getUserTeams with userId:', this.currentUserId); 
+      const teams = await this.ticketService.getUserTeams(this.currentUserId);
+      this.teams.set(teams);
+      console.log('Teams loaded:', teams); 
+    } catch (err) {
+      console.error('Load teams error:', err);
+      this.errorMessage.set('Failed to load teams');
+    } finally {
+      this.loadingTeams.set(false);
+    }
   }
 
   async submit() {
@@ -93,6 +114,7 @@ export class GenerateTicketsComponent implements OnInit, OnDestroy {
       await this.ticketService.createTicket(ticket);
       this.form.reset();
       this.errorMessage.set('');
+      console.log('Ticket created successfully'); // Test: Log success
     } catch (err) {
       console.error('Submit error:', err);
       this.errorMessage.set('Failed to create ticket');
