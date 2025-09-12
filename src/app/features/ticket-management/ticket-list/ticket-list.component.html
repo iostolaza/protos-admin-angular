@@ -1,3 +1,6 @@
+
+<!-- src/app/features/ticket-management/ticket-list/ticket-list.component.html -->
+
 <div class="rounded-lg bg-card px-8 py-8 shadow-custom">
   <h3 class="text-md font-bold text-foreground mb-4">Tickets</h3>
   <div class="relative overflow-x-auto">
@@ -13,13 +16,26 @@
         </tr>
       </thead>
       <tbody>
-        <tr
-          *ngFor="let ticket of tickets(); trackBy: trackById"
-          ticket-list-item
-          [ticket]="ticket"
-          (deleted)="onDelete($event)"
-          class="border-b border-dashed border-border hover:bg-card"
-        ></tr>
+        @for (ticket of tickets(); track ticket.id) {
+          <tr class="border-b border-dashed border-border hover:bg-card">
+            <td class="py-3 text-left">
+              <span class="font-medium text-foreground">{{ ticket.title }}</span>
+            </td>
+            <td class="py-3 text-left text-foreground">{{ ticket.description | slice:0:50 }}...</td>
+            <td class="py-3 text-left text-foreground">{{ ticket.status }}</td>
+            <td class="py-3 text-left text-foreground">{{ ticket.assigneeName }}</td>
+            <td class="py-3 text-center text-foreground">{{ ticket.estimated | date:'short' }}</td>
+            <td class="py-3 text-right">
+              <button (click)="onDelete(ticket.id)" class="rounded-full bg-transparent p-1 hover:bg-destructive/10">
+                <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="py-3 text-center text-muted-foreground">No tickets available.</td>
+          </tr> <!-- New: Empty state -->
+        }
       </tbody>
     </table>
   </div>

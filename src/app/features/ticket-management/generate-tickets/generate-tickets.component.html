@@ -1,38 +1,22 @@
+<!-- src/app/features/ticket-management/generate-tickets/generate-tickets.component.html -->
+ 
 <div class="p-4 bg-card rounded-lg shadow-custom">
   <div class="mx-auto text-center">
     <h1 class="text-2xl font-bold mb-4 text-foreground">Create Ticket</h1>
-    <div *ngIf="errorMessage()" class="text-destructive mb-4">{{ errorMessage() }}</div>
-    <div *ngIf="successMessage()" class="text-green-600 mb-4">{{ successMessage() }}</div> <!-- New: Success -->
+    @if (errorMessage()) {
+      <div class="text-destructive mb-4">{{ errorMessage() }}</div>
+    }
+    @if (successMessage()) {
+      <div class="text-green-600 mb-4">{{ successMessage() }}</div>
+    }
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
       <div>
         <label class="block text-sm font-semibold mb-1 text-foreground">*Title:</label>
         <input formControlName="title" type="text" class="w-full p-2 border border-border rounded bg-background text-foreground" />
       </div>
       <div>
-        <label class="block text-sm font-semibold mb-1 text-foreground">Label:</label>
-        <input formControlName="labels" type="text" class="w-full p-2 border border-border rounded bg-background text-foreground" />
-      </div>
-      <div>
         <label class="block text-sm font-semibold mb-1 text-foreground">*Description:</label>
         <textarea formControlName="description" class="w-full p-2 border border-border rounded bg-background text-foreground h-24"></textarea>
-      </div>
-      <div>
-        <label class="block text-sm font-semibold mb-1 text-foreground">*Team:</label>
-        <select formControlName="teamId" class="w-full p-2 border border-border rounded bg-background text-foreground">
-          <option value="">Select Team</option>
-          <option *ngFor="let team of teams()" [value]="team.id">{{ team.name }}</option>
-        </select>
-        <div *ngIf="loadingTeams()" class="text-muted-foreground text-xs">Loading teams...</div>
-        <div *ngIf="!loadingTeams() && teams().length === 0" class="text-destructive text-xs">No teams available. Create one first.</div>
-      </div>
-      <div>
-        <label class="block text-sm font-semibold mb-1 text-foreground">Assignee:</label>
-        <select formControlName="assigneeId" class="w-full p-2 border border-border rounded bg-background text-foreground">
-          <option value="">None</option>
-          <option *ngFor="let member of members()" [value]="member.cognitoId">{{ member.firstName }} {{ member.lastName }}</option>
-        </select>
-        <div *ngIf="loadingMembers()" class="text-muted-foreground text-xs">Loading assignees...</div>
-        <div *ngIf="!loadingMembers() && members().length === 0 && form.get('teamId')?.value" class="text-destructive text-xs">No members in selected team.</div>
       </div>
       <div>
         <label class="block text-sm font-semibold mb-1 text-foreground">*Estimated Date:</label>

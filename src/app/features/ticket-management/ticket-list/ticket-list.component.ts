@@ -1,42 +1,49 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
+// src/app/features/ticket-management/ticket-list/ticket-list.component.ts
+
+import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { TicketService, FlatTicket } from '../../../core/services/ticket.service';
-import { TicketListItemComponent } from './ticket-list-item/ticket-list-item.component';
+import { AngularSvgIconModule } from 'angular-svg-icon';
+import { getIconPath } from '../../../core/services/icon-preloader.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-ticket-list',
   standalone: true,
-  imports: [CommonModule, TicketListItemComponent],
+  imports: [CommonModule, DatePipe, AngularSvgIconModule],
   templateUrl: './ticket-list.component.html',
-  // styleUrl: './ticket-list.component.scss',
 })
-export class TicketListComponent implements OnInit {
-  public tickets = signal<FlatTicket[]>([]);
+export class TicketListComponent implements OnInit, OnDestroy {
+  tickets = signal<FlatTicket[]>([]);
+  private destroy$ = new Subject<void>();
+  getIconPath = getIconPath;
 
   constructor(private ticketService: TicketService) {}
 
-  trackById(index: number, item: FlatTicket): string {
-    return item.id;
-  }
-
   async ngOnInit(): Promise<void> {
     await this.loadTickets();
+    this.setupRealTime();
   }
 
   private async loadTickets(): Promise<void> {
     try {
-      let nextToken: string | null = null;
-      const accumulated: FlatTicket[] = [];
-      do {
-        const { tickets, nextToken: newToken } = await this.ticketService.getTickets(nextToken);
-        accumulated.push(...tickets);
-        nextToken = newToken;
-      } while (nextToken);
-      this.tickets.set(accumulated);
+      const { tickets } = await this.ticketService.getTickets(); // Simplify, no loop
+      this.tickets.set(tickets);
       console.log('Tickets loaded:', this.tickets());
     } catch (err) {
       console.error('Load tickets error:', err);
     }
+  }
+
+  private setupRealTime() {
+    this.ticketService.observeTickets()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        console.log('Tickets real-time update triggered');
+        this.loadTickets();
+      });
   }
 
   async onDelete(id: string): Promise<void> {
@@ -47,5 +54,10 @@ export class TicketListComponent implements OnInit {
     } catch (err) {
       console.error('Delete ticket error:', err);
     }
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

@@ -1,3 +1,5 @@
+// amplify/backend/data/resource.ts
+
 import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
 import { postConfirmation } from '../auth/post-confirmation/resource';
 
@@ -141,7 +143,7 @@ const schema = a.schema({
     requester: a.belongsTo('User', 'requesterId'),
     assigneeId: a.string(),
     assignee: a.belongsTo('User', 'assigneeId'),
-    teamId: a.id().required(),
+    teamId: a.id(),
     team: a.belongsTo('Team', 'teamId'),
     attachments: a.string().array(),
     comments: a.hasMany('Comment', 'ticketId'),

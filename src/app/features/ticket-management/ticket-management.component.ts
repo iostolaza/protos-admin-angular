@@ -1,4 +1,6 @@
 
+// src/app/features/ticket-management/ticket-management.component.ts
+
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TicketService, FlatTicket, FlatTeam } from '../../core/services/ticket.service';

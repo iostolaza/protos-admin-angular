@@ -1,3 +1,6 @@
+
+// src/app/features/ticket-management/team-list/team-list.component.ts
+
 import { Component, OnInit, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { TicketService, FlatTeam } from '../../../core/services/ticket.service';

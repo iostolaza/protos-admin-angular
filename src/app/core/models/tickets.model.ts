@@ -1,8 +1,7 @@
-
 // src/app/core/models/tickets.model.ts
 
 import { InputContact as User } from './contact';
- 
+
 export interface Ticket {
   id: string;
   title: string;
@@ -18,12 +17,12 @@ export interface Ticket {
   requester?: User;
   assigneeId?: string;
   assignee?: User;
-  teamId: string;
+  teamId?: string; 
   team?: Team;
   attachments?: string[];
   comments?: Comment[];
 }
- 
+
 export interface Team {
   id: string;
   name: string;
@@ -33,14 +32,14 @@ export interface Team {
   members?: TeamMember[];
   tickets?: Ticket[];
 }
- 
+
 export interface TeamMember {
   teamId: string;
   userId: string;
   team?: Team;
   user?: User;
 }
- 
+
 export interface Comment {
   content: string;
   createdAt: Date;
@@ -49,7 +48,7 @@ export interface Comment {
   ticketId: string;
   ticket?: Ticket;
 }
- 
+
 export interface Notification {
   content: string;
   createdAt: Date;

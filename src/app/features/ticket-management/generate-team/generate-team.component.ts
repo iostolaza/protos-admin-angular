@@ -1,5 +1,7 @@
+// src/app/features/ticket-management/generate-team/generate-team.component.ts
+
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule, NgIf } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, FormArray, ValidationErrors, AbstractControl } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
 import { UserService } from '../../../core/services/user.service';
@@ -11,7 +13,7 @@ import { getIconPath } from '../../../core/services/icon-preloader.service';
 @Component({
   selector: 'app-generate-team',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AngularSvgIconModule, NgIf],
+  imports: [CommonModule, ReactiveFormsModule, AngularSvgIconModule], // Removed NgIf (not needed with control flow)
   templateUrl: './generate-team.component.html',
 })
 export class GenerateTeamComponent implements OnInit {
