@@ -1,15 +1,15 @@
-
 // src/app/features/ticket-management/edit-team/edit-team.component.ts
 
 import { Component, Input, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormsModule, FormGroup } from '@angular/forms';
-import { TicketService, FlatTeam } from '../../../core/services/ticket.service';
+import { TicketService } from '../../../core/services/ticket.service';
 import { UserService } from '../../../core/services/user.service';
 import type { Schema } from '../../../../../amplify/data/resource';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { Subject, takeUntil } from 'rxjs';
+import { FlatTeam } from '../../../core/models/tickets.model';
 
 type UserType = Schema['User']['type'];
 

@@ -1,9 +1,8 @@
-
 // src/app/features/ticket-management/ticket-management.component.ts
 
-import { Component, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TicketService, FlatTicket, FlatTeam } from '../../core/services/ticket.service';
+import { TicketService } from '../../core/services/ticket.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -13,7 +12,9 @@ import { TeamListComponent } from './team-list/team-list.component';
 import { GenerateTicketsComponent } from './generate-tickets/generate-tickets.component'; 
 import { GenerateTeamComponent } from './generate-team/generate-team.component'; 
 import { TeamEditComponent } from './edit-team/edit-team.component'; 
-
+import { TicketDetailsComponent } from './ticket-details/ticket-details.component';
+import { EditTicketComponent } from './edit-ticket/edit-ticket.component';
+import { FlatTicket, FlatTeam } from '../../core/models/tickets.model';
 
 @Component({
   selector: 'app-ticket-management',
@@ -26,18 +27,29 @@ import { TeamEditComponent } from './edit-team/edit-team.component';
     TeamListComponent,  
     GenerateTicketsComponent, 
     GenerateTeamComponent,
-    TeamEditComponent 
+    TeamEditComponent,
+    TicketDetailsComponent,
+    EditTicketComponent
   ],
 })
 export class TicketManagementComponent implements OnInit, OnDestroy {
   tickets = signal<FlatTicket[]>([]);
   teams = signal<FlatTeam[]>([]);
   selectedTeam = signal<FlatTeam | null>(null);
-  tab = signal('tickets'); // Default tab
+  selectedTicket = signal<FlatTicket | null>(null);
+  editingTicket = signal<FlatTicket | null>(null);
+  tab = signal('tickets'); // Default tab, though template is card-based; retain if needed for future
   updatedAgo = signal('a moment ago');
-  openTickets = signal(0);
-  recentTickets = signal<FlatTicket[]>([]);
   private destroy$ = new Subject<void>();
+
+  // Use computed for derived state (best practice)
+  openTickets = computed(() => this.tickets().filter(t => t.status === 'OPEN').length);
+  recentTickets = computed(() => 
+    this.tickets()
+      .slice()
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 3)
+  );
 
   constructor(private ticketService: TicketService) {}  
 
@@ -47,13 +59,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     await this.loadTickets();
     await this.loadTeams();
     this.setupRealTime();
-    this.updateSummary();
+    this.updatedAgo.set(this.computeUpdatedAgo());
   }
 
   private async loadTickets(): Promise<void> {
     const { tickets } = await this.ticketService.getTickets();
     this.tickets.set(tickets);
-    this.updateSummary();
   }
 
   private async loadTeams(): Promise<void> {
@@ -70,15 +81,29 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.switchTab('edit-team');
   }
 
-  private updateSummary(): void {
-    this.openTickets.set(this.tickets().filter(t => t.status === 'OPEN').length);
-    this.recentTickets.set(
-      this.tickets()
-        .slice()
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 3)
-    );
-    this.updatedAgo.set(this.computeUpdatedAgo());
+  viewDetails(ticket: FlatTicket) {
+    this.selectedTicket.set(ticket);
+    this.editingTicket.set(null);
+  }
+
+  startEditing(ticket: FlatTicket) {
+    this.editingTicket.set(ticket);
+    this.selectedTicket.set(null);
+  }
+
+  getStatusClass(status: string): string {
+    switch (status) {
+      case 'OPEN': return 'bg-blue-100 text-blue-800';
+      case 'IN_PROGRESS': return 'bg-orange-100 text-orange-800';
+      case 'CLOSED': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+
+  onTicketUpdate(updatedTicket: FlatTicket) {
+    this.tickets.update(tickets => tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t));
+    this.editingTicket.set(null);
+    this.selectedTicket.set(updatedTicket); // Refresh details view
   }
 
   private computeUpdatedAgo(): string {

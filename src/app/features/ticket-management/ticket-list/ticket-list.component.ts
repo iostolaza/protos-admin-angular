@@ -3,11 +3,13 @@
 
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { TicketService, FlatTicket } from '../../../core/services/ticket.service';
+import { TicketService } from '../../../core/services/ticket.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { FlatTicket } from '../../../core/models/tickets.model';
+
 
 @Component({
   selector: 'app-ticket-list',

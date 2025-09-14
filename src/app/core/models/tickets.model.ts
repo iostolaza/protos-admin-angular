@@ -58,3 +58,38 @@ export interface Notification {
   user?: User;
   isRead: boolean;
 }
+
+export interface TicketComment {
+  name: string;
+  date: string; // Use string for ISO
+  comment: string;
+}
+
+export interface FlatTicket {
+  id: string;
+  title: string;
+  description: string;
+  estimated: string;
+  createdAt: string;
+  requesterId: string;
+  status: string;
+  assigneeId?: string | null;
+  teamId?: string | null;
+  labels?: (string | null)[] | null;
+  updatedAt?: string | null;
+  requesterName?: string;
+  assigneeName?: string;
+  teamName?: string;
+  comments?: TicketComment[];
+}
+
+export interface FlatTeam {
+  id: string;
+  name: string;
+  description?: string | null;
+  teamLeadId: string;
+  createdAt?: string;
+  updatedAt?: string;
+  teamLeadName?: string;
+  memberCount?: number;
+}

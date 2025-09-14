@@ -1,0 +1,40 @@
+<!-- src/app/features/ticket-management/ticket-details/ticket-details.component.html -->
+
+<div class="rounded-lg bg-card px-8 py-8 shadow-custom">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-md font-bold text-foreground">Ticket Details: {{ ticket.title }}</h3>
+    <button (click)="close.emit()" class="text-muted-foreground hover:text-foreground">
+      <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5"></svg-icon>
+    </button>
+  </div>
+  <div class="space-y-2 mb-4">
+    <div><strong>Status:</strong> {{ ticket.status }}</div>
+    <div><strong>Assigned:</strong> {{ ticket.assigneeName }}</div>
+    <div><strong>Estimated:</strong> {{ ticket.estimated | date:'short' }}</div>
+  </div>
+  <!-- Actions -->
+  <div class="flex gap-2 mb-6">
+    <button (click)="editTicket()" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Edit</button>
+    <button (click)="deleteTicket()" class="bg-destructive text-destructive-foreground px-4 py-2 rounded hover:bg-destructive/90">Delete</button>
+  </div>
+  <!-- Add Note Form -->
+  <div class="mb-6">
+    <h4 class="text-sm font-bold text-foreground mb-2">Add Note</h4>
+    <form (ngSubmit)="addNote()">
+      <textarea [(ngModel)]="newNote" class="w-full p-2 border border-border rounded bg-background text-foreground h-20 mb-2"></textarea>
+      <button type="submit" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Add</button>
+    </form>
+  </div>
+  <!-- Comments Section -->
+  <div>
+    <h4 class="text-sm font-bold text-foreground mb-2">Comments (Chronological)</h4>
+    @for (comment of ticket.comments; track $index) {
+      <div class="border-b border-dashed border-border py-2">
+        <div class="text-sm text-muted-foreground">{{ comment.name }} - {{ comment.date | date:'medium' }}</div>
+        <p class="text-foreground">{{ comment.comment }}</p>
+      </div>
+    } @empty {
+      <div class="text-muted-foreground">No comments yet.</div>
+    }
+  </div>
+</div>

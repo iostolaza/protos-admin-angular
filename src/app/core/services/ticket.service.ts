@@ -1,25 +1,17 @@
-// src/app/core/services/ticket.service.ts
+// src/app/core/services/ticket.service.ts (updated imports, remove interfaces)
 
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Observable } from 'rxjs';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { FlatTicket, FlatTeam, TicketComment } from '../models/tickets.model'; 
 
 type TicketType = Schema['Ticket']['type'];
 type TeamType = Schema['Team']['type'];
 type TeamMemberType = Schema['TeamMember']['type'];
 type UserType = Schema['User']['type'];
-
-export interface FlatTicket extends Omit<TicketType, 'requester' | 'assignee' | 'team'> {
-  requesterName?: string;
-  assigneeName?: string;
-  teamName?: string;
-}
-
-export interface FlatTeam extends Omit<TeamType, 'teamLead' | 'members'> {
-  teamLeadName?: string;
-  memberCount?: number;
-}
+type CommentType = Schema['Comment']['type'];
 
 @Injectable({
   providedIn: 'root',
@@ -42,11 +34,32 @@ export class TicketService {
         const assignee = assigneeRes.data;
         const teamRes = data.teamId ? await data.team() : { data: null }; 
         const team = teamRes.data;
+        const commentsRes = await data.comments();
+        const comments = await Promise.all(commentsRes.data.map(async (c: CommentType) => {
+          const userRes = await c.user();
+          const user = userRes.data;
+          return {
+            name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Anonymous',
+            date: c.createdAt,
+            comment: c.content,
+          };
+        }));
         const ticket: FlatTicket = {
-          ...data,
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          estimated: data.estimated,
+          createdAt: data.createdAt,
+          requesterId: data.requesterId,
+          status: data.status ?? 'OPEN',
+          assigneeId: data.assigneeId,
+          teamId: data.teamId,
+          labels: data.labels ?? [],
+          updatedAt: data.updatedAt ?? '',
           requesterName: `${requester?.firstName ?? ''} ${requester?.lastName ?? ''}`.trim(),
           assigneeName: assignee ? `${assignee.firstName ?? ''} ${assignee.lastName ?? ''}`.trim() : '',
           teamName: team?.name ?? '',
+          comments: comments,
         };
         console.log('Ticket fetched:', ticket);
         return ticket;
@@ -72,11 +85,32 @@ export class TicketService {
               const assignee = assigneeRes.data;
               const teamRes = t.teamId ? await t.team() : { data: null }; // Handle optional
               const team = teamRes.data;
+              const commentsRes = await t.comments();
+              const comments = await Promise.all(commentsRes.data.map(async (c: CommentType) => {
+                const userRes = await c.user();
+                const user = userRes.data;
+                return {
+                  name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Anonymous',
+                  date: c.createdAt,
+                  comment: c.content,
+                };
+              }));
               return {
-                ...t,
+                id: t.id,
+                title: t.title,
+                description: t.description,
+                estimated: t.estimated,
+                createdAt: t.createdAt,
+                requesterId: t.requesterId,
+                status: t.status ?? 'OPEN',
+                assigneeId: t.assigneeId,
+                teamId: t.teamId,
+                labels: t.labels ?? [],
+                updatedAt: t.updatedAt ?? '',
                 requesterName: `${requester?.firstName ?? ''} ${requester?.lastName ?? ''}`.trim(),
                 assigneeName: assignee ? `${assignee.firstName ?? ''} ${assignee.lastName ?? ''}`.trim() : '',
                 teamName: team?.name ?? '',
+                comments: comments,
               } as FlatTicket;
             })
           );
@@ -144,6 +178,25 @@ export class TicketService {
     }
   }
 
+  async addComment(ticketId: string, content: string): Promise<CommentType | null> {
+    try {
+      const { userId } = await getCurrentUser();
+      const now = new Date().toISOString();
+      const { data, errors } = await this.client.models.Comment.create({
+        content,
+        createdAt: now,
+        userId,
+        ticketId,
+      });
+      if (errors) throw new Error(`Failed to add comment: ${errors.map(e => e.message).join(', ')}`);
+      console.log('Comment added:', data);
+      return data;
+    } catch (error) {
+      console.error('Add comment error:', error);
+      return null;
+    }
+  }
+
   // --- Team CRUD Operations ---
   async getTeams(nextToken: string | null = null): Promise<{ teams: FlatTeam[]; nextToken: string | null }> {
     try {
@@ -160,7 +213,12 @@ export class TicketService {
             const membersRes = await t.members();
             const members = membersRes.data;
             return {
-              ...t,
+              id: t.id,
+              name: t.name,
+              description: t.description,
+              teamLeadId: t.teamLeadId,
+              createdAt: t.createdAt ?? '',
+              updatedAt: t.updatedAt ?? '',
               teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
               memberCount: members.length,
             } as FlatTeam;
@@ -193,7 +251,12 @@ export class TicketService {
         const leadRes = await team.teamLead();
         const lead = leadRes.data;
         return {
-          ...team,
+          id: team.id,
+          name: team.name,
+          description: team.description,
+          teamLeadId: team.teamLeadId,
+          createdAt: team.createdAt ?? '',
+          updatedAt: team.updatedAt ?? '',
           teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
         } as FlatTeam;
       }));

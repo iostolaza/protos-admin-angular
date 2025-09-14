@@ -1,0 +1,44 @@
+<!-- src/app/features/ticket-management/edit-ticket/edit-ticket.component.html -->
+
+<div class="rounded-lg bg-card px-8 py-8 shadow-custom">
+  <h3 class="text-md font-bold text-foreground mb-4">Edit Ticket: {{ ticket.title }}</h3>
+  @if (errorMessage()) {
+    <div class="text-destructive mb-4">{{ errorMessage() }}</div>
+  }
+  <form [formGroup]="form" (ngSubmit)="updateTicket()" class="space-y-4">
+    <div>
+      <label class="block text-sm font-semibold mb-1 text-foreground">Title:</label>
+      <input formControlName="title" type="text" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1 text-foreground">Description:</label>
+      <textarea formControlName="description" class="w-full p-2 border border-border rounded bg-background text-foreground h-24"></textarea>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1 text-foreground">Status:</label>
+      <select formControlName="status" class="w-full p-2 border border-border rounded bg-background text-foreground">
+        <option value="Open">Open</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Closed">Closed</option>
+        <!-- Add more as needed -->
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1 text-foreground">Assignee:</label>
+      <select formControlName="assigneeId" class="w-full p-2 border border-border rounded bg-background text-foreground">
+        <option value="">Select Assignee</option>
+        @for (user of users(); track user.cognitoId) {
+          <option [value]="user.cognitoId">{{ user.firstName }} {{ user.lastName }}</option>
+        }
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold mb-1 text-foreground">Estimated Date:</label>
+      <input formControlName="estimated" type="date" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+    </div>
+    <div class="flex justify-end gap-2">
+      <button type="submit" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Update</button>
+      <button type="button" (click)="cancel.emit()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/90">Cancel</button>
+    </div>
+  </form>
+</div>

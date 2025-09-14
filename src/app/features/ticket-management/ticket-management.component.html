@@ -1,15 +1,9 @@
-
 <!-- src/app/features/ticket-management/ticket-management.component.html -->
- 
+
 <div class="pt-[5%] flex flex-col gap-6">
   <!-- Summary Card -->
   <div class="rounded-lg bg-card px-8 py-8 shadow-custom">
-    <div class="mb-4 flex items-center justify-between">
-      <div class="flex-col items-center">
-        <h3 class="text-md font-bold text-foreground">Ticket Management</h3>
-        <span class="text-xs text-muted-foreground">Updated {{ updatedAgo() }}</span>
-      </div>
-    </div>
+    <h3 class="text-md font-bold text-foreground">Ticket Management</h3>
     <!-- Summary Pills -->
     <div class="mb-4 flex gap-4">
       <div class="flex-1 rounded-md bg-blue-100 px-4 py-2 text-center">
@@ -25,18 +19,45 @@
         <div class="text-xs text-green-600">Recent Tickets</div>
       </div>
     </div>
-    <!-- Tabs -->
-    <div class="flex gap-4 mb-4">
-      <button (click)="switchTab('tickets')" [class.font-bold]="tab() === 'tickets'" class="text-primary hover:text-primary/80">Tickets</button>
-      <button (click)="switchTab('teams')" [class.font-bold]="tab() === 'teams'" class="text-primary hover:text-primary/80">Teams</button>
-      <button (click)="switchTab('create-ticket')" [class.font-bold]="tab() === 'create-ticket'" class="text-primary hover:text-primary/80">Create Ticket</button>
-      <button (click)="switchTab('create-team')" [class.font-bold]="tab() === 'create-team'" class="text-primary hover:text-primary/80">Create Team</button>
-    </div>
-    <!-- Conditional Sub-Content -->
-    <app-ticket-list *ngIf="tab() === 'tickets'"></app-ticket-list>
-    <app-team-list *ngIf="tab() === 'teams'"></app-team-list>
-    <app-generate-tickets *ngIf="tab() === 'create-ticket'"></app-generate-tickets>
-    <app-generate-team *ngIf="tab() === 'create-team'"></app-generate-team>
-    <app-team-edit *ngIf="tab() === 'edit-team'" [team]="selectedTeam()!"></app-team-edit> 
   </div>
+
+  <!-- Create Ticket Card -->
+  <app-generate-tickets></app-generate-tickets>
+
+  <!-- Ticket Previews (Small Cards Grid) -->
+  <div class="rounded-lg bg-card px-8 py-8 shadow-custom">
+    <h3 class="text-md font-bold text-foreground mb-4">Tickets</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      @for (ticket of tickets(); track ticket.id) {
+        <div class="rounded-md border border-border p-4 hover:shadow-md transition-shadow">
+          <div class="flex justify-between items-center mb-2">
+            <span class="font-medium text-foreground truncate">{{ ticket.title }}</span>
+            <span class="text-sm px-2 py-1 rounded-full" [ngClass]="getStatusClass(ticket.status)">{{ ticket.status }}</span>
+          </div>
+          <div class="text-sm text-muted-foreground mb-2">Date: {{ ticket.createdAt ? (ticket.createdAt | date:'shortDate') : 'N/A' }}</div>
+          <button (click)="viewDetails(ticket)" class="text-primary hover:text-primary/80 text-sm">View Details</button>
+        </div>
+      } @empty {
+        <div class="text-center text-muted-foreground col-span-full">No tickets available.</div>
+      }
+    </div>
+  </div>
+
+  <!-- Ticket Details Card -->
+  <app-ticket-details *ngIf="selectedTicket()" [ticket]="selectedTicket()!" (close)="selectedTicket.set(null)" (edit)="startEditing($event)"></app-ticket-details>
+
+  <!-- Edit Ticket (Conditional, e.g., replaces details when editing) -->
+  <app-edit-ticket *ngIf="editingTicket()" [ticket]="editingTicket()!" (update)="onTicketUpdate($event)" (cancel)="editingTicket.set(null)"></app-edit-ticket>
+
+  <!-- Ticket List Card (Table) -->
+  <app-ticket-list></app-ticket-list>
+
+  <!-- Create Team Card -->
+  <app-generate-team></app-generate-team>
+
+  <!-- Team List Card -->
+  <app-team-list></app-team-list>
+
+  <!-- Team Edit (Conditional) -->
+  <app-team-edit *ngIf="selectedTeam()" [team]="selectedTeam()!"></app-team-edit>
 </div>

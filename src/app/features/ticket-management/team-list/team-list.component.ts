@@ -3,9 +3,10 @@
 
 import { Component, OnInit, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
-import { TicketService, FlatTeam } from '../../../core/services/ticket.service';
+import { TicketService, } from '../../../core/services/ticket.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
+import { FlatTeam } from '../../../core/models/tickets.model';
 
 @Component({
   selector: 'app-team-list',
