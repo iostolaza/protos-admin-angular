@@ -278,15 +278,16 @@ export class TicketService {
     try {
       console.log('Fetching members for teamId:', teamId);
       const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId({ teamId });
-      if (errors) throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
-
+      if (errors) {
+        console.error('TeamMember fetch errors:', errors); // Debug errors
+        throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
+      }
       const users = await Promise.all((members || []).map(async (m: TeamMemberType) => {
         const userRes = await m.user();
         return userRes.data;
       }));
-
       const filteredUsers = users.filter((u): u is UserType => u !== null);
-      console.log('Team members fetched:', filteredUsers); // Already logging empty
+      console.log('Team members fetched:', filteredUsers); // Log actual data
       return filteredUsers;
     } catch (error) {
       console.error('Get team members error:', error);
@@ -313,10 +314,13 @@ export class TicketService {
   async updateTeam(team: Partial<TeamType>): Promise<TeamType | null> {
     try {
       if (!team.id) throw new Error('Team ID required for update');
-      const { data, errors } = await this.client.models.Team.update({
-        ...team,
+      const validUpdate = {
+        id: team.id,
+        name: team.name,
+        description: team.description,
         updatedAt: new Date().toISOString(),
-      } as TeamType);
+      };
+      const { data, errors } = await this.client.models.Team.update(validUpdate as TeamType);
       if (errors) throw new Error(`Failed to update team: ${errors.map(e => e.message).join(', ')}`);
       console.log('Team updated:', data);
       return data;
@@ -328,10 +332,10 @@ export class TicketService {
 
   async addTeamMember(teamId: string, userId: string): Promise<TeamMemberType | null> {
     try {
-      console.log('Adding team member:', { teamId, userId }); // Added logging for debug
+      console.log('Adding team member:', { teamId, userId });
       const { data, errors } = await this.client.models.TeamMember.create({ teamId, userId });
       if (errors) {
-        console.error('Add team member errors:', errors); // Log errors for empty members issue
+        console.error('Add team member errors:', errors);
         throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
       }
       console.log('Team member added:', data);
@@ -341,7 +345,7 @@ export class TicketService {
       return null;
     }
   }
-
+  
   async deleteTeamMember(teamId: string, userId: string): Promise<void> {
     try {
       console.log('Deleting team member for teamId:', teamId, 'userId:', userId);

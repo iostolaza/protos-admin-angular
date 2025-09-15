@@ -3,19 +3,21 @@
 
 import { Component, OnInit, signal, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
-import { TicketService, } from '../../../core/services/ticket.service';
+import { TicketService } from '../../../core/services/ticket.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { FlatTeam } from '../../../core/models/tickets.model';
+import { TeamEditComponent } from '../edit-team/edit-team.component';
 
 @Component({
   selector: 'app-team-list',
   standalone: true,
-  imports: [CommonModule, AngularSvgIconModule], 
+  imports: [CommonModule, AngularSvgIconModule, TeamEditComponent], 
   templateUrl: './team-list.component.html',
 })
 export class TeamListComponent implements OnInit {
   teams = signal<FlatTeam[]>([]);
+  editingTeam = signal<FlatTeam | null>(null);  // Signal for edit state
   @Output() edit = new EventEmitter<FlatTeam>();
 
   constructor(private ticketService: TicketService) {}
@@ -43,7 +45,12 @@ export class TeamListComponent implements OnInit {
   }
 
   editTeam(team: FlatTeam) {
-    this.edit.emit(team);
+    this.editingTeam.set(team);  // Set team to edit
+  }
+
+  onTeamUpdate(updatedTeam: FlatTeam) {
+    this.teams.update(ts => ts.map(t => t.id === updatedTeam.id ? updatedTeam : t));
+    this.editingTeam.set(null);  // Close form
   }
 
   trackById(index: number, item: FlatTeam): string {

@@ -1,6 +1,6 @@
 // src/app/features/ticket-management/edit-team/edit-team.component.ts
 
-import { Component, Input, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, Input, Output, OnInit, OnDestroy, signal, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormsModule, FormGroup } from '@angular/forms';
 import { TicketService } from '../../../core/services/ticket.service';
@@ -10,6 +10,7 @@ import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { Subject, takeUntil } from 'rxjs';
 import { FlatTeam } from '../../../core/models/tickets.model';
+import { getCurrentUser } from 'aws-amplify/auth';  // Added import
 
 type UserType = Schema['User']['type'];
 
@@ -21,11 +22,13 @@ type UserType = Schema['User']['type'];
 })
 export class TeamEditComponent implements OnInit, OnDestroy {
   @Input() team!: FlatTeam;
+  @Output() update = new EventEmitter<FlatTeam>();
+  @Output() cancel = new EventEmitter<void>();
 
   members = signal<UserType[]>([]);
   users = signal<UserType[]>([]);
   selectedUserId = '';
-  errorMessage = signal('');
+  errorMessage = signal<string | null>(null);
   getIconPath = getIconPath;
 
   private destroy$ = new Subject<void>();
@@ -39,13 +42,8 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     this.form = this.fb.group({
-      name: ['', Validators.required],
-      description: [''],
-    });
-
-    this.form.patchValue({
-      name: this.team.name,
-      description: this.team.description || '',
+      name: [this.team.name, Validators.required],
+      description: [this.team.description || ''],
     });
 
     await this.loadMembers();
@@ -65,23 +63,23 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
   private async loadMembers() {
     const members = await this.ticketService.getTeamMembers(this.team.id);
-    this.members.set(members);
+    this.members.set(members || []); // Ensure array
   }
 
   async addMember() {
     if (!this.selectedUserId) return;
     try {
+      const { userId } = await getCurrentUser(); // Ensure auth context
       await this.ticketService.addTeamMember(this.team.id, this.selectedUserId);
       await this.loadMembers();
-
       this.users.update((curr) =>
         curr.filter((u) => u.cognitoId !== this.selectedUserId)
       );
-
       this.selectedUserId = '';
-      this.errorMessage.set('');
-    } catch {
-      this.errorMessage.set('Failed to add member');
+      this.errorMessage.set(null);
+    } catch (err) {
+      console.error('Add member error:', err);
+      this.errorMessage.set('Failed to add member: ' + (err as Error).message);
     }
   }
 
@@ -90,9 +88,10 @@ export class TeamEditComponent implements OnInit, OnDestroy {
       try {
         await this.ticketService.deleteTeamMember(this.team.id, userId);
         await this.loadMembers();
-        this.errorMessage.set('');
-      } catch {
-        this.errorMessage.set('Failed to remove member');
+        this.errorMessage.set(null);
+      } catch (err) {
+        console.error('Remove member error:', err);
+        this.errorMessage.set('Failed to remove member: ' + (err as Error).message);
       }
     }
   }
@@ -100,15 +99,18 @@ export class TeamEditComponent implements OnInit, OnDestroy {
   async updateTeam() {
     if (this.form.invalid) return;
     try {
-      await this.ticketService.updateTeam({
-        id: this.team.id,
-        name: this.form.value.name!,
+      const updatedData = {
+        ...this.team,
+        name: this.form.value.name,
         description: this.form.value.description || null,
         updatedAt: new Date().toISOString(),
-      });
-      this.errorMessage.set('');
-    } catch {
-      this.errorMessage.set('Failed to update team');
+      };
+      await this.ticketService.updateTeam(updatedData);
+      this.update.emit(updatedData as FlatTeam);
+      this.errorMessage.set(null);
+    } catch (err) {
+      console.error('Update team error:', err);
+      this.errorMessage.set('Failed to update team: ' + (err as Error).message);
     }
   }
 

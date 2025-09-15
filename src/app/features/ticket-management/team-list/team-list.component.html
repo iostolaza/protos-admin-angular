@@ -7,6 +7,7 @@
     <table class="w-full table-auto">
       <thead class="text-xs uppercase text-muted-foreground">
         <tr>
+          <th class="py-3 text-left">Team ID</th>  
           <th class="py-3 text-left">Name</th>
           <th class="py-3 text-left">Lead</th>
           <th class="py-3 text-center">Members</th>
@@ -16,9 +17,10 @@
       <tbody>
         @for (team of teams(); track team.id) {
           <tr class="border-b border-dashed border-border hover:bg-card">
-            <td class="py-3 text-left">{{ team.name }}</td>
-            <td class="py-3 text-left">{{ team.teamLeadName }}</td>
-            <td class="py-3 text-center">{{ team.memberCount }}</td>
+            <td class="py-3 text-left dark:text-gray-400 text-gray-900">{{ team.id.slice(-8) }}</td>  <!-- Capped ID, dark/light text -->
+            <td class="py-3 text-left dark:text-gray-400 text-gray-900">{{ team.name.slice(25) }}</td>
+            <td class="py-3 text-left dark:text-gray-400 text-gray-900">{{ team.teamLeadName || 'N/A' }}</td>
+            <td class="py-3 text-center dark:text-gray-400 text-gray-900">{{ team.memberCount ?? 0 }}</td>  <!-- Proper display -->
             <td class="py-3 text-right flex gap-2">
               <button (click)="editTeam(team)" class="rounded-full bg-transparent p-1 hover:bg-primary/10">
                 <svg-icon [src]="getIconPath('pencil')" svgClass="h-4 w-4 text-primary"></svg-icon>
@@ -31,5 +33,11 @@
         }
       </tbody>
     </table>
+    <!-- Edit Form (Conditional) -->
+    @if (editingTeam()) {
+      <div class="mt-4">
+        <app-team-edit [team]="editingTeam()!" (update)="onTeamUpdate($event)" (cancel)="editingTeam.set(null)"></app-team-edit>
+      </div>
+    }
   </div>
 </div>
