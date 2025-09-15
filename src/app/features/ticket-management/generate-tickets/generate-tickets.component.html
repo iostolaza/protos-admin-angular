@@ -1,7 +1,9 @@
 <!-- src/app/features/ticket-management/generate-tickets/generate-tickets.component.html -->
- 
+
+
 <div class="p-4 bg-card rounded-lg shadow-custom">
-  <div class="mx-auto text-center">
+<div class="p-4 bg-card rounded-lg shadow-custom max-w-md mx-auto w-full">
+  <div class="text-center">
     <h1 class="text-2xl font-bold mb-4 text-foreground">Create Ticket</h1>
     @if (errorMessage()) {
       <div class="text-destructive mb-4">{{ errorMessage() }}</div>
@@ -27,4 +29,5 @@
       </div>
     </form>
   </div>
+</div>
 </div>

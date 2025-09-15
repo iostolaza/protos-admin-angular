@@ -1,6 +1,7 @@
 <!-- src/app/features/ticket-management/edit-ticket/edit-ticket.component.html -->
 
-<div class="rounded-lg bg-card px-8 py-8 shadow-custom">
+<div class="p-4 bg-card rounded-lg shadow-custom">
+<div class="rounded-lg bg-card px-8 py-8 shadow-custom max-w-md mx-auto w-full">
   <h3 class="text-md font-bold text-foreground mb-4">Edit Ticket: {{ ticket.title }}</h3>
   @if (errorMessage()) {
     <div class="text-destructive mb-4">{{ errorMessage() }}</div>
@@ -41,4 +42,5 @@
       <button type="button" (click)="cancel.emit()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/90">Cancel</button>
     </div>
   </form>
+</div>
 </div>
