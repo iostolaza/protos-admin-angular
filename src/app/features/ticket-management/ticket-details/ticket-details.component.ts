@@ -1,5 +1,4 @@
 // src/app/features/ticket-management/ticket-details/ticket-details.component.ts
-
 import { Component, Input, Output, EventEmitter, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';

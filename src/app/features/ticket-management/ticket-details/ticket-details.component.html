@@ -2,21 +2,75 @@
 
 <div class="rounded-lg bg-card px-8 py-8 shadow-custom">
   <div class="flex justify-between items-center mb-4">
-    <h3 class="text-md font-bold text-foreground">Ticket Details: {{ ticket.title }}</h3>
+    <h3 class="text-md font-bold text-foreground">{{ ticket.title }}</h3>
     <button (click)="close.emit()" class="text-muted-foreground hover:text-foreground">
       <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5"></svg-icon>
     </button>
   </div>
-  <div class="space-y-2 mb-4 text-foreground ">
-    <div><strong>Status:</strong> <span [ngClass]="ticket.status | statusClass">{{ ticket.status | status }}</span></div>
-    <div><strong>Assigned:</strong> {{ ticket.assigneeName }}</div>
-    <div><strong>Estimated:</strong> {{ ticket.estimated | date:'short' }}</div>
+
+  <!-- Basic Info Section -->
+  <div class="mb-6">
+    <h4 class="text-sm font-bold text-foreground mb-2">Basic Information</h4>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-foreground">
+      <div><strong>ID:</strong> {{ ticket.id.slice(-8) }}</div>
+      <div class="md:col-span-2">
+        <div><strong>Description:</strong></div>  <!-- Label stacked -->
+        <div class="max-w-[400px] break-words mt-1">{{ ticket.description || 'No description provided' }}</div>  <!-- Value below, limited width -->
+      </div>
+      <div><strong>Status: </strong><span class="text-sm px-3 py-2 rounded-full" [ngClass]="ticket.status | statusClass">{{ ticket.status | status }}</span></div>
+      <!-- <div><strong>Labels:</strong> 
+        @if (ticket.labels && ticket.labels.length > 0) {
+          @for (label of ticket.labels; track label) {
+            <span class="inline-block bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs mr-1">{{ label }}</span>
+          }
+        } @else {
+          None
+        }
+      </div> -->
+    </div>
   </div>
+
+
+  <!-- Dates Section -->
+  <div class="mb-6">
+    <h4 class="text-sm font-bold text-foreground mb-2">Dates</h4>
+    <div class="grid grid-cols-1 md:grid-cols-1 gap-4 text-foreground">
+      <div><strong>Estimated:</strong> {{ ticket.estimated | date:'shortDate' }}</div>
+      <div><strong>Created At:</strong> {{ ticket.createdAt | date:'shortDate'}}</div>
+      <div><strong>Updated At:</strong> {{ ticket.updatedAt | date:'shortDate' }}</div>
+    </div>
+  </div>
+
+  <!-- Relations Section -->
+  <div class="mb-6">
+    <h4 class="text-sm font-bold text-foreground mb-2">Relations</h4>
+    <div class="grid grid-cols-1 md:grid-cols-1 gap-4 text-foreground">
+      <div><strong>Requester:</strong> {{ ticket.requesterName || 'N/A' }}</div>
+      <div><strong>Assigned:</strong> {{ ticket.assigneeName || 'Unassigned' }}</div>
+      <div><strong>Team:</strong> {{ ticket.teamName || 'No team' }}</div>
+    </div>
+  </div>
+
+  <!-- Attachments Section -->
+  <!-- <div class="mb-6">
+    <h4 class="text-sm font-bold text-foreground mb-2">Attachments</h4>
+    @if (ticket.attachments && ticket.attachments.length > 0) {
+      <ul class="list-disc pl-5">
+        @for (attachment of ticket.attachments; track attachment) {
+          <li><a [href]="attachment" class="text-primary hover:underline" target="_blank">{{ attachment | slice:0:50 }}...</a></li>
+        }
+      </ul>
+    } @else {
+      <div class="text-muted-foreground">No attachments.</div>
+    }
+  </div> -->
+
   <!-- Actions -->
   <div class="flex gap-2 mb-6">
     <button (click)="editTicket()" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Edit</button>
     <button (click)="deleteTicket()" class="bg-destructive text-destructive-foreground px-4 py-2 rounded hover:bg-destructive/90">Delete</button>
   </div>
+
   <!-- Add Note Form -->
   <div class="mb-6">
     <h4 class="text-sm font-bold text-foreground mb-2">Add Note</h4>
@@ -25,6 +79,7 @@
       <button type="submit" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Add</button>
     </form>
   </div>
+
   <!-- Comments Section -->
   <div>
     <h4 class="text-sm font-bold text-foreground mb-2">Comments (Chronological)</h4>

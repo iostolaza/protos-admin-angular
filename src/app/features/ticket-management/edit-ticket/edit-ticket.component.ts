@@ -1,10 +1,18 @@
 // src/app/features/ticket-management/edit-ticket/edit-ticket.component.ts
 
 import { Component, Input, Output, EventEmitter, signal, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { FlatTicket } from '../../../core/models/tickets.model';
+
+function validDate(control: AbstractControl): { [key: string]: boolean } | null {
+  const value = control.value;
+  if (!value || isNaN(new Date(value).getTime())) {
+    return { invalidDate: true };
+  }
+  return null;
+}
 
 @Component({
   selector: 'app-edit-ticket',
@@ -29,7 +37,7 @@ export class EditTicketComponent implements OnInit {
       description: [this.ticket.description || ''],
       status: [this.ticket.status, Validators.required],
       assigneeId: [this.ticket.assigneeId || ''],
-      estimated: [this.ticket.estimated ? new Date(this.ticket.estimated).toISOString().split('T')[0] : '', Validators.required],
+      estimated: [this.ticket.estimated ? new Date(this.ticket.estimated).toISOString().split('T')[0] : '', [Validators.required, validDate]],
     });
     await this.fetchUsers();
   }
@@ -47,8 +55,9 @@ export class EditTicketComponent implements OnInit {
         description: this.form.value.description,
         status: this.form.value.status,
         assigneeId: this.form.value.assigneeId,
-        estimated: this.form.value.estimated,  // Use direct 'YYYY-MM-DD' string from form
+        estimated: this.form.value.estimated,  
       };
+      console.log('Update Payload:', updatedPayload); 
       const updatedBackend = await this.ticketService.updateTicket(updatedPayload);
       if (updatedBackend) {
         const updated: FlatTicket = {
@@ -56,9 +65,11 @@ export class EditTicketComponent implements OnInit {
           ...updatedPayload,
         };
         this.update.emit(updated);
+      } else {
+        this.errorMessage.set('Update failed - check console for details');
       }
     } else {
-      this.errorMessage.set('Form invalid');
+      this.errorMessage.set('Form invalid - check date format');
     }
   }
 }

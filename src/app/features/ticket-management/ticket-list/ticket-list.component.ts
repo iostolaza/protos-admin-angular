@@ -32,7 +32,7 @@ export class TicketListComponent implements OnInit, OnDestroy {
 
   private async loadTickets(): Promise<void> {
     try {
-      const { tickets } = await this.ticketService.getTickets(); // Simplify, no loop
+      const { tickets } = await this.ticketService.getTickets(); 
       this.tickets.set(tickets);
       console.log('Tickets loaded:', this.tickets());
     } catch (err) {
