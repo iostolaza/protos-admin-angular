@@ -2,12 +2,21 @@
 
 import { InputContact as User } from './contact';
 
+export enum TicketStatus {
+  OPEN = 'OPEN',
+  QUEUED = 'QUEUED',  // Added missing from union
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETE = 'COMPLETE',
+  CLOSED = 'CLOSED',
+  REOPENED = 'REOPENED',
+}
+
 export interface Ticket {
   id: string;
   title: string;
   description: string;
   labels?: string[];
-  status: 'OPEN' | 'QUEUED' | 'IN_PROGRESS' | 'COMPLETE' | 'CLOSED' | 'REOPENED';
+  status: TicketStatus;  // Use enum
   estimated: Date;
   createdAt: Date;
   updatedAt?: Date;
@@ -72,7 +81,7 @@ export interface FlatTicket {
   estimated: string;
   createdAt: string;
   requesterId: string;
-  status: string;
+  status: TicketStatus;
   assigneeId?: string | null;
   teamId?: string | null;
   labels?: (string | null)[] | null;

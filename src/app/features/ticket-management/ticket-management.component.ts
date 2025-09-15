@@ -1,3 +1,4 @@
+
 // src/app/features/ticket-management/ticket-management.component.ts
 
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
@@ -15,6 +16,8 @@ import { TeamEditComponent } from './edit-team/edit-team.component';
 import { TicketDetailsComponent } from './ticket-details/ticket-details.component';
 import { EditTicketComponent } from './edit-ticket/edit-ticket.component';
 import { FlatTicket, FlatTeam } from '../../core/models/tickets.model';
+import { StatusPipe } from '../../core/pipes/status.pipe';  // New import
+import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  // New import
 
 @Component({
   selector: 'app-ticket-management',
@@ -29,7 +32,9 @@ import { FlatTicket, FlatTeam } from '../../core/models/tickets.model';
     GenerateTeamComponent,
     TeamEditComponent,
     TicketDetailsComponent,
-    EditTicketComponent
+    EditTicketComponent,
+    StatusPipe,  // Add
+    StatusClassPipe  // Add
   ],
 })
 export class TicketManagementComponent implements OnInit, OnDestroy {
@@ -89,15 +94,6 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   startEditing(ticket: FlatTicket) {
     this.editingTicket.set(ticket);
     this.selectedTicket.set(null);
-  }
-
-  getStatusClass(status: string): string {
-    switch (status) {
-      case 'OPEN': return 'bg-blue-100 text-blue-800';
-      case 'IN_PROGRESS': return 'bg-orange-100 text-orange-800';
-      case 'CLOSED': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
   }
 
   onTicketUpdate(updatedTicket: FlatTicket) {

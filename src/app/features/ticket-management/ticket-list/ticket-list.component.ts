@@ -9,12 +9,13 @@ import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { FlatTicket } from '../../../core/models/tickets.model';
-
+import { StatusPipe } from '../../../core/pipes/status.pipe';  // Import
+import { StatusClassPipe } from '../../../core/pipes/status-class.pipe';  // Import
 
 @Component({
   selector: 'app-ticket-list',
   standalone: true,
-  imports: [CommonModule, DatePipe, AngularSvgIconModule],
+  imports: [CommonModule, DatePipe, AngularSvgIconModule, StatusPipe, StatusClassPipe],  // Add pipes
   templateUrl: './ticket-list.component.html',
 })
 export class TicketListComponent implements OnInit, OnDestroy {

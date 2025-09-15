@@ -6,8 +6,6 @@ import { UserService } from '../../../core/services/user.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { FlatTicket } from '../../../core/models/tickets.model';
 
-
-
 @Component({
   selector: 'app-edit-ticket',
   standalone: true,
@@ -49,7 +47,7 @@ export class EditTicketComponent implements OnInit {
         description: this.form.value.description,
         status: this.form.value.status,
         assigneeId: this.form.value.assigneeId,
-        estimated: new Date(this.form.value.estimated).toISOString(),
+        estimated: this.form.value.estimated,  // Use direct 'YYYY-MM-DD' string from form
       };
       const updatedBackend = await this.ticketService.updateTicket(updatedPayload);
       if (updatedBackend) {

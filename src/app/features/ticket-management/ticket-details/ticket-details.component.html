@@ -7,8 +7,8 @@
       <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5"></svg-icon>
     </button>
   </div>
-  <div class="space-y-2 mb-4">
-    <div><strong>Status:</strong> {{ ticket.status }}</div>
+  <div class="space-y-2 mb-4 text-foreground ">
+    <div><strong>Status:</strong> <span [ngClass]="ticket.status | statusClass">{{ ticket.status | status }}</span></div>
     <div><strong>Assigned:</strong> {{ ticket.assigneeName }}</div>
     <div><strong>Estimated:</strong> {{ ticket.estimated | date:'short' }}</div>
   </div>
@@ -21,7 +21,7 @@
   <div class="mb-6">
     <h4 class="text-sm font-bold text-foreground mb-2">Add Note</h4>
     <form (ngSubmit)="addNote()">
-      <textarea [(ngModel)]="newNote" class="w-full p-2 border border-border rounded bg-background text-foreground h-20 mb-2"></textarea>
+      <textarea [(ngModel)]="newNote" name="newNote" class="w-full p-2 border border-border rounded bg-background text-foreground h-20 mb-2"></textarea>
       <button type="submit" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Add</button>
     </form>
   </div>

@@ -29,10 +29,10 @@
     <h3 class="text-md font-bold text-foreground mb-4">Tickets</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (ticket of tickets(); track ticket.id) {
-        <div class="rounded-md border border-border p-4 hover:shadow-md transition-shadow">
+        <div class="rounded-md bg-background border border-border p-4 hover:shadow-md transition-shadow">
           <div class="flex justify-between items-center mb-2">
             <span class="font-medium text-foreground truncate">{{ ticket.title }}</span>
-            <span class="text-sm px-2 py-1 rounded-full" [ngClass]="getStatusClass(ticket.status)">{{ ticket.status }}</span>
+            <span class="text-sm px-2 py-1 rounded-full" [ngClass]="ticket.status | statusClass">{{ ticket.status | status }}</span>  
           </div>
           <div class="text-sm text-muted-foreground mb-2">Date: {{ ticket.createdAt ? (ticket.createdAt | date:'shortDate') : 'N/A' }}</div>
           <button (click)="viewDetails(ticket)" class="text-primary hover:text-primary/80 text-sm">View Details</button>

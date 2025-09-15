@@ -22,7 +22,9 @@
               <span class="font-medium text-foreground">{{ ticket.title }}</span>
             </td>
             <td class="py-3 text-left text-foreground">{{ ticket.description | slice:0:50 }}...</td>
-            <td class="py-3 text-left text-foreground">{{ ticket.status }}</td>
+            <td class="py-3 text-left">
+              <span [ngClass]="ticket.status | statusClass">{{ ticket.status | status }}</span>
+            </td>
             <td class="py-3 text-left text-foreground">{{ ticket.assigneeName }}</td>
             <td class="py-3 text-center text-foreground">{{ ticket.estimated | date:'short' }}</td>
             <td class="py-3 text-right">

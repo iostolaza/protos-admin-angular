@@ -1,11 +1,11 @@
-// src/app/core/services/ticket.service.ts (updated imports, remove interfaces)
+// src/app/core/services/ticket.service.ts 
 
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Observable } from 'rxjs';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { FlatTicket, FlatTeam, TicketComment } from '../models/tickets.model'; 
+import { FlatTicket, FlatTeam, TicketComment, TicketStatus } from '../models/tickets.model';  // Import enum
 
 type TicketType = Schema['Ticket']['type'];
 type TeamType = Schema['Team']['type'];
@@ -20,6 +20,8 @@ export class TicketService {
   private client = generateClient<Schema>();
 
   async getTicketById(id: string): Promise<FlatTicket | null> {
+    const start = performance.now();  // Start timing
+
       try {
         console.log('Fetching ticket with ID:', id);
         const { data, errors } = await this.client.models.Ticket.get({ id });
@@ -51,7 +53,7 @@ export class TicketService {
           estimated: data.estimated,
           createdAt: data.createdAt,
           requesterId: data.requesterId,
-          status: data.status ?? 'OPEN',
+          status: data.status ? data.status as TicketStatus : TicketStatus.OPEN,  // Cast string to enum
           assigneeId: data.assigneeId,
           teamId: data.teamId,
           labels: data.labels ?? [],
@@ -62,6 +64,7 @@ export class TicketService {
           comments: comments,
         };
         console.log('Ticket fetched:', ticket);
+        console.log('Get ticket by ID time:', performance.now() - start, 'ms');
         return ticket;
       } catch (error) {
         console.error('Get ticket by ID error:', error);
@@ -70,6 +73,7 @@ export class TicketService {
     }
 
   async getTickets(nextToken: string | null = null): Promise<{ tickets: FlatTicket[]; nextToken: string | null }> {
+      const start = performance.now();  // Start timing
       try {
         const accumulated: FlatTicket[] = [];
         let token = nextToken;
@@ -102,7 +106,7 @@ export class TicketService {
                 estimated: t.estimated,
                 createdAt: t.createdAt,
                 requesterId: t.requesterId,
-                status: t.status ?? 'OPEN',
+                status: t.status ? t.status as TicketStatus : TicketStatus.OPEN, 
                 assigneeId: t.assigneeId,
                 teamId: t.teamId,
                 labels: t.labels ?? [],
@@ -118,6 +122,7 @@ export class TicketService {
           token = newToken ?? null;
         } while (token);
         console.log('All tickets fetched:', accumulated);
+        console.log('Get tickets time:', performance.now() - start, 'ms');
         return { tickets: accumulated, nextToken: null };
       } catch (error) {
         console.error('Get tickets error:', error);
@@ -134,7 +139,7 @@ export class TicketService {
 
         const payload: Partial<TicketType> = {
           ...ticket,
-          status: 'OPEN', // Default
+          status: TicketStatus.OPEN, // Use enum
           assigneeId: undefined, // Optional
           teamId: undefined, // Optional
           labels: [], // Default empty
