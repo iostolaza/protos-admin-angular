@@ -57,11 +57,11 @@
   <app-generate-team></app-generate-team>
 
   <!-- Team List Card -->
-  <app-team-list (view)="viewTeam($event)" (edit)="editTeam($event)"></app-team-list>  <!-- NEW: Bind view/edit events -->
+  <app-team-list (view)="viewTeam($event)" (edit)="editTeam($event)"></app-team-list>
 
   <!-- Team Details Card -->  <!-- NEW: Conditional details -->
   <app-team-details *ngIf="selectedTeam()" [team]="selectedTeam()!" (close)="selectedTeam.set(null)" (edit)="editTeam($event)"></app-team-details>
 
   <!-- Team Edit (Conditional) -->
-  <app-team-edit *ngIf="editingTeam()" [team]="editingTeam()!"></app-team-edit>  <!-- Assuming editingTeam signal added -->
+  <app-team-edit *ngIf="editingTeam()" [team]="editingTeam()!" (update)="onTeamUpdate($event)" (cancel)="editingTeam.set(null)"></app-team-edit>
 </div>

@@ -15,7 +15,7 @@ import { GenerateTeamComponent } from './generate-team/generate-team.component';
 import { TeamEditComponent } from './edit-team/edit-team.component'; 
 import { TicketDetailsComponent } from './ticket-details/ticket-details.component';
 import { EditTicketComponent } from './edit-ticket/edit-ticket.component';
-import { TeamDetailsComponent } from './team-details/team-details.component';  // NEW: Import
+import { TeamDetailsComponent } from './team-details/team-details.component';  
 import { FlatTicket, FlatTeam } from '../../core/models/tickets.model';
 import { StatusPipe } from '../../core/pipes/status.pipe';  
 import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  
@@ -34,7 +34,7 @@ import { StatusClassPipe } from '../../core/pipes/status-class.pipe';
     TeamEditComponent,
     TicketDetailsComponent,
     EditTicketComponent,
-    TeamDetailsComponent,  // NEW
+    TeamDetailsComponent,  
     StatusPipe,  
     StatusClassPipe  
   ],
@@ -43,7 +43,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   tickets = signal<FlatTicket[]>([]);
   teams = signal<FlatTeam[]>([]);
   selectedTeam = signal<FlatTeam | null>(null);
-  editingTeam = signal<FlatTeam | null>(null);  // NEW: For edit mode
+  editingTeam = signal<FlatTeam | null>(null); 
   selectedTicket = signal<FlatTicket | null>(null);
   editingTicket = signal<FlatTicket | null>(null);
   tab = signal('tickets');
@@ -83,7 +83,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.tab.set(newTab); 
   }
 
-  viewTeam(team: FlatTeam) {  // NEW: Set for details view
+  viewTeam(team: FlatTeam) { 
     this.selectedTeam.set(team);
     this.editingTeam.set(null);
   }
@@ -91,6 +91,12 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   editTeam(team: FlatTeam) {  
     this.editingTeam.set(team);
     this.selectedTeam.set(null);
+  }
+
+  onTeamUpdate(updatedTeam: FlatTeam) { 
+    this.teams.update(teams => teams.map(t => t.id === updatedTeam.id ? updatedTeam : t));
+    this.editingTeam.set(null);
+    this.selectedTeam.set(updatedTeam);  
   }
 
   viewDetails(ticket: FlatTicket) {

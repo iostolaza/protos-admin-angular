@@ -1,4 +1,3 @@
-
 // src/app/core/services/user.service.ts
 
 import { Injectable, signal } from '@angular/core';
@@ -22,6 +21,7 @@ export type UserProfile = UserType & { profileImageUrl?: string };
 export class UserService {
   private client = generateClient<Schema>();
   public user = signal<UserProfile | null>(null); // Make public
+  public allUsers = signal<UserType[]>([]); // Cached all users
   private destroy$ = new Subject<void>();
 
   constructor() {
@@ -38,6 +38,7 @@ export class UserService {
           break;
         case 'signedOut':
           this.user.set(null);
+          this.allUsers.set([]); // Clear cache on sign out
           break;
       }
     });
@@ -129,22 +130,27 @@ export class UserService {
     await this.updateUser(validUpdated);
   }
 
-    async getAllUsers(nextToken: string | null = null): Promise<UserType[]> {  
-      try {
-        const accumulated: UserType[] = [];
-        let token = nextToken;
-        do {
-          const { data, nextToken: newToken, errors } = await this.client.models.User.list({ nextToken: token ?? undefined });
-          if (errors) throw new Error(errors.map(e => e.message).join(', '));
-          accumulated.push(...data);
-          token = newToken ?? null;
-        } while (token);
-        return accumulated;
-      } catch (error) {
-        console.error('Get all users error:', error);
-        return [];
-      }
+  async getAllUsers(nextToken: string | null = null): Promise<UserType[]> {  
+    if (this.allUsers().length > 0) {
+      console.log('Returning cached all users');
+      return this.allUsers();
     }
+    try {
+      const accumulated: UserType[] = [];
+      let token = nextToken;
+      do {
+        const { data, nextToken: newToken, errors } = await this.client.models.User.list({ nextToken: token ?? undefined });
+        if (errors) throw new Error(errors.map(e => e.message).join(', '));
+        accumulated.push(...data);
+        token = newToken ?? null;
+      } while (token);
+      this.allUsers.set(accumulated); // Cache the result
+      return accumulated;
+    } catch (error) {
+      console.error('Get all users error:', error);
+      return [];
+    }
+  }
 
   async updateUser(updatedData: Partial<UserType>) {
     const currentUser = this.user();
@@ -158,6 +164,8 @@ export class UserService {
     if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     if (!updated) throw new Error('Updated user is null');
     await this.updateProfileFromItem(updated);
+    // Invalidate cache if needed (e.g., if user details change affects list)
+    this.allUsers.set([]);
   }
 
   async uploadProfileImage(file: File): Promise<string> {

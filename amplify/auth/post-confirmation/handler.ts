@@ -1,3 +1,6 @@
+
+// amplify/auth/post-confirmation/handler.ts
+
 import type { PostConfirmationTriggerHandler } from 'aws-lambda'; // @types/aws-lambda ^8.10.145 (latest)
 import { type Schema } from '../../data/resource';
 import { Amplify } from 'aws-amplify'; // aws-amplify ^6.6.3 (latest)

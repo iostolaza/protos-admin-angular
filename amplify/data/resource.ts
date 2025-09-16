@@ -105,7 +105,7 @@ const schema = a.schema({
     .secondaryIndexes(index => [index('channelId').sortKeys(['timestamp'])])
     .authorization(allow => [allow.authenticated()]),
 
-  Team: a.model({
+Team: a.model({
     id: a.id().required(),
     name: a.string().required(),
     description: a.string(),
@@ -132,9 +132,9 @@ const schema = a.schema({
     .authorization(allow => [
       allow.authenticated().to(['create', 'read']),
       allow.ownerDefinedIn('owner').to(['update', 'delete']),
-      allow.groups(['admin', 'team_lead']).to(['update', 'delete']),
+      allow.groups(['admin', 'team_lead']).to(['create', 'update', 'delete']),  // Added 'create' and 'team_lead' for add/remove
     ]),
-
+    
   Ticket: a.model({
     id: a.id().required(),
     title: a.string().required(),

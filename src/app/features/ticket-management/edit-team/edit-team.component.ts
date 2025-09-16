@@ -1,3 +1,4 @@
+
 // src/app/features/ticket-management/edit-team/edit-team.component.ts
 
 import { Component, Input, Output, OnInit, OnDestroy, signal, EventEmitter } from '@angular/core';
@@ -78,6 +79,10 @@ export class TeamEditComponent implements OnInit, OnDestroy {
 
   async addMember() {
     if (!this.selectedUserId) return;
+    if (this.members().some(m => m.cognitoId === this.selectedUserId)) {
+      this.errorMessage.set('User already a member');
+      return;
+    }
     try {
       const { userId } = await getCurrentUser(); // Ensure auth context
       await this.ticketService.addTeamMember(this.team.id, this.selectedUserId);
@@ -117,6 +122,7 @@ export class TeamEditComponent implements OnInit, OnDestroy {
       };
       await this.ticketService.updateTeam(updatedData);
       this.update.emit(updatedData as FlatTeam);
+      this.cancel.emit(); // Auto-close after successful update
       this.errorMessage.set(null);
     } catch (err) {
       console.error('Update team error:', err);

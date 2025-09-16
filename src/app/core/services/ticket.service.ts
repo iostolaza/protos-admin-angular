@@ -1,4 +1,6 @@
+
 // src/app/core/services/ticket.service.ts 
+
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
@@ -17,6 +19,7 @@ type CommentType = Schema['Comment']['type'];
 })
 export class TicketService {
   private client = generateClient<Schema>();
+  private teamMembersCache = new Map<string, UserType[]>(); // Cache team members by teamId
 
   async getTicketById(id: string): Promise<FlatTicket | null> {
     const start = performance.now();  // Start timing
@@ -283,6 +286,10 @@ export class TicketService {
 
   async getTeamMembers(teamId: string): Promise<UserType[]> {
     try {
+      if (this.teamMembersCache.has(teamId)) {
+        console.log('Returning cached members for teamId:', teamId);
+        return this.teamMembersCache.get(teamId)!;
+      }
       console.log('Fetching members for teamId:', teamId);
       const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId(
         { teamId },
@@ -304,6 +311,7 @@ export class TicketService {
         }
       }));
       const filteredUsers = users.filter(u => u !== null) as UserType[];
+      this.teamMembersCache.set(teamId, filteredUsers); // Cache the result
       console.log('Team members fetched:', filteredUsers); // Log actual data
       return filteredUsers;
     } catch (error) {
@@ -340,6 +348,8 @@ export class TicketService {
       const { data, errors } = await this.client.models.Team.update(validUpdate as TeamType);
       if (errors) throw new Error(`Failed to update team: ${errors.map(e => e.message).join(', ')}`);
       console.log('Team updated:', data);
+      // Invalidate cache for this team
+      if (team.id) this.teamMembersCache.delete(team.id);
       return data;
     } catch (error) {
       console.error('Update team error:', error);
@@ -361,6 +371,8 @@ export class TicketService {
           throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
         }
         console.log('Team member added:', data);
+        // Invalidate cache for this team
+        this.teamMembersCache.delete(teamId);
         return data;
       } catch (error) {
         console.error('Add team member error:', error);
@@ -374,6 +386,8 @@ export class TicketService {
         const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
         if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
         console.log('Team member deleted:', { teamId, userCognitoId });
+        // Invalidate cache for this team
+        this.teamMembersCache.delete(teamId);
       } catch (error) {
         console.error('Delete team member error:', error);
       }
@@ -385,6 +399,8 @@ export class TicketService {
       const { errors } = await this.client.models.Team.delete({ id });
       if (errors) throw new Error(`Failed to delete team: ${errors.map(e => e.message).join(', ')}`);
       console.log('Team deleted:', id);
+      // Remove from cache
+      this.teamMembersCache.delete(id);
     } catch (error) {
       console.error('Delete team error:', error);
     }
