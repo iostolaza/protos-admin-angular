@@ -1,8 +1,11 @@
+
+// src/app/core/services/user.service.ts
+
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
-import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth'; // Fixed: added fetchAuthSession
+import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth'; 
 import { Observable, Subject, from } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Hub } from 'aws-amplify/utils'; 
@@ -180,7 +183,7 @@ export class UserService {
   async getPaymentMethods(): Promise<PaymentMethodType[]> {
     try {
       const { userId } = await getCurrentUser();
-      const { data, errors } = await this.client.models.PaymentMethod.listPaymentMethodByUserId({ userId }); // Fixed: singular model name
+      const { data, errors } = await this.client.models.PaymentMethod.listPaymentMethodByUserCognitoId({ userCognitoId: userId });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
       return data;
     } catch (error: unknown) {
@@ -193,7 +196,7 @@ export class UserService {
     try {
       const { userId } = await getCurrentUser();
       const now = new Date().toISOString();
-      const { errors } = await this.client.models.PaymentMethod.create({ userId, type, name, createdAt: now, updatedAt: now });
+      const { errors } = await this.client.models.PaymentMethod.create({ userCognitoId: userId, type, name, createdAt: now, updatedAt: now });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Add payment error:', error);

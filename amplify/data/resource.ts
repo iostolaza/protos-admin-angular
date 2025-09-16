@@ -1,3 +1,4 @@
+
 // amplify/backend/data/resource.ts
 
 import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
@@ -38,12 +39,12 @@ const schema = a.schema({
     status: a.string(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
-    teams: a.hasMany('TeamMember', 'userId'),
+    teams: a.hasMany('TeamMember', 'userCognitoId'),  // Updated reference
     ledTeams: a.hasMany('Team', 'teamLeadId'),
     ticketsRequested: a.hasMany('Ticket', 'requesterId'),
     ticketsAssigned: a.hasMany('Ticket', 'assigneeId'),
-    comments: a.hasMany('Comment', 'userId'),
-    notifications: a.hasMany('Notification', 'userId'),
+    comments: a.hasMany('Comment', 'userCognitoId'),  // Updated reference
+    notifications: a.hasMany('Notification', 'userCognitoId'),  // Updated reference
   })
     .identifier(['cognitoId'])
     .secondaryIndexes(index => [index('email')])
@@ -53,24 +54,24 @@ const schema = a.schema({
     ]),
 
   PaymentMethod: a.model({
-    userId: a.id().required(),
+    userCognitoId: a.string().required(),  // Renamed + typed as string (references User.cognitoId)
     type: a.string().required(),
     name: a.string().required(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
   })
-    .secondaryIndexes(index => [index('userId')])
-    .authorization(allow => [allow.ownerDefinedIn('userId')]),
+    .secondaryIndexes(index => [index('userCognitoId')])  // Updated index
+    .authorization(allow => [allow.ownerDefinedIn('userCognitoId')]),  // Updated owner field
 
   Friend: a.model({
-    userId: a.id().required(),
-    friendId: a.id().required(),
+    userCognitoId: a.string().required(),  // Renamed + typed as string
+    friendCognitoId: a.string().required(),  // Renamed + typed as string
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
   })
-    .identifier(['userId', 'friendId'])
-    .secondaryIndexes(index => [index('userId')])
-    .authorization(allow => [allow.ownerDefinedIn('userId')]),
+    .identifier(['userCognitoId', 'friendCognitoId'])  // Updated identifier
+    .secondaryIndexes(index => [index('userCognitoId')])
+    .authorization(allow => [allow.ownerDefinedIn('userCognitoId')]),
 
   Channel: a.model({
     name: a.string(),
@@ -80,21 +81,21 @@ const schema = a.schema({
     .authorization(allow => [allow.authenticated()]),
 
   UserChannel: a.model({
-    userId: a.id().required(),
+    userCognitoId: a.string().required(),  // Renamed + typed as string
     channelId: a.id().required(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
   })
-    .identifier(['userId', 'channelId'])
-    .secondaryIndexes(index => [index('userId'), index('channelId')])
+    .identifier(['userCognitoId', 'channelId'])  // Updated identifier
+    .secondaryIndexes(index => [index('userCognitoId'), index('channelId')])
     .authorization(allow => [
       allow.authenticated().to(['create', 'read']),
-      allow.ownerDefinedIn('userId').to(['update', 'delete']),
+      allow.ownerDefinedIn('userCognitoId').to(['update', 'delete']),
     ]),
 
   Message: a.model({
     content: a.string(),
-    senderId: a.id().required(),
+    senderCognitoId: a.string().required(),  // Renamed + typed as string
     channelId: a.id().required(),
     timestamp: a.datetime().required(),
     attachment: a.string(),
@@ -109,7 +110,7 @@ const schema = a.schema({
     id: a.id().required(),
     name: a.string().required(),
     description: a.string(),
-    teamLeadId: a.string().required(),
+    teamLeadId: a.string().required(),  // Already string; can rename to teamLeadCognitoId if desired
     teamLead: a.belongsTo('User', 'teamLeadId'),
     members: a.hasMany('TeamMember', 'teamId'),
     tickets: a.hasMany('Ticket', 'teamId'),
@@ -121,12 +122,16 @@ const schema = a.schema({
 
   TeamMember: a.model({
     teamId: a.id().required(),
-    userId: a.string().required(),
+    userCognitoId: a.string().required(),  // Renamed from userId
     team: a.belongsTo('Team', 'teamId'),
-    user: a.belongsTo('User', 'userId'),
+    user: a.belongsTo('User', 'userCognitoId'),  // Updated reference
   })
-    .secondaryIndexes(index => [index('teamId'), index('userId')])
-    .authorization(allow => [allow.groups(['admin', 'team_lead'])]),
+    .identifier(['teamId', 'userCognitoId'])  // Updated identifier
+    .secondaryIndexes(index => [index('teamId'), index('userCognitoId')])  // Updated GSI
+    .authorization(allow => [
+      allow.authenticated().to(['create', 'read']),
+      allow.groups(['admin', 'team_lead']).to(['update', 'delete']),
+    ]),
 
   Ticket: a.model({
     id: a.id().required(),
@@ -139,7 +144,7 @@ const schema = a.schema({
     updatedAt: a.datetime(),
     startDate: a.datetime(),
     completionDate: a.datetime(),
-    requesterId: a.string().required(),
+    requesterId: a.string().required(),  // Can rename to requesterCognitoId
     requester: a.belongsTo('User', 'requesterId'),
     assigneeId: a.string(),
     assignee: a.belongsTo('User', 'assigneeId'),
@@ -153,23 +158,23 @@ const schema = a.schema({
   Comment: a.model({
     content: a.string().required(),
     createdAt: a.datetime().required(),
-    userId: a.string().required(),
-    user: a.belongsTo('User', 'userId'),
+    userCognitoId: a.string().required(),  // Renamed from userId
+    user: a.belongsTo('User', 'userCognitoId'),  // Updated reference
     ticketId: a.id().required(),
     ticket: a.belongsTo('Ticket', 'ticketId'),
   })
-    .authorization(allow => [allow.ownerDefinedIn('userId'), allow.groups(['admin', 'team_lead', 'member'])]),
+    .authorization(allow => [allow.ownerDefinedIn('userCognitoId'), allow.groups(['admin', 'team_lead', 'member'])]),
 
   Notification: a.model({
     content: a.string().required(),
     createdAt: a.datetime().required(),
     type: a.enum(['team', 'ticket', 'viewTeam']),
     nameType: a.string(),
-    userId: a.string().required(),
-    user: a.belongsTo('User', 'userId'),
+    userCognitoId: a.string().required(),  // Renamed from userId
+    user: a.belongsTo('User', 'userCognitoId'),  // Updated reference
     isRead: a.boolean().default(false),
   })
-    .authorization(allow => [allow.ownerDefinedIn('userId'), allow.groups(['admin'])]),
+    .authorization(allow => [allow.ownerDefinedIn('userCognitoId'), allow.groups(['admin'])]),
 }).authorization(allow => [allow.resource(postConfirmation)]);
 
 export type Schema = ClientSchema<typeof schema>;

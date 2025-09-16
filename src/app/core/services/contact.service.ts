@@ -1,3 +1,6 @@
+
+// src/app/core/services/contact.service.ts
+
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
@@ -15,17 +18,17 @@ type UserChannelType = Schema['UserChannel']['type'];
 export class ContactService {
   private client = generateClient<Schema>();
 
-  async getFriends(userId: string, nextToken: string | null = null) {
+  async getFriends(userCognitoId: string, nextToken: string | null = null) {
     try {
       const { data, nextToken: newToken, errors } = await this.client.models.Friend.list({
-        filter: { userId: { eq: userId } },
+        filter: { userCognitoId: { eq: userCognitoId } },
         nextToken: nextToken ?? undefined,
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
       const friendsWithDate = await Promise.all(
         data.map(async (f: FriendType) => {
           const { data: userData, errors: userErrors } = await this.client.models.User.get({
-            cognitoId: f.friendId,
+            cognitoId: f.friendCognitoId,
           });
           if (userErrors) throw new Error(userErrors.map((e: any) => e.message).join(', '));
           return { ...userData, createdAt: f.createdAt } as NonNullable<UserType>;
@@ -70,29 +73,29 @@ export class ContactService {
     }
   }
 
-  async addFriend(userId: string, friendId: string) {
+  async addFriend(userCognitoId: string, friendCognitoId: string) {
     try {
-      const { errors } = await this.client.models.Friend.create({ userId, friendId }); // Amplify auto-populates timestamps
+      const { errors } = await this.client.models.Friend.create({ userCognitoId, friendCognitoId }); // Amplify auto-populates timestamps
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Add friend error:', error);
     }
   }
 
-  async removeFriend(userId: string, friendId: string) {
+  async removeFriend(userCognitoId: string, friendCognitoId: string) {
     try {
-      const { errors } = await this.client.models.Friend.delete({ userId, friendId });
+      const { errors } = await this.client.models.Friend.delete({ userCognitoId, friendCognitoId });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Remove friend error:', error);
     }
   }
 
-  async getOrCreateChannel(friendId: string): Promise<ChannelType> {
+  async getOrCreateChannel(friendCognitoId: string): Promise<ChannelType> {
     try {
-      const { userId: currentUserId } = await getCurrentUser();
+      const { userId: currentUserCognitoId } = await getCurrentUser();
       const { data: userChannels, errors } = await this.client.models.UserChannel.list({
-        filter: { userId: { eq: currentUserId } },
+        filter: { userCognitoId: { eq: currentUserCognitoId } },
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
       const potentialChannel = userChannels.reduce((acc: Record<string, number>, uc: UserChannelType) => {
@@ -106,11 +109,11 @@ export class ContactService {
         if (data) return data;
       }
       const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({
-        name: `Chat with ${friendId}`,
+        name: `Chat with ${friendCognitoId}`,
       }); // Amplify auto-populates timestamps
       if (createErrors) throw new Error(createErrors.map((e: any) => e.message).join(', '));
-      await this.client.models.UserChannel.create({ userId: currentUserId, channelId: newChannel!.id }); // Auto-timestamps
-      await this.client.models.UserChannel.create({ userId: friendId, channelId: newChannel!.id }); // Auto-timestamps
+      await this.client.models.UserChannel.create({ userCognitoId: currentUserCognitoId, channelId: newChannel!.id }); // Auto-timestamps
+      await this.client.models.UserChannel.create({ userCognitoId: friendCognitoId, channelId: newChannel!.id }); // Auto-timestamps
       return newChannel!;
     } catch (error: unknown) {
       console.error('Get or create channel error:', error);
@@ -118,10 +121,10 @@ export class ContactService {
     }
   }
 
-  async deleteUser(userId: string) {
+  async deleteUser(userCognitoId: string) {
     try {
       const { errors } = await this.client.models.User.delete({
-        cognitoId: userId,
+        cognitoId: userCognitoId,
       });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
@@ -143,19 +146,19 @@ export class ContactService {
     return await this.getUsers(searchQuery, nextToken);
   }
 
-  async addContact(contactId: string) {
+  async addContact(contactCognitoId: string) {
     try {
       const { userId } = await getCurrentUser();
-      await this.addFriend(userId, contactId);
+      await this.addFriend(userId, contactCognitoId);
     } catch (error) {
       console.error('Add contact error:', error);
     }
   }
 
-  async deleteContact(contactId: string) {
+  async deleteContact(contactCognitoId: string) {
     try {
       const { userId } = await getCurrentUser();
-      await this.removeFriend(userId, contactId);
+      await this.removeFriend(userId, contactCognitoId);
     } catch (error) {
       console.error('Delete contact error:', error);
     }

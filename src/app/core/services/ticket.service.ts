@@ -190,7 +190,7 @@ export class TicketService {
       const { data, errors } = await this.client.models.Comment.create({
         content,
         createdAt: now,
-        userId,
+        userCognitoId: userId,
         ticketId,
       });
       if (errors) throw new Error(`Failed to add comment: ${errors.map(e => e.message).join(', ')}`);
@@ -240,13 +240,13 @@ export class TicketService {
     }
   }
 
-  async getUserTeams(userId: string): Promise<FlatTeam[]> {
+  async getUserTeams(userCognitoId: string): Promise<FlatTeam[]> {
     try {
-      console.log('Fetching user teams for userId:', userId);
-      const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserId({ userId });
+      console.log('Fetching user teams for userCognitoId:', userCognitoId);
+      const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserCognitoId({ userCognitoId });
       if (errors) throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
       if (!members) {
-        console.log('No team members found for userId:', userId);
+        console.log('No team members found for userCognitoId:', userCognitoId);
         return [];
       }
       const teams = await Promise.all(members.map(async (m: TeamMemberType) => {
@@ -330,10 +330,10 @@ export class TicketService {
     }
   }
 
-  async addTeamMember(teamId: string, userId: string): Promise<TeamMemberType | null> {
+  async addTeamMember(teamId: string, userCognitoId: string): Promise<TeamMemberType | null> {
     try {
-      console.log('Adding team member:', { teamId, userId });
-      const { data, errors } = await this.client.models.TeamMember.create({ teamId, userId });
+      console.log('Adding team member:', { teamId, userCognitoId });
+      const { data, errors } = await this.client.models.TeamMember.create({ teamId, userCognitoId });
       if (errors) {
         console.error('Add team member errors:', errors);
         throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
@@ -346,19 +346,12 @@ export class TicketService {
     }
   }
   
-  async deleteTeamMember(teamId: string, userId: string): Promise<void> {
+  async deleteTeamMember(teamId: string, userCognitoId: string): Promise<void> {
     try {
-      console.log('Deleting team member for teamId:', teamId, 'userId:', userId);
-      const { data, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId({ teamId });
-      if (errors) throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
-      const target = data.find(m => m.userId === userId);
-      if (!target) {
-        console.log('No team member found for deletion');
-        return;
-      }
-      const { errors: delErrors } = await this.client.models.TeamMember.delete({ id: target.id });
-      if (delErrors) throw new Error(`Failed to delete team member: ${delErrors.map(e => e.message).join(', ')}`);
-      console.log('Team member deleted:', target.id);
+      console.log('Deleting team member:', { teamId, userCognitoId });
+      const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
+      if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
+      console.log('Team member deleted:', { teamId, userCognitoId });
     } catch (error) {
       console.error('Delete team member error:', error);
     }
