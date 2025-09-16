@@ -331,31 +331,36 @@ export class TicketService {
   }
 
   async addTeamMember(teamId: string, userCognitoId: string): Promise<TeamMemberType | null> {
-    try {
-      console.log('Adding team member:', { teamId, userCognitoId });
-      const { data, errors } = await this.client.models.TeamMember.create({ teamId, userCognitoId });
-      if (errors) {
-        console.error('Add team member errors:', errors);
-        throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
+      try {
+        const { userId: currentUserId } = await getCurrentUser();  // Get lead ID (caller is lead)
+        console.log('Adding team member:', { teamId, userCognitoId, owner: currentUserId });
+        const { data, errors } = await this.client.models.TeamMember.create({ 
+          teamId, 
+          userCognitoId,
+          owner: currentUserId  // Set owner to lead's Cognito ID
+        });
+        if (errors) {
+          console.error('Add team member errors:', errors);
+          throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
+        }
+        console.log('Team member added:', data);
+        return data;
+      } catch (error) {
+        console.error('Add team member error:', error);
+        return null;
       }
-      console.log('Team member added:', data);
-      return data;
-    } catch (error) {
-      console.error('Add team member error:', error);
-      return null;
     }
-  }
   
   async deleteTeamMember(teamId: string, userCognitoId: string): Promise<void> {
-    try {
-      console.log('Deleting team member:', { teamId, userCognitoId });
-      const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
-      if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Team member deleted:', { teamId, userCognitoId });
-    } catch (error) {
-      console.error('Delete team member error:', error);
+      try {
+        console.log('Deleting team member:', { teamId, userCognitoId });
+        const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
+        if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
+        console.log('Team member deleted:', { teamId, userCognitoId });
+      } catch (error) {
+        console.error('Delete team member error:', error);
+      }
     }
-  }
 
   async deleteTeam(id: string): Promise<void> {
     try {
