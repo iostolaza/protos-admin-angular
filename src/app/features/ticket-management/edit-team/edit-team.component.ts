@@ -46,14 +46,24 @@ export class TeamEditComponent implements OnInit, OnDestroy {
       description: [this.team.description || ''],
     });
 
-    await this.loadMembers();
+    try {
+      await this.loadMembers();
+    } catch (err) {
+      console.error('Load members error:', err);
+      this.errorMessage.set('Failed to load members: ' + (err as Error).message);
+    }
 
-    const allUsers = await this.userService.getAllUsers();
-    this.users.set(
-      allUsers.filter(
-        (u) => !this.members().some((m) => m.cognitoId === u.cognitoId)
-      )
-    );
+    try {
+      const allUsers = await this.userService.getAllUsers();
+      this.users.set(
+        allUsers.filter(
+          (u) => !this.members().some((m) => m.cognitoId === u.cognitoId)
+        )
+      );
+    } catch (err) {
+      console.error('Load all users error:', err);
+      this.errorMessage.set('Failed to load users: ' + (err as Error).message);
+    }
 
     this.ticketService
       .observeTeams()
