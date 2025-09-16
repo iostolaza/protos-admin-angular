@@ -1,4 +1,3 @@
-
 // amplify/backend/data/resource.ts
 
 import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
@@ -117,22 +116,23 @@ const schema = a.schema({
   })
     .authorization(allow => [
       allow.authenticated().to(['create', 'read']),
-      allow.ownerDefinedIn('teamLeadId').to(['update', 'delete']),  // NEW: Allow lead (authenticated owner) to update/delete
-      allow.groups(['admin', 'team_lead']).to(['update', 'delete']),  // Retain for groups
+      allow.ownerDefinedIn('teamLeadId').to(['update', 'delete']),  
+      allow.groups(['admin', 'team_lead']).to(['update', 'delete']),  
     ]),
 
   TeamMember: a.model({
     teamId: a.id().required(),
     userCognitoId: a.string().required(),  
+    owner: a.string().required(),  // NEW: Separate owner field for auth (set to teamLeadId on create)
     team: a.belongsTo('Team', 'teamId'),
     user: a.belongsTo('User', 'userCognitoId'),  
   })
-    .identifier(['teamId', 'userCognitoId'])  // Retained: Composite PK for no duplicates
-    .secondaryIndexes(index => [index('teamId'), index('userCognitoId')])  // Retained: For efficient queries
+    .identifier(['teamId', 'userCognitoId'])  
+    .secondaryIndexes(index => [index('teamId'), index('userCognitoId')])  
     .authorization(allow => [
       allow.authenticated().to(['create', 'read']),
-      allow.ownerDefinedIn('userCognitoId').to(['delete']),  // NEW: Allow member self-remove; or restrict if not wanted
-      allow.groups(['admin', 'team_lead']).to(['update', 'delete']),  // Retain
+      allow.ownerDefinedIn('owner').to(['update', 'delete']),  // NEW: Use separate owner field
+      allow.groups(['admin', 'team_lead']).to(['update', 'delete']),  
     ]),
 
   Ticket: a.model({
