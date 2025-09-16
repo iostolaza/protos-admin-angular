@@ -3,8 +3,8 @@
 <div class="rounded-lg bg-card px-8 py-8 shadow-custom">
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-md font-bold text-foreground">{{ ticket.title }}</h3>
-    <button (click)="close.emit()" class="text-muted-foreground hover:text-foreground">
-      <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5"></svg-icon>
+    <button (click)="close.emit()" class="text-destructive hover:text-foreground">
+      <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5 text-destructive"></svg-icon>
     </button>
   </div>
 

@@ -15,9 +15,10 @@ import { GenerateTeamComponent } from './generate-team/generate-team.component';
 import { TeamEditComponent } from './edit-team/edit-team.component'; 
 import { TicketDetailsComponent } from './ticket-details/ticket-details.component';
 import { EditTicketComponent } from './edit-ticket/edit-ticket.component';
+import { TeamDetailsComponent } from './team-details/team-details.component';  // NEW: Import
 import { FlatTicket, FlatTeam } from '../../core/models/tickets.model';
-import { StatusPipe } from '../../core/pipes/status.pipe';  // New import
-import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  // New import
+import { StatusPipe } from '../../core/pipes/status.pipe';  
+import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  
 
 @Component({
   selector: 'app-ticket-management',
@@ -33,21 +34,22 @@ import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  // New im
     TeamEditComponent,
     TicketDetailsComponent,
     EditTicketComponent,
-    StatusPipe,  // Add
-    StatusClassPipe  // Add
+    TeamDetailsComponent,  // NEW
+    StatusPipe,  
+    StatusClassPipe  
   ],
 })
 export class TicketManagementComponent implements OnInit, OnDestroy {
   tickets = signal<FlatTicket[]>([]);
   teams = signal<FlatTeam[]>([]);
   selectedTeam = signal<FlatTeam | null>(null);
+  editingTeam = signal<FlatTeam | null>(null);  // NEW: For edit mode
   selectedTicket = signal<FlatTicket | null>(null);
   editingTicket = signal<FlatTicket | null>(null);
-  tab = signal('tickets'); // Default tab, though template is card-based; retain if needed for future
+  tab = signal('tickets');
   updatedAgo = signal('a moment ago');
   private destroy$ = new Subject<void>();
 
-  // Use computed for derived state (best practice)
   openTickets = computed(() => this.tickets().filter(t => t.status === 'OPEN').length);
   recentTickets = computed(() => 
     this.tickets()
@@ -81,9 +83,14 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.tab.set(newTab); 
   }
 
-  editTeam(team: FlatTeam) {  
+  viewTeam(team: FlatTeam) {  // NEW: Set for details view
     this.selectedTeam.set(team);
-    this.switchTab('edit-team');
+    this.editingTeam.set(null);
+  }
+
+  editTeam(team: FlatTeam) {  
+    this.editingTeam.set(team);
+    this.selectedTeam.set(null);
   }
 
   viewDetails(ticket: FlatTicket) {
@@ -99,7 +106,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   onTicketUpdate(updatedTicket: FlatTicket) {
     this.tickets.update(tickets => tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t));
     this.editingTicket.set(null);
-    this.selectedTicket.set(updatedTicket); // Refresh details view
+    this.selectedTicket.set(updatedTicket);
   }
 
   private computeUpdatedAgo(): string {

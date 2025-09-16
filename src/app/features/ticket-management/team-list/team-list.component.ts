@@ -18,7 +18,8 @@ import { TeamEditComponent } from '../edit-team/edit-team.component';
 export class TeamListComponent implements OnInit {
   teams = signal<FlatTeam[]>([]);
   editingTeam = signal<FlatTeam | null>(null);  // Signal for edit state
-  @Output() edit = new EventEmitter<FlatTeam>();
+  @Output() edit = new EventEmitter<FlatTeam>();  // Existing for edit
+  @Output() view = new EventEmitter<FlatTeam>();  // NEW: For details view
 
   constructor(private ticketService: TicketService) {}
 
@@ -45,7 +46,12 @@ export class TeamListComponent implements OnInit {
   }
 
   editTeam(team: FlatTeam) {
-    this.editingTeam.set(team);  // Set team to edit
+    this.edit.emit(team);  // Emit for parent to handle edit
+    this.editingTeam.set(team);  // Local edit state if needed
+  }
+
+  viewTeam(team: FlatTeam) {
+    this.view.emit(team);  // NEW: Emit for parent to show details
   }
 
   onTeamUpdate(updatedTeam: FlatTeam) {

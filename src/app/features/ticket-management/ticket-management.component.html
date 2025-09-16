@@ -1,3 +1,4 @@
+
 <!-- src/app/features/ticket-management/ticket-management.component.html -->
 
 <div class="pt-[5%] flex flex-col gap-6">
@@ -24,7 +25,7 @@
   <!-- Create Ticket Card -->
   <app-generate-tickets></app-generate-tickets>
 
-  <!-- Ticket Previews (Small Cards Grid) -->
+  <!-- Ticket Previews -->
   <div class="rounded-lg bg-card px-8 py-8 shadow-custom">
     <h3 class="text-md font-bold text-foreground mb-4">Tickets</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -46,7 +47,7 @@
   <!-- Ticket Details Card -->
   <app-ticket-details *ngIf="selectedTicket()" [ticket]="selectedTicket()!" (close)="selectedTicket.set(null)" (edit)="startEditing($event)"></app-ticket-details>
 
-  <!-- Edit Ticket (Conditional, e.g., replaces details when editing) -->
+  <!-- Edit Ticket (Conditional) -->
   <app-edit-ticket *ngIf="editingTicket()" [ticket]="editingTicket()!" (update)="onTicketUpdate($event)" (cancel)="editingTicket.set(null)"></app-edit-ticket>
 
   <!-- Ticket List Card (Table) -->
@@ -56,8 +57,11 @@
   <app-generate-team></app-generate-team>
 
   <!-- Team List Card -->
-  <app-team-list></app-team-list>
+  <app-team-list (view)="viewTeam($event)" (edit)="editTeam($event)"></app-team-list>  <!-- NEW: Bind view/edit events -->
+
+  <!-- Team Details Card -->  <!-- NEW: Conditional details -->
+  <app-team-details *ngIf="selectedTeam()" [team]="selectedTeam()!" (close)="selectedTeam.set(null)" (edit)="editTeam($event)"></app-team-details>
 
   <!-- Team Edit (Conditional) -->
-  <app-team-edit *ngIf="selectedTeam()" [team]="selectedTeam()!"></app-team-edit>
+  <app-team-edit *ngIf="editingTeam()" [team]="editingTeam()!"></app-team-edit>  <!-- Assuming editingTeam signal added -->
 </div>

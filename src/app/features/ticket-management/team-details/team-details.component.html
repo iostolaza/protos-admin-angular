@@ -1,0 +1,46 @@
+<!-- src/app/features/ticket-management/team-details/team-details.component.html -->
+
+<div class="rounded-lg bg-card px-8 py-8 shadow-custom">  <!-- Aligned with ticket details div -->
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-md font-bold text-foreground">{{ team.name }}</h3>  <!-- Simplified header -->
+    <button (click)="close.emit()" class="text-destructive hover:text-foreground">  <!-- NEW: Top-right X -->
+      <svg-icon [src]="getIconPath('x-mark')" svgClass="h-5 w-5 text-destructive"></svg-icon>
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="text-center text-muted-foreground">Loading...</div>
+  } @else {
+    <div class="space-y-4">
+      <div class="flex items-center gap-1">  
+        <label class="text-sm font-semibold text-foreground w-1/5">Team ID:</label>  
+        <span class="dark:text-gray-400 text-gray-900">{{ team.id.slice(-8) }}</span> 
+      </div>
+      <div class="flex items-center gap-1">
+        <label class="text-sm font-semibold text-foreground w-1/5">Name:</label>
+        <span class="dark:text-gray-400 text-gray-900">{{ team.name }}</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <label class="text-sm font-semibold text-foreground w-1/5">Date Created:</label>
+        <span class="dark:text-gray-400 text-gray-900">{{ team.createdAt | date:'shortDate' }}</span>
+      </div>
+      <div>
+        <h3 class="text-md space-y-8 font-bold text-foreground mb-2">Members ({{ members().length }})</h3>
+        <ul class="space-y-2 pl-4">  <!-- NEW: Left padding (1rem ~ tab) -->
+          @for (member of members(); track member.cognitoId) {
+            <li class="bg-card p-2 rounded dark:text-gray-400 text-gray-900">{{ member.firstName }} {{ member.lastName }} ({{ member.email }})</li>
+          } @empty {
+            <li class="text-center text-muted-foreground">No members</li>
+          }
+        </ul>
+      </div>
+    </div>
+  }
+  @if (error()) {
+    <div class="text-destructive mt-4">{{ error() }}</div>
+  }
+  <div class="flex gap-2 mt-6">  <!-- Actions at bottom, like ticket -->
+    <button (click)="edit.emit(team)" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Edit</button>
+    <button (click)="deleteTeam(team.id)" class="bg-destructive text-destructive-foreground px-4 py-2 rounded hover:bg-destructive/90">Delete</button>
+  </div>
+</div>
