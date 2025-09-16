@@ -1,13 +1,10 @@
-
 // src/app/core/services/ticket.service.ts 
-
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Observable } from 'rxjs';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { FlatTicket, FlatTeam, TicketComment, TicketStatus } from '../models/tickets.model';
-import { GraphQLResult } from '@aws-amplify/api-graphql'; // Added for correct typing
+import { FlatTicket, FlatTeam, TicketComment, TicketStatus } from '../models/tickets.model';  // Import enum
 
 type TicketType = Schema['Ticket']['type'];
 type TeamType = Schema['Team']['type'];
@@ -22,157 +19,158 @@ export class TicketService {
   private client = generateClient<Schema>();
 
   async getTicketById(id: string): Promise<FlatTicket | null> {
-    const start = performance.now();
-    try {
-      console.log('Fetching ticket with ID:', id);
-      const { data, errors } = await this.client.models.Ticket.get({ id });
-      if (errors) throw new Error(`Failed to fetch ticket: ${errors.map(e => e.message).join(', ')}`);
-      if (!data) {
-        console.log('No ticket found for ID:', id);
+    const start = performance.now();  // Start timing
+
+      try {
+        console.log('Fetching ticket with ID:', id);
+        const { data, errors } = await this.client.models.Ticket.get({ id });
+        if (errors) throw new Error(`Failed to fetch ticket: ${errors.map(e => e.message).join(', ')}`);
+        if (!data) {
+          console.log('No ticket found for ID:', id);
+          return null;
+        }
+        const requesterRes = await data.requester();
+        const requester = requesterRes.data;
+        const assigneeRes = data.assigneeId ? await data.assignee() : { data: null };
+        const assignee = assigneeRes.data;
+        const teamRes = data.teamId ? await data.team() : { data: null }; 
+        const team = teamRes.data;
+        const commentsRes = await data.comments();
+        const comments = await Promise.all(commentsRes.data.map(async (c: CommentType) => {
+          const userRes = await c.user();
+          const user = userRes.data;
+          return {
+            name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Anonymous',
+            date: c.createdAt,
+            comment: c.content,
+          };
+        }));
+        const ticket: FlatTicket = {
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          estimated: data.estimated,
+          createdAt: data.createdAt,
+          requesterId: data.requesterId,
+          status: data.status ? data.status as TicketStatus : TicketStatus.OPEN,  // Cast string to enum
+          assigneeId: data.assigneeId,
+          teamId: data.teamId,
+          labels: data.labels ?? [],
+          updatedAt: data.updatedAt ?? '',
+          requesterName: `${requester?.firstName ?? ''} ${requester?.lastName ?? ''}`.trim(),
+          assigneeName: assignee ? `${assignee.firstName ?? ''} ${assignee.lastName ?? ''}`.trim() : '',
+          teamName: team?.name ?? '',
+          comments: comments,
+        };
+        console.log('Ticket fetched:', ticket);
+        console.log('Get ticket by ID time:', performance.now() - start, 'ms');
+        return ticket;
+      } catch (error) {
+        console.error('Get ticket by ID error:', error);
         return null;
       }
-      const requesterRes = await data.requester();
-      const requester = requesterRes.data;
-      const assigneeRes = data.assigneeId ? await data.assignee() : { data: null };
-      const assignee = assigneeRes.data;
-      const teamRes = data.teamId ? await data.team() : { data: null };
-      const team = teamRes.data;
-      const commentsRes = await data.comments();
-      const comments = await Promise.all(commentsRes.data.map(async (c: CommentType) => {
-        const userRes = await c.user();
-        const user = userRes.data;
-        return {
-          name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Anonymous',
-          date: c.createdAt,
-          comment: c.content,
-        };
-      }));
-      const ticket: FlatTicket = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        estimated: data.estimated,
-        createdAt: data.createdAt,
-        requesterId: data.requesterId,
-        status: data.status ? data.status as TicketStatus : TicketStatus.OPEN,
-        assigneeId: data.assigneeId,
-        teamId: data.teamId,
-        labels: data.labels ?? [],
-        updatedAt: data.updatedAt ?? '',
-        requesterName: `${requester?.firstName ?? ''} ${requester?.lastName ?? ''}`.trim(),
-        assigneeName: assignee ? `${assignee.firstName ?? ''} ${assignee.lastName ?? ''}`.trim() : '',
-        teamName: team?.name ?? '',
-        comments: comments,
-      };
-      console.log('Ticket fetched:', ticket);
-      console.log('Get ticket by ID time:', performance.now() - start, 'ms');
-      return ticket;
-    } catch (error) {
-      console.error('Get ticket by ID error:', error);
-      return null;
     }
-  }
 
   async getTickets(nextToken: string | null = null): Promise<{ tickets: FlatTicket[]; nextToken: string | null }> {
-    const start = performance.now();
-    try {
-      const accumulated: FlatTicket[] = [];
-      let token = nextToken;
-      do {
-        console.log('Fetching tickets with nextToken:', token);
-        const { data, nextToken: newToken, errors } = await this.client.models.Ticket.list({ nextToken: token ?? undefined });
-        if (errors) throw new Error(`Failed to list tickets: ${errors.map(e => e.message).join(', ')}`);
-        const extended = await Promise.all(
-          data.map(async (t: TicketType) => {
-            const requesterRes = await t.requester();
-            const requester = requesterRes.data;
-            const assigneeRes = t.assigneeId ? await t.assignee() : { data: null };
-            const assignee = assigneeRes.data;
-            const teamRes = t.teamId ? await t.team() : { data: null };
-            const team = teamRes.data;
-            const commentsRes = await t.comments();
-            const comments = await Promise.all(commentsRes.data.map(async (c: CommentType) => {
-              const userRes = await c.user();
-              const user = userRes.data;
+      const start = performance.now();  // Start timing
+      try {
+        const accumulated: FlatTicket[] = [];
+        let token = nextToken;
+        do {
+          console.log('Fetching tickets with nextToken:', token);
+          const { data, nextToken: newToken, errors } = await this.client.models.Ticket.list({ nextToken: token ?? undefined });
+          if (errors) throw new Error(`Failed to list tickets: ${errors.map(e => e.message).join(', ')}`);
+          const extended = await Promise.all(
+            data.map(async (t: TicketType) => {
+              const requesterRes = await t.requester();
+              const requester = requesterRes.data;
+              const assigneeRes = t.assigneeId ? await t.assignee() : { data: null };
+              const assignee = assigneeRes.data;
+              const teamRes = t.teamId ? await t.team() : { data: null }; // Handle optional
+              const team = teamRes.data;
+              const commentsRes = await t.comments();
+              const comments = await Promise.all(commentsRes.data.map(async (c: CommentType) => {
+                const userRes = await c.user();
+                const user = userRes.data;
+                return {
+                  name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Anonymous',
+                  date: c.createdAt,
+                  comment: c.content,
+                };
+              }));
               return {
-                name: `${user?.firstName ?? ''} ${user?.lastName ?? ''}`.trim() || 'Anonymous',
-                date: c.createdAt,
-                comment: c.content,
-              };
-            }));
-            return {
-              id: t.id,
-              title: t.title,
-              description: t.description,
-              estimated: t.estimated,
-              createdAt: t.createdAt,
-              requesterId: t.requesterId,
-              status: t.status ? t.status as TicketStatus : TicketStatus.OPEN,
-              assigneeId: t.assigneeId,
-              teamId: t.teamId,
-              labels: t.labels ?? [],
-              updatedAt: t.updatedAt ?? '',
-              requesterName: `${requester?.firstName ?? ''} ${requester?.lastName ?? ''}`.trim(),
-              assigneeName: assignee ? `${assignee.firstName ?? ''} ${assignee.lastName ?? ''}`.trim() : '',
-              teamName: team?.name ?? '',
-              comments: comments,
-            } as FlatTicket;
-          })
-        );
-        accumulated.push(...extended);
-        token = newToken ?? null;
-      } while (token);
-      console.log('All tickets fetched:', accumulated);
-      console.log('Get tickets time:', performance.now() - start, 'ms');
-      return { tickets: accumulated, nextToken: null };
-    } catch (error) {
-      console.error('Get tickets error:', error);
-      return { tickets: [], nextToken: null };
+                id: t.id,
+                title: t.title,
+                description: t.description,
+                estimated: t.estimated,
+                createdAt: t.createdAt,
+                requesterId: t.requesterId,
+                status: t.status ? t.status as TicketStatus : TicketStatus.OPEN, 
+                assigneeId: t.assigneeId,
+                teamId: t.teamId,
+                labels: t.labels ?? [],
+                updatedAt: t.updatedAt ?? '',
+                requesterName: `${requester?.firstName ?? ''} ${requester?.lastName ?? ''}`.trim(),
+                assigneeName: assignee ? `${assignee.firstName ?? ''} ${assignee.lastName ?? ''}`.trim() : '',
+                teamName: team?.name ?? '',
+                comments: comments,
+              } as FlatTicket;
+            })
+          );
+          accumulated.push(...extended);
+          token = newToken ?? null;
+        } while (token);
+        console.log('All tickets fetched:', accumulated);
+        console.log('Get tickets time:', performance.now() - start, 'ms');
+        return { tickets: accumulated, nextToken: null };
+      } catch (error) {
+        console.error('Get tickets error:', error);
+        return { tickets: [], nextToken: null };
+      }
     }
-  }
 
   async createTicket(ticket: Partial<TicketType>): Promise<TicketType | null> {
-    try {
-      if (!ticket.title) throw new Error('Missing ticket title');
-      if (!ticket.description) throw new Error('Missing ticket description');
-      if (!ticket.estimated) throw new Error('Missing ticket estimated date');
-      if (!ticket.requesterId) throw new Error('Missing ticket requester ID');
+      try {
+        if (!ticket.title) throw new Error('Missing ticket title');
+        if (!ticket.description) throw new Error('Missing ticket description');
+        if (!ticket.estimated) throw new Error('Missing ticket estimated date');
+        if (!ticket.requesterId) throw new Error('Missing ticket requester ID');
 
-      const payload: Partial<TicketType> = {
-        ...ticket,
-        status: TicketStatus.OPEN,
-        assigneeId: undefined,
-        teamId: undefined,
-        labels: [],
-        createdAt: new Date().toISOString(),
-      };
+        const payload: Partial<TicketType> = {
+          ...ticket,
+          status: TicketStatus.OPEN, // Use enum
+          assigneeId: undefined, // Optional
+          teamId: undefined, // Optional
+          labels: [], // Default empty
+          createdAt: new Date().toISOString(),
+        };
 
-      const { data, errors } = await this.client.models.Ticket.create(payload as TicketType);
-      if (errors) throw new Error(`Failed to create ticket: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Ticket created:', data);
-      return data;
-    } catch (error) {
-      console.error('Create ticket error:', error);
-      return null;
+        const { data, errors } = await this.client.models.Ticket.create(payload as TicketType);
+        if (errors) throw new Error(`Failed to create ticket: ${errors.map(e => e.message).join(', ')}`);
+        console.log('Ticket created:', data);
+        return data;
+      } catch (error) {
+        console.error('Create ticket error:', error);
+        return null;
+      }
     }
-  }
 
   async updateTicket(ticket: Partial<TicketType>): Promise<TicketType | null> {
-    try {
-      if (!ticket.id) throw new Error('Ticket ID required for update');
-      const payload: Partial<TicketType> = {
-        ...ticket,
-        updatedAt: new Date().toISOString(),
-      };
-      const { data, errors } = await this.client.models.Ticket.update(payload as TicketType);
-      if (errors) throw new Error(`Failed to update ticket: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Ticket updated:', data);
-      return data;
-    } catch (error) {
-      console.error('Update ticket error:', error);
-      return null;
+      try {
+        if (!ticket.id) throw new Error('Ticket ID required for update');
+        const payload: Partial<TicketType> = {
+          ...ticket,
+          updatedAt: new Date().toISOString(),
+        };
+        const { data, errors } = await this.client.models.Ticket.update(payload as TicketType);
+        if (errors) throw new Error(`Failed to update ticket: ${errors.map(e => e.message).join(', ')}`);
+        console.log('Ticket updated:', data);
+        return data;
+      } catch (error) {
+        console.error('Update ticket error:', error);
+        return null;
+      }
     }
-  }
 
   async deleteTicket(id: string): Promise<void> {
     try {
@@ -216,14 +214,7 @@ export class TicketService {
           data.map(async (t: TeamType) => {
             const leadRes = await t.teamLead();
             const lead = leadRes.data;
-            let memberCount = 0;
-            try {
-              const membersRes = await t.members();
-              const members = membersRes.data.filter((m): m is TeamMemberType => m != null);
-              memberCount = members.length;
-            } catch (membersErr) {
-              console.error('Error fetching members for team count:', { teamId: t.id, error: membersErr });
-            }
+            const members = await this.getTeamMembers(t.id);
             return {
               id: t.id,
               name: t.name,
@@ -232,7 +223,7 @@ export class TicketService {
               createdAt: t.createdAt ?? '',
               updatedAt: t.updatedAt ?? '',
               teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
-              memberCount: memberCount,
+              memberCount: members.length,
             } as FlatTeam;
           })
         );
@@ -250,19 +241,23 @@ export class TicketService {
   async getUserTeams(userCognitoId: string): Promise<FlatTeam[]> {
     try {
       console.log('Fetching user teams for userCognitoId:', userCognitoId);
-      const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserCognitoId({ userCognitoId });
+      const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserCognitoId(
+        { userCognitoId },
+        { selectionSet: ['teamId'] }  // Select only needed field to avoid required field validation issues
+      );
       if (errors) throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
-      if (!members) {
+      console.log('Fetched team members count:', members?.length ?? 0);  // Added debug log
+      if (!members || members.length === 0) {
         console.log('No team members found for userCognitoId:', userCognitoId);
         return [];
       }
-      const teams = await Promise.all(members.map(async (m: TeamMemberType) => {
+      const teams = await Promise.all(members.map(async (m: { teamId: string }) => {
         try {
-          const teamRes = await m.team();
-          const team = teamRes.data;
+          const { data: team, errors: teamErrors } = await this.client.models.Team.get({ id: m.teamId });
+          if (teamErrors) throw new Error(`Failed to fetch team: ${teamErrors.map(e => e.message).join(', ')}`);
           if (!team) return null;
-          const leadRes = await team.teamLead();
-          const lead = leadRes.data;
+          const { data: lead, errors: leadErrors } = await this.client.models.User.get({ cognitoId: team.teamLeadId });
+          if (leadErrors) throw new Error(`Failed to fetch lead: ${leadErrors.map(e => e.message).join(', ')}`);
           return {
             id: team.id,
             name: team.name,
@@ -273,7 +268,7 @@ export class TicketService {
             teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
           } as FlatTeam;
         } catch (teamErr) {
-          console.error('Error fetching team for TeamMember:', { teamMember: m, error: teamErr });
+          console.error('Error fetching team for TeamMember:', { teamMember: m, error: (teamErr as Error).message });
           return null;
         }
       }));
@@ -281,7 +276,7 @@ export class TicketService {
       console.log('User teams fetched:', filteredTeams);
       return filteredTeams;
     } catch (error) {
-      console.error('Get user teams error:', error);
+      console.error('Get user teams error:', (error as Error).message);
       return [];
     }
   }
@@ -289,38 +284,30 @@ export class TicketService {
   async getTeamMembers(teamId: string): Promise<UserType[]> {
     try {
       console.log('Fetching members for teamId:', teamId);
-      const getTeamMembersQuery = /* GraphQL */ `
-        query GetTeamMembers($teamId: ID!) {
-          listTeamMemberByTeamId(teamId: $teamId) {
-            items {
-              user {
-                cognitoId
-                firstName
-                lastName
-                email
-              }
-            }
-          }
-        }
-      `;
-      const response = await this.client.graphql<GraphQLResult<{
-        listTeamMemberByTeamId: { items: ({ user: UserType | null } | null)[] }
-      }>>({
-        query: getTeamMembersQuery,
-        variables: { teamId }
-      });
-      // Explicitly type errors and data
-      const { data, errors } = response;
-      if (errors && errors.length > 0) {
-        console.error('TeamMember fetch errors:', errors);
-        throw new Error(`Failed to list team members: ${errors.map((e: { message: string }) => e.message).join(', ')}`);
+      const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId(
+        { teamId },
+        { selectionSet: ['userCognitoId'] }  // Select only needed field to avoid required field validation issues
+      );
+      if (errors) {
+        console.error('TeamMember fetch errors:', errors); // Debug errors
+        throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
       }
-      const items = data.listTeamMemberByTeamId.items.filter((item: { user: UserType | null } | null): item is NonNullable<{ user: UserType | null }> => item != null);
-      const users = items.map((item: { user: UserType | null }) => item.user).filter((user: UserType | null): user is UserType => user != null);
-      console.log('Team members fetched:', users);
-      return users;
+      console.log('Fetched team members count:', members?.length ?? 0);  // Added debug log
+      const users = await Promise.all(members.map(async (m: { userCognitoId: string }) => {
+        try {
+          const { data: user, errors: userErrors } = await this.client.models.User.get({ cognitoId: m.userCognitoId });
+          if (userErrors) throw new Error(`Failed to fetch user: ${userErrors.map(e => e.message).join(', ')}`);
+          return user;
+        } catch (userErr) {
+          console.error('Error fetching user for TeamMember:', { teamMember: m, error: (userErr as Error).message });
+          return null;
+        }
+      }));
+      const filteredUsers = users.filter(u => u !== null) as UserType[];
+      console.log('Team members fetched:', filteredUsers); // Log actual data
+      return filteredUsers;
     } catch (error) {
-      console.error('Get team members error:', error);
+      console.error('Get team members error:', (error as Error).message);
       return [];
     }
   }
@@ -361,36 +348,36 @@ export class TicketService {
   }
 
   async addTeamMember(teamId: string, userCognitoId: string): Promise<TeamMemberType | null> {
-    try {
-      const { userId: currentUserId } = await getCurrentUser();
-      console.log('Adding team member:', { teamId, userCognitoId, owner: currentUserId });
-      const { data, errors } = await this.client.models.TeamMember.create({
-        teamId,
-        userCognitoId,
-        owner: currentUserId
-      });
-      if (errors) {
-        console.error('Add team member errors:', errors);
-        throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
+      try {
+        const { userId: currentUserId } = await getCurrentUser();  // Get lead ID (caller is lead)
+        console.log('Adding team member:', { teamId, userCognitoId, owner: currentUserId });
+        const { data, errors } = await this.client.models.TeamMember.create({ 
+          teamId, 
+          userCognitoId,
+          owner: currentUserId  // Set owner to lead's Cognito ID
+        });
+        if (errors) {
+          console.error('Add team member errors:', errors);
+          throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
+        }
+        console.log('Team member added:', data);
+        return data;
+      } catch (error) {
+        console.error('Add team member error:', error);
+        return null;
       }
-      console.log('Team member added:', data);
-      return data;
-    } catch (error) {
-      console.error('Add team member error:', error);
-      return null;
     }
-  }
-
+  
   async deleteTeamMember(teamId: string, userCognitoId: string): Promise<void> {
-    try {
-      console.log('Deleting team member:', { teamId, userCognitoId });
-      const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
-      if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Team member deleted:', { teamId, userCognitoId });
-    } catch (error) {
-      console.error('Delete team member error:', error);
+      try {
+        console.log('Deleting team member:', { teamId, userCognitoId });
+        const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
+        if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
+        console.log('Team member deleted:', { teamId, userCognitoId });
+      } catch (error) {
+        console.error('Delete team member error:', error);
+      }
     }
-  }
 
   async deleteTeam(id: string): Promise<void> {
     try {
