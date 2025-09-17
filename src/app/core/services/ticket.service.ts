@@ -318,7 +318,7 @@ async getTeamMembers(teamId: string): Promise<UserType[]> {
       return [];
     }
   }
-
+ 
   async createTeam(team: Partial<TeamType>): Promise<TeamType | null> {
     try {
       if (!team.name) throw new Error('Missing team name');
