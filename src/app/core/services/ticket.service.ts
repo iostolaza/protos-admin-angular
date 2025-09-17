@@ -1,12 +1,12 @@
 
-// src/app/core/services/ticket.service.ts 
+// src/app/core/services/ticket.service.ts (UPDATED)
 
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Observable } from 'rxjs';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { FlatTicket, FlatTeam, TicketComment, TicketStatus } from '../models/tickets.model';  // Import enum
+import { FlatTicket, FlatTeam, TicketComment, TicketStatus } from '../models/tickets.model';  
 
 type TicketType = Schema['Ticket']['type'];
 type TeamType = Schema['Team']['type'];
@@ -19,7 +19,7 @@ type CommentType = Schema['Comment']['type'];
 })
 export class TicketService {
   private client = generateClient<Schema>();
-  private teamMembersCache = new Map<string, UserType[]>(); // Cache team members by teamId
+  private teamMembersCache = new Map<string, UserType[]>();
 
   async getTicketById(id: string): Promise<FlatTicket | null> {
     const start = performance.now();  // Start timing
@@ -284,35 +284,34 @@ export class TicketService {
     }
   }
 
-  async getTeamMembers(teamId: string): Promise<UserType[]> {
+async getTeamMembers(teamId: string): Promise<UserType[]> {
     try {
       if (this.teamMembersCache.has(teamId)) {
         console.log('Returning cached members for teamId:', teamId);
         return this.teamMembersCache.get(teamId)!;
       }
       console.log('Fetching members for teamId:', teamId);
-      const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByTeamId(
-        { teamId },
-        { selectionSet: ['userCognitoId'] }  // Select only needed field to avoid required field validation issues
-      );
+      const { data: members, errors } = await this.client.queries.listTeamMembersByTeamId({
+        teamId
+      });
       if (errors) {
-        console.error('TeamMember fetch errors:', errors); // Debug errors
-        throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
+        console.error('TeamMember fetch errors:', errors);
+        throw new Error(`Failed to list team members: ${errors.map((e: { message: string }) => e.message).join(', ')}`);  
       }
-      console.log('Fetched team members count:', members?.length ?? 0);  // Added debug log
-      const users = await Promise.all(members.map(async (m: { userCognitoId: string }) => {
+      console.log('Fetched team members count:', members?.length ?? 0);  
+      const users = await Promise.all((members ?? []).map(async (m) => {  
         try {
-          const { data: user, errors: userErrors } = await this.client.models.User.get({ cognitoId: m.userCognitoId });
-          if (userErrors) throw new Error(`Failed to fetch user: ${userErrors.map(e => e.message).join(', ')}`);
+          const { data: user, errors: userErrors } = await this.client.models.User.get({ cognitoId: m!.userCognitoId });  // CHANGE: Added non-null assertion m! to assure TS m is not null/undefined; safe as m from array map
+          if (userErrors) throw new Error(`Failed to fetch user: ${userErrors.map((e: { message: string }) => e.message).join(', ')}`);  
           return user;
         } catch (userErr) {
           console.error('Error fetching user for TeamMember:', { teamMember: m, error: (userErr as Error).message });
           return null;
         }
       }));
-      const filteredUsers = users.filter(u => u !== null) as UserType[];
+      const filteredUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);  
       this.teamMembersCache.set(teamId, filteredUsers); // Cache the result
-      console.log('Team members fetched:', filteredUsers); // Log actual data
+      console.log('Team members fetched:', filteredUsers); 
       return filteredUsers;
     } catch (error) {
       console.error('Get team members error:', (error as Error).message);

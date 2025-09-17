@@ -1,4 +1,3 @@
-
 // src/app/features/ticket-management/ticket-management.component.ts
 
 import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
@@ -15,7 +14,7 @@ import { GenerateTeamComponent } from './generate-team/generate-team.component';
 import { TeamEditComponent } from './edit-team/edit-team.component'; 
 import { TicketDetailsComponent } from './ticket-details/ticket-details.component';
 import { EditTicketComponent } from './edit-ticket/edit-ticket.component';
-import { TeamDetailsComponent } from './team-details/team-details.component';  
+import { TeamDetailsComponent } from './team-details/team-details.component';  // NEW: Import
 import { FlatTicket, FlatTeam } from '../../core/models/tickets.model';
 import { StatusPipe } from '../../core/pipes/status.pipe';  
 import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  
@@ -34,7 +33,7 @@ import { StatusClassPipe } from '../../core/pipes/status-class.pipe';
     TeamEditComponent,
     TicketDetailsComponent,
     EditTicketComponent,
-    TeamDetailsComponent,  
+    TeamDetailsComponent,  // NEW
     StatusPipe,  
     StatusClassPipe  
   ],
@@ -43,7 +42,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
   tickets = signal<FlatTicket[]>([]);
   teams = signal<FlatTeam[]>([]);
   selectedTeam = signal<FlatTeam | null>(null);
-  editingTeam = signal<FlatTeam | null>(null); 
+  editingTeam = signal<FlatTeam | null>(null);  // NEW: For edit mode
   selectedTicket = signal<FlatTicket | null>(null);
   editingTicket = signal<FlatTicket | null>(null);
   tab = signal('tickets');
@@ -83,7 +82,7 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.tab.set(newTab); 
   }
 
-  viewTeam(team: FlatTeam) { 
+  viewTeam(team: FlatTeam) {  // NEW: Set for details view
     this.selectedTeam.set(team);
     this.editingTeam.set(null);
   }
@@ -93,10 +92,10 @@ export class TicketManagementComponent implements OnInit, OnDestroy {
     this.selectedTeam.set(null);
   }
 
-  onTeamUpdate(updatedTeam: FlatTeam) { 
+  onTeamUpdate(updatedTeam: FlatTeam) {  // NEW: Handle update emit
     this.teams.update(teams => teams.map(t => t.id === updatedTeam.id ? updatedTeam : t));
     this.editingTeam.set(null);
-    this.selectedTeam.set(updatedTeam);  
+    this.selectedTeam.set(updatedTeam);  // Return to details after update
   }
 
   viewDetails(ticket: FlatTicket) {
