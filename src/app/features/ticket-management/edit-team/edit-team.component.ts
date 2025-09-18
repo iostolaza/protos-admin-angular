@@ -2,7 +2,7 @@
 
 import { Component, Input, Output, OnInit, OnDestroy, signal, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormsModule, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormsModule, FormGroup, Validators } from '@angular/forms';  // Added Validators
 import { UserService } from '../../../core/services/user.service';
 import { TeamService } from '../../../core/services/team.service';
 import type { Schema } from '../../../../../amplify/data/resource';
@@ -33,7 +33,7 @@ export class EditTeamComponent implements OnInit, OnDestroy {
 
   constructor(private fb: FormBuilder, private userService: UserService, private teamService: TeamService) {
     this.form = this.fb.group({
-      name: [''],
+      name: ['', Validators.required],
       description: [''],
     });
   }
@@ -58,7 +58,16 @@ export class EditTeamComponent implements OnInit, OnDestroy {
   }
 
   async updateTeam() {
+    if (this.form.invalid) {
+      this.errorMessage.set('Form invalid: Name is required');
+      return;
+    }
     try {
+      // Add selected member if any
+      if (this.selectedUserId) {
+        await this.teamService.addMember(this.team.id, this.selectedUserId);
+        this.selectedUserId = '';
+      }
       const updated = await this.teamService.updateTeam(this.team.id, this.form.value);
       this.update.emit(updated);
     } catch (error) {

@@ -1,7 +1,6 @@
-
 <!-- src/app/features/ticket-management/edit-team/edit-team.component.html -->
 
-<div class="p-4 bg-card rounded-lg shadow-custom">  <!-- Keep full size -->
+<div class="p-4 bg-card rounded-lg shadow-custom">
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-md font-bold text-foreground">Edit Team: {{ team.name }}</h3>
   </div>
@@ -9,7 +8,7 @@
   @if (errorMessage()) {
     <div class="text-destructive mb-4">{{ errorMessage() }}</div>
   }
-  <form [formGroup]="form" (ngSubmit)="updateTeam()" class="space-y-4 max-w-md mx-auto">  <!-- NEW: max-w-md mx-auto on form -->
+  <form [formGroup]="form" (ngSubmit)="updateTeam()" class="space-y-4 max-w-md mx-auto">
     <div class="flex items-center gap-1">
       <label class="text-sm font-semibold text-foreground mr-1 w-1/5">Name:</label>
       <input formControlName="name" type="text" class="flex-1 p-2 border border-border rounded bg-background text-foreground" />
@@ -18,33 +17,33 @@
       <label class="text-sm font-semibold text-foreground mr-1 w-1/5">Description:</label>
       <textarea formControlName="description" class="flex-1 p-2 border border-border rounded bg-background text-foreground h-24"></textarea>
     </div>
-  </form>
-  <div class="mt-6 max-w-md mx-auto">  <!-- NEW: Constrain members section -->
-    <h3 class="text-md font-bold text-foreground mb-2">Members ({{ members().length }})</h3>
-    <ul class="space-y-2">
-      @for (member of members(); track member.cognitoId) {
-        <li class="flex justify-between items-center bg-card p-2 rounded">
-          <span class="dark:text-gray-400 text-gray-900">{{ member.firstName }} {{ member.lastName }} ({{ member.email }})</span>
-          <button (click)="removeMember(member.cognitoId)" class="text-destructive hover:text-destructive/80">
-            <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
-          </button>
-        </li>
-      }
-    </ul>
-    <div class="mt-4 flex items-center gap-2">
-      <select [(ngModel)]="selectedUserId" class="flex-1 p-2 border border-border rounded bg-background text-foreground">
-        <option value="">Select User to Add</option>
-        @for (user of users(); track user.cognitoId) {
-          <option [value]="user.cognitoId">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
+    <div class="mt-6 max-w-md mx-auto">  <!-- Members section inside form for context -->
+      <h3 class="text-md font-bold text-foreground mb-2">Members ({{ members().length }})</h3>
+      <ul class="space-y-2">
+        @for (member of members(); track member.cognitoId) {
+          <li class="flex justify-between items-center bg-card p-2 rounded">
+            <span class="dark:text-gray-400 text-gray-900">{{ member.firstName }} {{ member.lastName }} ({{ member.email }})</span>
+            <button type="button" (click)="removeMember(member.cognitoId)" class="text-destructive hover:text-destructive/80">
+              <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+            </button>
+          </li>
         }
-      </select>
-      <button (click)="addMember()" class="text-primary hover:text-primary/80">
-        <svg-icon [src]="getIconPath('plus')" svgClass="h-5 w-5 text-primary"></svg-icon>
-      </button>
+      </ul>
+      <div class="mt-4 flex items-center gap-2">
+        <select [(ngModel)]="selectedUserId" [ngModelOptions]="{standalone: true}" class="flex-1 p-2 border border-border rounded bg-background text-foreground">
+          <option value="">Select User to Add</option>
+          @for (user of users(); track user.cognitoId) {
+            <option [value]="user.cognitoId">{{ user.firstName }} {{ user.lastName }} ({{ user.email }})</option>
+          }
+        </select>
+        <button type="button" (click)="addMember()" class="text-primary hover:text-primary/80">
+          <svg-icon [src]="getIconPath('plus')" svgClass="h-5 w-5 text-primary"></svg-icon>
+        </button>
+      </div>
     </div>
-  </div>
-  <div class="mt-6 flex gap-2 justify-end max-w-md mx-auto">  <!-- NEW: Constrain buttons -->
-    <button (click)="updateTeam()" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Update</button>
-    <button (click)="cancel.emit()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/90">Cancel</button>
-  </div>
+    <div class="mt-6 flex gap-2 justify-end max-w-md mx-auto">
+      <button type="submit" class="bg-primary text-primary-foreground px-4 py-2 rounded hover:bg-primary/90">Update</button>
+      <button type="button" (click)="cancel.emit()" class="bg-secondary text-secondary-foreground px-4 py-2 rounded hover:bg-secondary/90">Cancel</button>
+    </div>
+  </form>
 </div>
