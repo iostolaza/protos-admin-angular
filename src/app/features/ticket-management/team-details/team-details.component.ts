@@ -7,47 +7,110 @@ import type { Schema } from '../../../../../amplify/data/resource';
 import { FlatTeam } from '../../../core/models/tickets.model';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
+import { TeamService } from '../../../core/services/team.service';
 
 type UserType = Schema['User']['type'];
+
+
 
 @Component({
   selector: 'app-team-details',
   standalone: true,
-  imports: [CommonModule, DatePipe,  AngularSvgIconModule],
+  imports: [CommonModule, DatePipe, AngularSvgIconModule],
   templateUrl: './team-details.component.html',
 })
-export class TeamDetailsComponent implements OnInit {
-  @Input() team!: FlatTeam;
+export class TeamDetailsComponent {
+  @Input() team!: any;
   @Output() close = new EventEmitter<void>();
-  @Output() edit = new EventEmitter<FlatTeam>();  // Emit to switch to edit
+  @Output() edit = new EventEmitter<any>();
 
-  members = signal<UserType[]>([]);
-  loading = signal(true);
+  members = signal<any[]>([]);
+  loading = signal(false);
   error = signal<string | null>(null);
   getIconPath = getIconPath;
 
-  constructor(private ticketService: TicketService) {}
+  constructor(private teamService: TeamService) {}
 
-  async ngOnInit() {
-    try {
-      this.loading.set(true);
-      const members = await this.ticketService.getTeamMembers(this.team.id);
-      this.members.set(members || []);
-    } catch (err) {
-      this.error.set((err as Error).message || 'Failed to load members');
-    } finally {
-      this.loading.set(false);
-    }
+  ngOnInit() {
+    this.loadMembers();
   }
 
-  async deleteTeam(id: string) {
-    if (confirm('Delete team? This is permanent.')) {
-      try {
-        await this.ticketService.deleteTeam(id);
-        this.close.emit();
-      } catch (err) {
-        this.error.set((err as Error).message || 'Failed to delete team');
-      }
+  async loadMembers() {
+    this.loading.set(true);
+    try {
+      this.members.set(await this.teamService.getTeamMembers(this.team.id));
+    } catch (error) {
+      this.error.set((error as Error).message);
+    }
+    this.loading.set(false);
+  }
+
+  deleteTeam(id: string) {
+    if (confirm('Are you sure?')) {
+      this.teamService.deleteTeam(id);
+      this.close.emit();
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// @Component({
+//   selector: 'app-team-details',
+//   standalone: true,
+//   imports: [CommonModule, DatePipe,  AngularSvgIconModule],
+//   templateUrl: './team-details.component.html',
+// })
+// export class TeamDetailsComponent implements OnInit {
+//   @Input() team!: FlatTeam;
+//   @Output() close = new EventEmitter<void>();
+//   @Output() edit = new EventEmitter<FlatTeam>();  
+
+//   members = signal<UserType[]>([]);
+//   loading = signal(true);
+//   error = signal<string | null>(null);
+//   getIconPath = getIconPath;
+
+//   constructor(private ticketService: TicketService) {}
+
+//   async ngOnInit() {
+//     try {
+//       this.loading.set(true);
+//       const members = await this.ticketService.getTeamMembers(this.team.id);
+//       this.members.set(members || []);
+//     } catch (err) {
+//       this.error.set((err as Error).message || 'Failed to load members');
+//     } finally {
+//       this.loading.set(false);
+//     }
+//   }
+
+//   async deleteTeam(id: string) {
+//     if (confirm('Delete team? This is permanent.')) {
+//       try {
+//         await this.ticketService.deleteTeam(id);
+//         this.close.emit();
+//       } catch (err) {
+//         this.error.set((err as Error).message || 'Failed to delete team');
+//       }
+//     }
+//   }
+// }

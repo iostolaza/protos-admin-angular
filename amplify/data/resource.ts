@@ -106,34 +106,63 @@ const schema = a.schema({
     .authorization(allow => [allow.authenticated()]),
 
   Team: a.model({
-    id: a.id().required(),
     name: a.string().required(),
     description: a.string(),
-    teamLeadId: a.string().required(),  
-    teamLead: a.belongsTo('User', 'teamLeadId'),
+    teamLeadCognitoId: a.string().required(),
+    teamLeadName: a.string(),
+    memberCount: a.integer().default(0),
+    createdAt: a.datetime(),
+    updatedAt: a.datetime(),
     members: a.hasMany('TeamMember', 'teamId'),
-    tickets: a.hasMany('Ticket', 'teamId'),
-  })
-    .authorization(allow => [
-      allow.authenticated().to(['create', 'read']),
-      allow.ownerDefinedIn('teamLeadId').to(['update', 'delete']),
-      allow.groups(['Admin', 'team_lead']).to(['update', 'delete']), 
-    ]),
+  }).authorization(allow => [
+      allow.owner().identityClaim('teamLeadCognitoId').to(['read', 'update', 'delete']),
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),
+      allow.group('team_lead').to(['create', 'read']),
+      allow.authenticated().to(['read']),
+  ]),
 
   TeamMember: a.model({
     teamId: a.id().required(),
-    userCognitoId: a.string().required(),  
-    owner: a.string().required(),  
+    userCognitoId: a.string().required(),
+    createdAt: a.datetime(),
+    updatedAt: a.datetime(),
+    user: a.belongsTo('User', 'userCognitoId'),
     team: a.belongsTo('Team', 'teamId'),
-    user: a.belongsTo('User', 'userCognitoId'),  
-  })
-    .identifier(['teamId', 'userCognitoId'])  
-    .secondaryIndexes(index => [index('userCognitoId')])  
-    .authorization(allow => [
-      allow.authenticated().to(['create', 'read']),
-      allow.ownerDefinedIn('owner').to(['update', 'delete']),
-      allow.groups(['Admin', 'team_lead']).to(['create', 'update', 'delete']), 
-    ]),
+  }).authorization(allow => [
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),
+      allow.group('team_lead').to(['create', 'read', 'update', 'delete']),
+      allow.authenticated().to(['read']),
+  ]),
+
+  // Team: a.model({
+  //   id: a.id().required(),
+  //   name: a.string().required(),
+  //   description: a.string(),
+  //   teamLeadId: a.string().required(),  
+  //   teamLead: a.belongsTo('User', 'teamLeadId'),
+  //   members: a.hasMany('TeamMember', 'teamId'),
+  //   tickets: a.hasMany('Ticket', 'teamId'),
+  // })
+  //   .authorization(allow => [
+  //     allow.authenticated().to(['create', 'read']),
+  //     allow.ownerDefinedIn('teamLeadId').to(['update', 'delete']),
+  //     allow.groups(['Admin', 'team_lead']).to(['update', 'delete']), 
+  //   ]),
+
+  // TeamMember: a.model({
+  //   teamId: a.id().required(),
+  //   userCognitoId: a.string().required(),  
+  //   owner: a.string().required(),  
+  //   team: a.belongsTo('Team', 'teamId'),
+  //   user: a.belongsTo('User', 'userCognitoId'),  
+  // })
+  //   .identifier(['teamId', 'userCognitoId'])  
+  //   .secondaryIndexes(index => [index('userCognitoId')])  
+  //   .authorization(allow => [
+  //     allow.authenticated().to(['create', 'read']),
+  //     allow.ownerDefinedIn('owner').to(['update', 'delete']),
+  //     allow.groups(['Admin', 'team_lead']).to(['create', 'update', 'delete']), 
+  //   ]),
   
   Ticket: a.model({
     id: a.id().required(),
@@ -178,16 +207,6 @@ const schema = a.schema({
   })
     .authorization(allow => [allow.ownerDefinedIn('userCognitoId'), allow.groups(['Admin'])]),  
 
-  // CHANGE: Fixed integer and authorization syntax
-  listTeamMembersByTeamId: a
-    .query()
-    .arguments({ teamId: a.id().required(), limit: a.integer(), nextToken: a.string() })
-    .returns(a.ref('TeamMember').array())
-    .authorization(allow => [allow.authenticated()]) 
-    .handler(a.handler.custom({
-      dataSource: a.ref('TeamMember'),  
-      entry: './list-team-members-by-team-id.js'  
-    }))
 
 }).authorization(allow => [allow.resource(postConfirmation)]);
 

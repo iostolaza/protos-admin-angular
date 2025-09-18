@@ -6,11 +6,11 @@ import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Observable } from 'rxjs';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { FlatTicket, FlatTeam, TicketComment, TicketStatus } from '../models/tickets.model';  
+import { FlatTicket, TicketComment, TicketStatus } from '../models/tickets.model';  
 
 type TicketType = Schema['Ticket']['type'];
-type TeamType = Schema['Team']['type'];
-type TeamMemberType = Schema['TeamMember']['type'];
+// type TeamType = Schema['Team']['type'];
+// type TeamMemberType = Schema['TeamMember']['type'];
 type UserType = Schema['User']['type'];
 type CommentType = Schema['Comment']['type'];
 
@@ -205,205 +205,205 @@ export class TicketService {
   }
 
   // --- Team CRUD Operations ---
-  async getTeams(nextToken: string | null = null): Promise<{ teams: FlatTeam[]; nextToken: string | null }> {
-    try {
-      const accumulated: FlatTeam[] = [];
-      let token = nextToken;
-      do {
-        console.log('Fetching teams with nextToken:', token);
-        const { data, nextToken: newToken, errors } = await this.client.models.Team.list({ nextToken: token ?? undefined });
-        if (errors) throw new Error(`Failed to list teams: ${errors.map(e => e.message).join(', ')}`);
-        const extended = await Promise.all(
-          data.map(async (t: TeamType) => {
-            const leadRes = await t.teamLead();
-            const lead = leadRes.data;
-            const members = await this.getTeamMembers(t.id);
-            return {
-              id: t.id,
-              name: t.name,
-              description: t.description,
-              teamLeadId: t.teamLeadId,
-              createdAt: t.createdAt ?? '',
-              updatedAt: t.updatedAt ?? '',
-              teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
-              memberCount: members.length,
-            } as FlatTeam;
-          })
-        );
-        accumulated.push(...extended);
-        token = newToken ?? null;
-      } while (token);
-      console.log('All teams fetched:', accumulated);
-      return { teams: accumulated, nextToken: null };
-    } catch (error) {
-      console.error('Get teams error:', error);
-      return { teams: [], nextToken: null };
-    }
-  }
+//   async getTeams(nextToken: string | null = null): Promise<{ teams: FlatTeam[]; nextToken: string | null }> {
+//     try {
+//       const accumulated: FlatTeam[] = [];
+//       let token = nextToken;
+//       do {
+//         console.log('Fetching teams with nextToken:', token);
+//         const { data, nextToken: newToken, errors } = await this.client.models.Team.list({ nextToken: token ?? undefined });
+//         if (errors) throw new Error(`Failed to list teams: ${errors.map(e => e.message).join(', ')}`);
+//         const extended = await Promise.all(
+//           data.map(async (t: TeamType) => {
+//             const leadRes = await t.teamLead();
+//             const lead = leadRes.data;
+//             const members = await this.getTeamMembers(t.id);
+//             return {
+//               id: t.id,
+//               name: t.name,
+//               description: t.description,
+//               teamLeadId: t.teamLeadId,
+//               createdAt: t.createdAt ?? '',
+//               updatedAt: t.updatedAt ?? '',
+//               teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
+//               memberCount: members.length,
+//             } as FlatTeam;
+//           })
+//         );
+//         accumulated.push(...extended);
+//         token = newToken ?? null;
+//       } while (token);
+//       console.log('All teams fetched:', accumulated);
+//       return { teams: accumulated, nextToken: null };
+//     } catch (error) {
+//       console.error('Get teams error:', error);
+//       return { teams: [], nextToken: null };
+//     }
+//   }
 
-  async getUserTeams(userCognitoId: string): Promise<FlatTeam[]> {
-    try {
-      console.log('Fetching user teams for userCognitoId:', userCognitoId);
-      const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserCognitoId(
-        { userCognitoId },
-        { selectionSet: ['teamId'] }  // Select only needed field to avoid required field validation issues
-      );
-      if (errors) throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Fetched team members count:', members?.length ?? 0);  // Added debug log
-      if (!members || members.length === 0) {
-        console.log('No team members found for userCognitoId:', userCognitoId);
-        return [];
-      }
-      const teams = await Promise.all(members.map(async (m: { teamId: string }) => {
-        try {
-          const { data: team, errors: teamErrors } = await this.client.models.Team.get({ id: m.teamId });
-          if (teamErrors) throw new Error(`Failed to fetch team: ${teamErrors.map(e => e.message).join(', ')}`);
-          if (!team) return null;
-          const { data: lead, errors: leadErrors } = await this.client.models.User.get({ cognitoId: team.teamLeadId });
-          if (leadErrors) throw new Error(`Failed to fetch lead: ${leadErrors.map(e => e.message).join(', ')}`);
-          return {
-            id: team.id,
-            name: team.name,
-            description: team.description,
-            teamLeadId: team.teamLeadId,
-            createdAt: team.createdAt ?? '',
-            updatedAt: team.updatedAt ?? '',
-            teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
-          } as FlatTeam;
-        } catch (teamErr) {
-          console.error('Error fetching team for TeamMember:', { teamMember: m, error: (teamErr as Error).message });
-          return null;
-        }
-      }));
-      const filteredTeams = teams.filter((t): t is FlatTeam => t !== null);
-      console.log('User teams fetched:', filteredTeams);
-      return filteredTeams;
-    } catch (error) {
-      console.error('Get user teams error:', (error as Error).message);
-      return [];
-    }
-  }
+//   async getUserTeams(userCognitoId: string): Promise<FlatTeam[]> {
+//     try {
+//       console.log('Fetching user teams for userCognitoId:', userCognitoId);
+//       const { data: members, errors } = await this.client.models.TeamMember.listTeamMemberByUserCognitoId(
+//         { userCognitoId },
+//         { selectionSet: ['teamId'] }  // Select only needed field to avoid required field validation issues
+//       );
+//       if (errors) throw new Error(`Failed to list team members: ${errors.map(e => e.message).join(', ')}`);
+//       console.log('Fetched team members count:', members?.length ?? 0);  // Added debug log
+//       if (!members || members.length === 0) {
+//         console.log('No team members found for userCognitoId:', userCognitoId);
+//         return [];
+//       }
+//       const teams = await Promise.all(members.map(async (m: { teamId: string }) => {
+//         try {
+//           const { data: team, errors: teamErrors } = await this.client.models.Team.get({ id: m.teamId });
+//           if (teamErrors) throw new Error(`Failed to fetch team: ${teamErrors.map(e => e.message).join(', ')}`);
+//           if (!team) return null;
+//           const { data: lead, errors: leadErrors } = await this.client.models.User.get({ cognitoId: team.teamLeadId });
+//           if (leadErrors) throw new Error(`Failed to fetch lead: ${leadErrors.map(e => e.message).join(', ')}`);
+//           return {
+//             id: team.id,
+//             name: team.name,
+//             description: team.description,
+//             teamLeadId: team.teamLeadId,
+//             createdAt: team.createdAt ?? '',
+//             updatedAt: team.updatedAt ?? '',
+//             teamLeadName: `${lead?.firstName ?? ''} ${lead?.lastName ?? ''}`.trim(),
+//           } as FlatTeam;
+//         } catch (teamErr) {
+//           console.error('Error fetching team for TeamMember:', { teamMember: m, error: (teamErr as Error).message });
+//           return null;
+//         }
+//       }));
+//       const filteredTeams = teams.filter((t): t is FlatTeam => t !== null);
+//       console.log('User teams fetched:', filteredTeams);
+//       return filteredTeams;
+//     } catch (error) {
+//       console.error('Get user teams error:', (error as Error).message);
+//       return [];
+//     }
+//   }
 
-async getTeamMembers(teamId: string): Promise<UserType[]> {
-    try {
-      if (this.teamMembersCache.has(teamId)) {
-        console.log('Returning cached members for teamId:', teamId);
-        return this.teamMembersCache.get(teamId)!;
-      }
-      console.log('Fetching members for teamId:', teamId);
-      const { data: members, errors } = await this.client.queries.listTeamMembersByTeamId({
-        teamId
-      });
-      if (errors) {
-        console.error('TeamMember fetch errors:', errors);
-        throw new Error(`Failed to list team members: ${errors.map((e: { message: string }) => e.message).join(', ')}`);  
-      }
-      console.log('Fetched team members count:', members?.length ?? 0);  
-      const users = await Promise.all((members ?? []).map(async (m) => {  
-        try {
-          const { data: user, errors: userErrors } = await this.client.models.User.get({ cognitoId: m!.userCognitoId });  // CHANGE: Added non-null assertion m! to assure TS m is not null/undefined; safe as m from array map
-          if (userErrors) throw new Error(`Failed to fetch user: ${userErrors.map((e: { message: string }) => e.message).join(', ')}`);  
-          return user;
-        } catch (userErr) {
-          console.error('Error fetching user for TeamMember:', { teamMember: m, error: (userErr as Error).message });
-          return null;
-        }
-      }));
-      const filteredUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);  
-      this.teamMembersCache.set(teamId, filteredUsers); // Cache the result
-      console.log('Team members fetched:', filteredUsers); 
-      return filteredUsers;
-    } catch (error) {
-      console.error('Get team members error:', (error as Error).message);
-      return [];
-    }
-  }
+// async getTeamMembers(teamId: string): Promise<UserType[]> {
+//     try {
+//       if (this.teamMembersCache.has(teamId)) {
+//         console.log('Returning cached members for teamId:', teamId);
+//         return this.teamMembersCache.get(teamId)!;
+//       }
+//       console.log('Fetching members for teamId:', teamId);
+//       const { data: members, errors } = await this.client.queries.listTeamMembersByTeamId({
+//         teamId
+//       });
+//       if (errors) {
+//         console.error('TeamMember fetch errors:', errors);
+//         throw new Error(`Failed to list team members: ${errors.map((e: { message: string }) => e.message).join(', ')}`);  
+//       }
+//       console.log('Fetched team members count:', members?.length ?? 0);  
+//       const users = await Promise.all((members ?? []).map(async (m) => {  
+//         try {
+//           const { data: user, errors: userErrors } = await this.client.models.User.get({ cognitoId: m!.userCognitoId });  // CHANGE: Added non-null assertion m! to assure TS m is not null/undefined; safe as m from array map
+//           if (userErrors) throw new Error(`Failed to fetch user: ${userErrors.map((e: { message: string }) => e.message).join(', ')}`);  
+//           return user;
+//         } catch (userErr) {
+//           console.error('Error fetching user for TeamMember:', { teamMember: m, error: (userErr as Error).message });
+//           return null;
+//         }
+//       }));
+//       const filteredUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);  
+//       this.teamMembersCache.set(teamId, filteredUsers); // Cache the result
+//       console.log('Team members fetched:', filteredUsers); 
+//       return filteredUsers;
+//     } catch (error) {
+//       console.error('Get team members error:', (error as Error).message);
+//       return [];
+//     }
+//   }
  
-  async createTeam(team: Partial<TeamType>): Promise<TeamType | null> {
-    try {
-      if (!team.name) throw new Error('Missing team name');
-      if (!team.teamLeadId) throw new Error('Missing team lead ID');
-      const { data, errors } = await this.client.models.Team.create({
-        ...team,
-      } as TeamType);
-      if (errors) throw new Error(`Failed to create team: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Team created:', data);
-      return data;
-    } catch (error) {
-      console.error('Create team error:', error);
-      return null;
-    }
-  }
+//   async createTeam(team: Partial<TeamType>): Promise<TeamType | null> {
+//     try {
+//       if (!team.name) throw new Error('Missing team name');
+//       if (!team.teamLeadId) throw new Error('Missing team lead ID');
+//       const { data, errors } = await this.client.models.Team.create({
+//         ...team,
+//       } as TeamType);
+//       if (errors) throw new Error(`Failed to create team: ${errors.map(e => e.message).join(', ')}`);
+//       console.log('Team created:', data);
+//       return data;
+//     } catch (error) {
+//       console.error('Create team error:', error);
+//       return null;
+//     }
+//   }
 
-  async updateTeam(team: Partial<TeamType>): Promise<TeamType | null> {
-    try {
-      if (!team.id) throw new Error('Team ID required for update');
-      const validUpdate = {
-        id: team.id,
-        name: team.name,
-        description: team.description,
-        updatedAt: new Date().toISOString(),
-      };
-      const { data, errors } = await this.client.models.Team.update(validUpdate as TeamType);
-      if (errors) throw new Error(`Failed to update team: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Team updated:', data);
-      // Invalidate cache for this team
-      if (team.id) this.teamMembersCache.delete(team.id);
-      return data;
-    } catch (error) {
-      console.error('Update team error:', error);
-      return null;
-    }
-  }
+//   async updateTeam(team: Partial<TeamType>): Promise<TeamType | null> {
+//     try {
+//       if (!team.id) throw new Error('Team ID required for update');
+//       const validUpdate = {
+//         id: team.id,
+//         name: team.name,
+//         description: team.description,
+//         updatedAt: new Date().toISOString(),
+//       };
+//       const { data, errors } = await this.client.models.Team.update(validUpdate as TeamType);
+//       if (errors) throw new Error(`Failed to update team: ${errors.map(e => e.message).join(', ')}`);
+//       console.log('Team updated:', data);
+//       // Invalidate cache for this team
+//       if (team.id) this.teamMembersCache.delete(team.id);
+//       return data;
+//     } catch (error) {
+//       console.error('Update team error:', error);
+//       return null;
+//     }
+//   }
 
-  async addTeamMember(teamId: string, userCognitoId: string): Promise<TeamMemberType | null> {
-      try {
-        const { userId: currentUserId } = await getCurrentUser();  // Get lead ID (caller is lead)
-        console.log('Adding team member:', { teamId, userCognitoId, owner: currentUserId });
-        const { data, errors } = await this.client.models.TeamMember.create({ 
-          teamId, 
-          userCognitoId,
-          owner: currentUserId  // Set owner to lead's Cognito ID
-        });
-        if (errors) {
-          console.error('Add team member errors:', errors);
-          throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
-        }
-        console.log('Team member added:', data);
-        // Invalidate cache for this team
-        this.teamMembersCache.delete(teamId);
-        return data;
-      } catch (error) {
-        console.error('Add team member error:', error);
-        return null;
-      }
-    }
+//   async addTeamMember(teamId: string, userCognitoId: string): Promise<TeamMemberType | null> {
+//       try {
+//         const { userId: currentUserId } = await getCurrentUser();  // Get lead ID (caller is lead)
+//         console.log('Adding team member:', { teamId, userCognitoId, owner: currentUserId });
+//         const { data, errors } = await this.client.models.TeamMember.create({ 
+//           teamId, 
+//           userCognitoId,
+//           owner: currentUserId  // Set owner to lead's Cognito ID
+//         });
+//         if (errors) {
+//           console.error('Add team member errors:', errors);
+//           throw new Error(`Failed to add team member: ${errors.map(e => e.message).join(', ')}`);
+//         }
+//         console.log('Team member added:', data);
+//         // Invalidate cache for this team
+//         this.teamMembersCache.delete(teamId);
+//         return data;
+//       } catch (error) {
+//         console.error('Add team member error:', error);
+//         return null;
+//       }
+//     }
   
-  async deleteTeamMember(teamId: string, userCognitoId: string): Promise<void> {
-      try {
-        console.log('Deleting team member:', { teamId, userCognitoId });
-        const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
-        if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
-        console.log('Team member deleted:', { teamId, userCognitoId });
-        // Invalidate cache for this team
-        this.teamMembersCache.delete(teamId);
-      } catch (error) {
-        console.error('Delete team member error:', error);
-      }
-    }
+//   async deleteTeamMember(teamId: string, userCognitoId: string): Promise<void> {
+//       try {
+//         console.log('Deleting team member:', { teamId, userCognitoId });
+//         const { errors } = await this.client.models.TeamMember.delete({ teamId, userCognitoId });
+//         if (errors) throw new Error(`Failed to delete team member: ${errors.map(e => e.message).join(', ')}`);
+//         console.log('Team member deleted:', { teamId, userCognitoId });
+//         // Invalidate cache for this team
+//         this.teamMembersCache.delete(teamId);
+//       } catch (error) {
+//         console.error('Delete team member error:', error);
+//       }
+//     }
 
-  async deleteTeam(id: string): Promise<void> {
-    try {
-      console.log('Deleting team with ID:', id);
-      const { errors } = await this.client.models.Team.delete({ id });
-      if (errors) throw new Error(`Failed to delete team: ${errors.map(e => e.message).join(', ')}`);
-      console.log('Team deleted:', id);
-      // Remove from cache
-      this.teamMembersCache.delete(id);
-    } catch (error) {
-      console.error('Delete team error:', error);
-    }
-  }
+//   async deleteTeam(id: string): Promise<void> {
+//     try {
+//       console.log('Deleting team with ID:', id);
+//       const { errors } = await this.client.models.Team.delete({ id });
+//       if (errors) throw new Error(`Failed to delete team: ${errors.map(e => e.message).join(', ')}`);
+//       console.log('Team deleted:', id);
+//       // Remove from cache
+//       this.teamMembersCache.delete(id);
+//     } catch (error) {
+//       console.error('Delete team error:', error);
+//     }
+//   }
 
   // --- Real-Time Subscriptions ---
   observeTickets(): Observable<void> {
