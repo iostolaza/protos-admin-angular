@@ -1,24 +1,23 @@
+
 // src/app/features/ticket-management/ticket-management.component.ts
 
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
-import { CommonModule, DatePipe} from '@angular/common';
-import { TicketService } from '../../core/services/ticket.service';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Component, OnDestroy } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
 import { AngularSvgIconModule } from 'angular-svg-icon';
-import { getIconPath } from '../../core/services/icon-preloader.service';
 import { TicketListComponent } from './ticket-list/ticket-list.component';  
 import { TeamListComponent } from './team-list/team-list.component';  
 import { GenerateTicketsComponent } from './generate-tickets/generate-tickets.component'; 
-import { GenerateTeamComponent } from './generate-team/generate-team.component'; 
-// import { TeamEditComponent } from './edit-team/edit-team.component'; 
+import { GenerateTeamComponent } from './generate-team/generate-team.component';  
 import { TicketDetailsComponent } from './ticket-details/ticket-details.component';
 import { EditTicketComponent } from './edit-ticket/edit-ticket.component';
 import { TeamDetailsComponent } from './team-details/team-details.component'; 
-import { FlatTicket, FlatTeam } from '../../core/models/tickets.model';
+import { EditTeamComponent } from './edit-team/edit-team.component';  
 import { StatusPipe } from '../../core/pipes/status.pipe';  
 import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  
-
+import { TicketService } from '../../core/services/ticket.service';
+import { TeamService } from '../../core/services/team.service';
+import { signal } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-ticket-management',
@@ -31,21 +30,35 @@ import { StatusClassPipe } from '../../core/pipes/status-class.pipe';
     TeamListComponent,  
     GenerateTicketsComponent, 
     GenerateTeamComponent,
-    // TeamEditComponent,
     TicketDetailsComponent,
     EditTicketComponent,
-    TeamDetailsComponent,  // NEW
+    TeamDetailsComponent,
+    EditTeamComponent,  
     StatusPipe,  
-    StatusClassPipe  
+    StatusClassPipe,
+    DatePipe  
   ],
 })
-export class TicketManagementComponent {
-  tickets = signal<any[]>([]); // From TicketService
+export class TicketManagementComponent implements OnDestroy {
+  tickets = signal<any[]>([]);
   recentTickets = signal<any[]>([]);
   selectedTicket = signal<any | null>(null);
   editingTicket = signal<any | null>(null);
   selectedTeam = signal<any | null>(null);
   editingTeam = signal<any | null>(null);
+  private subs: Subscription[] = [];
+
+  constructor(private ticketService: TicketService, private teamService: TeamService) {
+    // Assume loadTickets() etc.
+    this.subs.push(
+      this.ticketService.observeTickets().subscribe(() => {
+        // Reload tickets
+      }),
+      this.teamService.observeTeams().subscribe(() => {
+        // Reload teams if needed
+      })
+    );
+  }
 
   openTickets() {
     return this.tickets().filter(t => t.status === 'open').length;
@@ -61,7 +74,6 @@ export class TicketManagementComponent {
   }
 
   onTicketUpdate(updated: any) {
-    // Update tickets
     this.editingTicket.set(null);
   }
 
@@ -75,10 +87,12 @@ export class TicketManagementComponent {
   }
 
   onTeamUpdate(updated: any) {
-    // Reload teams if needed
     this.editingTeam.set(null);
   }
-  
+
+  ngOnDestroy() {
+    this.subs.forEach(sub => sub.unsubscribe());
+  }
   private computeUpdatedAgo(): string {
     const tickets = this.tickets();
     if (tickets.length === 0) return 'never';

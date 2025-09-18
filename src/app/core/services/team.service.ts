@@ -4,7 +4,8 @@ import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import type { Schema } from '../../../../amplify/data/resource';
 import { getCurrentUser } from 'aws-amplify/auth';
-import { UserService } from './user.service'; // Assuming existing
+import { UserService } from './user.service';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -12,7 +13,7 @@ import { UserService } from './user.service'; // Assuming existing
 export class TeamService {
   private client = generateClient<Schema>();
   public teams = signal<Schema['Team']['type'][]>([]);
-  public members = signal<Schema['User']['type'][]>([]); // For current team
+  public members = signal<Schema['User']['type'][]>([]);
 
   constructor(private userService: UserService) {}
 
@@ -129,15 +130,16 @@ export class TeamService {
 
   async addMember(teamId: string, userCognitoId: string): Promise<void> {
     try {
+      console.log('Adding member:', { teamId, userCognitoId });  // Added log
       const now = new Date().toISOString();
-      const { errors } = await this.client.models.TeamMember.create({
+      const { data: newMember, errors } = await this.client.models.TeamMember.create({
         teamId,
         userCognitoId,
         createdAt: now,
         updatedAt: now,
       });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
-      // Update count using updateTeam
+      console.log('Member added:', newMember);  // Added log
       const team = await this.getTeam(teamId);
       if (team) {
         await this.updateTeam(teamId, { memberCount: (team.memberCount || 0) + 1 });
@@ -151,21 +153,56 @@ export class TeamService {
 
   async removeMember(teamId: string, userCognitoId: string): Promise<void> {
     try {
+      console.log('Removing member:', { teamId, userCognitoId });  // Added log
       const { data: member, errors: findErrors } = await this.client.models.TeamMember.list({ filter: { teamId: { eq: teamId }, userCognitoId: { eq: userCognitoId } } });
       if (findErrors) throw new Error(findErrors.map(e => e.message).join(', '));
       if (member[0]) {
-        const { errors: delErrors } = await this.client.models.TeamMember.delete({ id: member[0].id });
+        const { data: deleted, errors: delErrors } = await this.client.models.TeamMember.delete({ id: member[0].id });
         if (delErrors) throw new Error(delErrors.map(e => e.message).join(', '));
-        // Update count using updateTeam
+        console.log('Member removed:', deleted);  // Added log
         const team = await this.getTeam(teamId);
         if (team) {
           await this.updateTeam(teamId, { memberCount: Math.max(0, (team.memberCount || 0) - 1) });
         }
         await this.getTeamMembers(teamId);
+      } else {
+        console.log('No member found to remove');
       }
     } catch (error) {
       console.error('Remove member error:', error);
       throw error;
     }
+  }
+
+  // Real-time observations
+  observeTeams(): Observable<{ items: Schema['Team']['type'][] }> {
+    return new Observable(observer => {
+      const sub = this.client.models.Team.observeQuery().subscribe({
+        next: (snapshot) => {
+          this.teams.set(snapshot.items);
+          observer.next(snapshot);
+        },
+        error: (err) => observer.error(err),
+      });
+      return () => sub.unsubscribe();
+    });
+  }
+
+  observeTeamMembers(teamId: string): Observable<{ items: Schema['TeamMember']['type'][] }> {
+    return new Observable(observer => {
+      const sub = this.client.models.TeamMember.observeQuery({ filter: { teamId: { eq: teamId } } }).subscribe({
+        next: async (snapshot) => {
+          const users = await Promise.all(snapshot.items.map(async m => {
+            const { data: user } = await this.client.models.User.get({ cognitoId: m.userCognitoId });
+            return user;
+          }));
+          const nonNullUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);
+          this.members.set(nonNullUsers);
+          observer.next(snapshot);
+        },
+        error: (err) => observer.error(err),
+      });
+      return () => sub.unsubscribe();
+    });
   }
 }
