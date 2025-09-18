@@ -16,7 +16,7 @@ export class TeamService {
 
   constructor(private userService: UserService) {}
 
-  async createTeam(name: string, inviteUserIds: string[]) {
+  async createTeam(name: string, inviteUserIds: string[]): Promise<Schema['Team']['type']> {
     try {
       const { userId } = await getCurrentUser();
       const leadUser = this.userService.user();
@@ -33,14 +33,16 @@ export class TeamService {
         updatedAt: now,
       });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
+      if (!team) throw new Error('Created team is null');
 
       for (const userId of inviteUserIds) {
-        await this.client.models.TeamMember.create({
+        const { errors: memberErrors } = await this.client.models.TeamMember.create({
           teamId: team.id,
           userCognitoId: userId,
           createdAt: now,
           updatedAt: now,
         });
+        if (memberErrors) throw new Error(memberErrors.map(e => e.message).join(', '));
       }
       this.teams.update(t => [...t, team]);
       return team;
@@ -50,7 +52,7 @@ export class TeamService {
     }
   }
 
-  async getTeams() {
+  async getTeams(): Promise<Schema['Team']['type'][]> {
     try {
       const { data, errors } = await this.client.models.Team.list();
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
@@ -62,7 +64,7 @@ export class TeamService {
     }
   }
 
-  async getTeam(id: string) {
+  async getTeam(id: string): Promise<Schema['Team']['type'] | null> {
     try {
       const { data, errors } = await this.client.models.Team.get({ id });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
@@ -73,7 +75,7 @@ export class TeamService {
     }
   }
 
-  async updateTeam(id: string, updates: { name?: string; description?: string }) {
+  async updateTeam(id: string, updates: Partial<Omit<Schema['Team']['type'], 'id' | 'createdAt'>>): Promise<Schema['Team']['type']> {
     try {
       const { data, errors } = await this.client.models.Team.update({
         id,
@@ -81,6 +83,7 @@ export class TeamService {
         updatedAt: new Date().toISOString(),
       });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
+      if (!data) throw new Error('Updated team is null');
       this.teams.update(t => t.map(team => team.id === id ? data : team));
       return data;
     } catch (error) {
@@ -89,12 +92,13 @@ export class TeamService {
     }
   }
 
-  async deleteTeam(id: string) {
+  async deleteTeam(id: string): Promise<void> {
     try {
-      // Delete members first
-      const { data: members } = await this.client.models.TeamMember.list({ filter: { teamId: { eq: id } } });
+      const { data: members, errors: memErrors } = await this.client.models.TeamMember.list({ filter: { teamId: { eq: id } } });
+      if (memErrors) throw new Error(memErrors.map(e => e.message).join(', '));
       for (const member of members) {
-        await this.client.models.TeamMember.delete({ id: member.id });
+        const { errors: delErrors } = await this.client.models.TeamMember.delete({ id: member.id });
+        if (delErrors) throw new Error(delErrors.map(e => e.message).join(', '));
       }
       const { errors } = await this.client.models.Team.delete({ id });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
@@ -105,23 +109,25 @@ export class TeamService {
     }
   }
 
-  async getTeamMembers(teamId: string) {
+  async getTeamMembers(teamId: string): Promise<Schema['User']['type'][]> {
     try {
       const { data: members, errors } = await this.client.models.TeamMember.list({ filter: { teamId: { eq: teamId } } });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
       const users = await Promise.all(members.map(async m => {
-        const { data: user } = await this.client.models.User.get({ cognitoId: m.userCognitoId });
+        const { data: user, errors: userErrors } = await this.client.models.User.get({ cognitoId: m.userCognitoId });
+        if (userErrors) throw new Error(userErrors.map(e => e.message).join(', '));
         return user;
       }));
-      this.members.set(users.filter(u => u !== null) as Schema['User']['type'][]);
-      return this.members();
+      const nonNullUsers = users.filter((u): u is NonNullable<typeof u> => u !== null);
+      this.members.set(nonNullUsers);
+      return nonNullUsers;
     } catch (error) {
       console.error('Get members error:', error);
       return [];
     }
   }
 
-  async addMember(teamId: string, userCognitoId: string) {
+  async addMember(teamId: string, userCognitoId: string): Promise<void> {
     try {
       const now = new Date().toISOString();
       const { errors } = await this.client.models.TeamMember.create({
@@ -131,11 +137,10 @@ export class TeamService {
         updatedAt: now,
       });
       if (errors) throw new Error(errors.map(e => e.message).join(', '));
-      // Update count
+      // Update count using updateTeam
       const team = await this.getTeam(teamId);
       if (team) {
-        await this.updateTeam(teamId, { });
-        await this.client.models.Team.update({ id: teamId, memberCount: (team.memberCount || 0) + 1 });
+        await this.updateTeam(teamId, { memberCount: (team.memberCount || 0) + 1 });
       }
       await this.getTeamMembers(teamId);
     } catch (error) {
@@ -144,15 +149,17 @@ export class TeamService {
     }
   }
 
-  async removeMember(teamId: string, userCognitoId: string) {
+  async removeMember(teamId: string, userCognitoId: string): Promise<void> {
     try {
-      const { data: member } = await this.client.models.TeamMember.list({ filter: { teamId: { eq: teamId }, userCognitoId: { eq: userCognitoId } } });
+      const { data: member, errors: findErrors } = await this.client.models.TeamMember.list({ filter: { teamId: { eq: teamId }, userCognitoId: { eq: userCognitoId } } });
+      if (findErrors) throw new Error(findErrors.map(e => e.message).join(', '));
       if (member[0]) {
-        await this.client.models.TeamMember.delete({ id: member[0].id });
-        // Update count
+        const { errors: delErrors } = await this.client.models.TeamMember.delete({ id: member[0].id });
+        if (delErrors) throw new Error(delErrors.map(e => e.message).join(', '));
+        // Update count using updateTeam
         const team = await this.getTeam(teamId);
         if (team) {
-          await this.client.models.Team.update({ id: teamId, memberCount: Math.max(0, (team.memberCount || 0) - 1) });
+          await this.updateTeam(teamId, { memberCount: Math.max(0, (team.memberCount || 0) - 1) });
         }
         await this.getTeamMembers(teamId);
       }
