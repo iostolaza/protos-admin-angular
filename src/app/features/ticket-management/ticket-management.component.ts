@@ -1,7 +1,6 @@
-
 // src/app/features/ticket-management/ticket-management.component.ts
 
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { TicketListComponent } from './ticket-list/ticket-list.component';  
@@ -16,8 +15,9 @@ import { StatusPipe } from '../../core/pipes/status.pipe';
 import { StatusClassPipe } from '../../core/pipes/status-class.pipe';  
 import { TicketService } from '../../core/services/ticket.service';
 import { TeamService } from '../../core/services/team.service';
-import { signal } from '@angular/core';
+import { signal, computed } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { TicketStatus } from '../../core/models/tickets.model';  // Added import
 
 @Component({
   selector: 'app-ticket-management',
@@ -39,29 +39,48 @@ import { Subscription } from 'rxjs';
     DatePipe  
   ],
 })
-export class TicketManagementComponent implements OnDestroy {
+export class TicketManagementComponent implements OnInit, OnDestroy {
   tickets = signal<any[]>([]);
-  recentTickets = signal<any[]>([]);
+  teams = signal<any[]>([]);  // Added for teams
   selectedTicket = signal<any | null>(null);
   editingTicket = signal<any | null>(null);
   selectedTeam = signal<any | null>(null);
   editingTeam = signal<any | null>(null);
+  updatedAgo = signal<string>('a moment ago');  // Added signal
   private subs: Subscription[] = [];
 
+  openTickets = computed(() => this.tickets().filter(t => t.status === TicketStatus.OPEN).length);
+  recentTickets = computed(() => 
+    this.tickets()
+      .slice()
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 3)
+  );
+
   constructor(private ticketService: TicketService, private teamService: TeamService) {
-    // Assume loadTickets() etc.
     this.subs.push(
       this.ticketService.observeTickets().subscribe(() => {
-        // Reload tickets
+        this.loadTickets();
       }),
       this.teamService.observeTeams().subscribe(() => {
-        // Reload teams if needed
+        this.loadTeams();  // Added
       })
     );
   }
 
-  openTickets() {
-    return this.tickets().filter(t => t.status === 'open').length;
+  async ngOnInit(): Promise<void> {
+    await this.loadTickets();
+    await this.loadTeams();  // Added
+    this.updatedAgo.set(this.computeUpdatedAgo());
+  }
+
+  private async loadTickets(): Promise<void> {
+    const { tickets } = await this.ticketService.getTickets();
+    this.tickets.set(tickets);
+  }
+
+  private async loadTeams(): Promise<void> {  // Added method
+    this.teams.set(await this.teamService.getTeams());
   }
 
   viewDetails(ticket: any) {
@@ -90,9 +109,6 @@ export class TicketManagementComponent implements OnDestroy {
     this.editingTeam.set(null);
   }
 
-  ngOnDestroy() {
-    this.subs.forEach(sub => sub.unsubscribe());
-  }
   private computeUpdatedAgo(): string {
     const tickets = this.tickets();
     if (tickets.length === 0) return 'never';
@@ -107,123 +123,8 @@ export class TicketManagementComponent implements OnDestroy {
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   }
+
+  ngOnDestroy() {
+    this.subs.forEach(sub => sub.unsubscribe());
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// export class TicketManagementComponent implements OnInit, OnDestroy {
-//   tickets = signal<FlatTicket[]>([]);
-//   teams = signal<FlatTeam[]>([]);
-//   selectedTeam = signal<FlatTeam | null>(null);
-//   editingTeam = signal<FlatTeam | null>(null); 
-//   selectedTicket = signal<FlatTicket | null>(null);
-//   editingTicket = signal<FlatTicket | null>(null);
-//   tab = signal('tickets');
-//   updatedAgo = signal('a moment ago');
-//   private destroy$ = new Subject<void>();
-
-//   openTickets = computed(() => this.tickets().filter(t => t.status === 'OPEN').length);
-//   recentTickets = computed(() => 
-//     this.tickets()
-//       .slice()
-//       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-//       .slice(0, 3)
-//   );
-
-//   constructor(private ticketService: TicketService) {}  
-
-//   getIconPath = getIconPath;
-
-//   async ngOnInit(): Promise<void> {
-//     await this.loadTickets();
-//     await this.loadTeams();
-//     this.setupRealTime();
-//     this.updatedAgo.set(this.computeUpdatedAgo());
-//   }
-
-//   private async loadTickets(): Promise<void> {
-//     const { tickets } = await this.ticketService.getTickets();
-//     this.tickets.set(tickets);
-//   }
-
-//   private async loadTeams(): Promise<void> {
-//     const { teams } = await this.ticketService.getTeams();
-//     this.teams.set(teams);
-//   }
-
-//   switchTab(newTab: string) {
-//     this.tab.set(newTab); 
-//   }
-
-//   viewTeam(team: FlatTeam) {  // NEW: Set for details view
-//     this.selectedTeam.set(team);
-//     this.editingTeam.set(null);
-//   }
-
-//   editTeam(team: FlatTeam) {  
-//     this.editingTeam.set(team);
-//     this.selectedTeam.set(null);
-//   }
-
-//   onTeamUpdate(updatedTeam: FlatTeam) {  
-//     this.teams.update(teams => teams.map(t => t.id === updatedTeam.id ? updatedTeam : t));
-//     this.editingTeam.set(null);
-//     this.selectedTeam.set(updatedTeam);  
-//   }
-
-//   viewDetails(ticket: FlatTicket) {
-//     this.selectedTicket.set(ticket);
-//     this.editingTicket.set(null);
-//   }
-
-//   startEditing(ticket: FlatTicket) {
-//     this.editingTicket.set(ticket);
-//     this.selectedTicket.set(null);
-//   }
-
-//   onTicketUpdate(updatedTicket: FlatTicket) {
-//     this.tickets.update(tickets => tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t));
-//     this.editingTicket.set(null);
-//     this.selectedTicket.set(updatedTicket);
-//   }
-
-//   private computeUpdatedAgo(): string {
-//     const tickets = this.tickets();
-//     if (tickets.length === 0) return 'never';
-//     const maxDate = Math.max(...tickets.map(t => new Date(t.createdAt).getTime()));
-//     const diffMs = Date.now() - maxDate;
-//     const diffSecs = Math.floor(diffMs / 1000);
-//     if (diffSecs < 60) return 'a moment ago';
-//     const diffMins = Math.floor(diffSecs / 60);
-//     if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-//     const diffHours = Math.floor(diffMins / 60);
-//     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
-//     const diffDays = Math.floor(diffHours / 24);
-//     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-//   }
-
-//   private setupRealTime() {
-//     this.ticketService.observeTickets()
-//       .pipe(takeUntil(this.destroy$))
-//       .subscribe(() => this.loadTickets());
-//     this.ticketService.observeTeams()
-//       .pipe(takeUntil(this.destroy$))
-//       .subscribe(() => this.loadTeams());
-//   }
-
-//   ngOnDestroy() {
-//     this.destroy$.next();
-//     this.destroy$.complete();
-//   }
-// }
