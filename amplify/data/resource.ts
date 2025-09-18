@@ -39,7 +39,7 @@ const schema = a.schema({
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
     teams: a.hasMany('TeamMember', 'userCognitoId'),  
-    ledTeams: a.hasMany('Team', 'teamLeadId'),
+    ledTeams: a.hasMany('Team', 'teamLeadCognitoId'),  // Fixed reference field
     ticketsRequested: a.hasMany('Ticket', 'requesterId'),
     ticketsAssigned: a.hasMany('Ticket', 'assigneeId'),
     comments: a.hasMany('Comment', 'userCognitoId'),  
@@ -48,7 +48,7 @@ const schema = a.schema({
     .identifier(['cognitoId'])
     .secondaryIndexes(index => [index('email')])
     .authorization(allow => [
-      allow.ownerDefinedIn('cognitoId').to(['read', 'update', 'delete']),
+      allow.ownerDefinedIn('cognitoId').identityClaim('sub').to(['read', 'update', 'delete']),  // Map to Cognito sub
       allow.authenticated().to(['create', 'read']),
     ]),
 
@@ -60,7 +60,7 @@ const schema = a.schema({
     updatedAt: a.datetime(),
   })
     .secondaryIndexes(index => [index('userCognitoId')])  
-    .authorization(allow => [allow.ownerDefinedIn('userCognitoId')]),  
+    .authorization(allow => [allow.ownerDefinedIn('userCognitoId').identityClaim('sub')]),  
 
   Friend: a.model({
     userCognitoId: a.string().required(),  
@@ -70,7 +70,7 @@ const schema = a.schema({
   })
     .identifier(['userCognitoId', 'friendCognitoId'])  
     .secondaryIndexes(index => [index('userCognitoId')])
-    .authorization(allow => [allow.ownerDefinedIn('userCognitoId')]),
+    .authorization(allow => [allow.ownerDefinedIn('userCognitoId').identityClaim('sub')]),
 
   Channel: a.model({
     name: a.string(),
@@ -89,7 +89,7 @@ const schema = a.schema({
     .secondaryIndexes(index => [index('userCognitoId'), index('channelId')])
     .authorization(allow => [
       allow.authenticated().to(['create', 'read']),
-      allow.ownerDefinedIn('userCognitoId').to(['update', 'delete']),
+      allow.ownerDefinedIn('userCognitoId').identityClaim('sub').to(['update', 'delete']),
     ]),
 
   Message: a.model({
@@ -113,9 +113,11 @@ const schema = a.schema({
     memberCount: a.integer().default(0),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
+    teamLead: a.belongsTo('User', 'teamLeadCognitoId'),  // Added back-reference
     members: a.hasMany('TeamMember', 'teamId'),
+    tickets: a.hasMany('Ticket', 'teamId'),  // Added for consistency
   }).authorization(allow => [
-      allow.owner().identityClaim('teamLeadCognitoId').to(['read', 'update', 'delete']),
+      allow.ownerDefinedIn('teamLeadCognitoId').identityClaim('sub').to(['read', 'update', 'delete']),  // Fixed owner auth
       allow.group('Admin').to(['create', 'read', 'update', 'delete']),
       allow.group('team_lead').to(['create', 'read']),
       allow.authenticated().to(['read']),
@@ -134,36 +136,6 @@ const schema = a.schema({
       allow.authenticated().to(['read']),
   ]),
 
-  // Team: a.model({
-  //   id: a.id().required(),
-  //   name: a.string().required(),
-  //   description: a.string(),
-  //   teamLeadId: a.string().required(),  
-  //   teamLead: a.belongsTo('User', 'teamLeadId'),
-  //   members: a.hasMany('TeamMember', 'teamId'),
-  //   tickets: a.hasMany('Ticket', 'teamId'),
-  // })
-  //   .authorization(allow => [
-  //     allow.authenticated().to(['create', 'read']),
-  //     allow.ownerDefinedIn('teamLeadId').to(['update', 'delete']),
-  //     allow.groups(['Admin', 'team_lead']).to(['update', 'delete']), 
-  //   ]),
-
-  // TeamMember: a.model({
-  //   teamId: a.id().required(),
-  //   userCognitoId: a.string().required(),  
-  //   owner: a.string().required(),  
-  //   team: a.belongsTo('Team', 'teamId'),
-  //   user: a.belongsTo('User', 'userCognitoId'),  
-  // })
-  //   .identifier(['teamId', 'userCognitoId'])  
-  //   .secondaryIndexes(index => [index('userCognitoId')])  
-  //   .authorization(allow => [
-  //     allow.authenticated().to(['create', 'read']),
-  //     allow.ownerDefinedIn('owner').to(['update', 'delete']),
-  //     allow.groups(['Admin', 'team_lead']).to(['create', 'update', 'delete']), 
-  //   ]),
-  
   Ticket: a.model({
     id: a.id().required(),
     title: a.string().required(),
@@ -184,7 +156,10 @@ const schema = a.schema({
     attachments: a.string().array(),
     comments: a.hasMany('Comment', 'ticketId'),
   })
-    .authorization(allow => [allow.ownerDefinedIn('requesterId'), allow.groups(['Admin', 'team_lead', 'member'])]),  
+    .authorization(allow => [
+      allow.ownerDefinedIn('requesterId').identityClaim('sub'),
+      allow.groups(['Admin', 'team_lead', 'member'])
+    ]),  
 
   Comment: a.model({
     content: a.string().required(),
@@ -194,7 +169,10 @@ const schema = a.schema({
     ticketId: a.id().required(),
     ticket: a.belongsTo('Ticket', 'ticketId'),
   })
-    .authorization(allow => [allow.ownerDefinedIn('userCognitoId'), allow.groups(['Admin', 'team_lead', 'member'])]),  
+    .authorization(allow => [
+      allow.ownerDefinedIn('userCognitoId').identityClaim('sub'),
+      allow.groups(['Admin', 'team_lead', 'member'])
+    ]),  
 
   Notification: a.model({
     content: a.string().required(),
@@ -205,7 +183,10 @@ const schema = a.schema({
     user: a.belongsTo('User', 'userCognitoId'),  
     isRead: a.boolean().default(false),
   })
-    .authorization(allow => [allow.ownerDefinedIn('userCognitoId'), allow.groups(['Admin'])]),  
+    .authorization(allow => [
+      allow.ownerDefinedIn('userCognitoId').identityClaim('sub'),
+      allow.groups(['Admin'])
+    ]),  
 
 
 }).authorization(allow => [allow.resource(postConfirmation)]);
