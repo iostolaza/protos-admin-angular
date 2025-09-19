@@ -41,6 +41,8 @@ export const Menu = {
           ],
         },
         { label: 'Documents', icon: 'document-text', route: '/main-layout/documents' },
+// currency-dollar
+        { label: 'Financial', icon: 'chart-bar-square', route: '/main-layout/financial' },
 
         { label: 'Analytics', icon: 'chart-bar', route: '/main-layout/analytics' },
         { 

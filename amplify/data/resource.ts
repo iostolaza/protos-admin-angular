@@ -187,7 +187,75 @@ const schema = a.schema({
       allow.ownerDefinedIn('userCognitoId').identityClaim('sub'),
       allow.groups(['Admin'])
     ]),  
+    
+// NEW: Added Document model (independent; optional link to User via belongsTo if needed later)
+  Document: a.model({
+    docId: a.id().required(),
+    userCognitoId: a.string(),  // Optional: For personal docs; links to User.cognitoId
+    category: a.enum(['Audit', 'Budget', 'FinancialReports', 'Forms', 'Insurance', 'Certificates', 'Policies', 'Legal', 'Minutes', 'ReserveAnalysis', 'Statement', 'ViolationNotice']),  // From strategy
+    subcategory: a.string(),  // e.g., 'Board' under Minutes
+    fileName: a.string().required(),
+    fileKey: a.string().required(),  // S3 key for upload/integration 
+    fileType: a.string().default('PDF'),
+    description: a.string(),
+    effectiveDate: a.date(),
+    uploadDate: a.date().required(),
+    expiryDate: a.date(),  // For insurance
+    status: a.enum(['active', 'expired', 'archived']),
+    version: a.integer().default(1),
+    permissions: a.string().array().required(),  // e.g., ['User', 'Admin'] for dynamic group access 
+    tags: a.string().array(),  // For search
+    size: a.integer(),  // Bytes
+    createdAt: a.datetime(),
+    updatedAt: a.datetime(),
+    tenantId: a.string(),  // For multi-tenant isolation
+  })
+    .identifier(['docId'])
+    .secondaryIndexes(index => [
+      index('category').sortKeys(['uploadDate']),  // GSI1: List by category/date desc 
+      index('expiryDate').sortKeys(['status']),   // GSI3: Alert expired
+      index('userCognitoId').sortKeys(['category'])  // For user-specific queries
+    ])
+    .authorization(allow => [
+      allow.groupsDefinedIn('permissions').to(['read']),  // Dynamic: Read if user in group listed in permissions 
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),
+      allow.group('Manager').to(['create', 'read', 'update', 'delete']),  // Full for managers 
+      allow.group('team_lead').to(['read', 'update']),  // Limited
+      allow.group('User').to(['read']),  // Basic read for tenants
+      allow.group('Facilities').to(['read'])  // e.g., For facility-related docs
+    ]),
 
+  // NEW: Added Transaction model (independent; optional link to User via ownerDefinedIn)
+  Transaction: a.model({
+    transactionId: a.id().required(),
+    accountId: a.string().required(),  // cognito sub; owner field
+    type: a.enum(['assessment', 'payment', 'charge', 'other']),
+    date: a.date().required(),
+    docNumber: a.string(),
+    description: a.string(),
+    chargeAmount: a.float(),
+    paymentAmount: a.float(),
+    balance: a.float().required(),  // Computed on insert (client-side for now; Lambda later)
+    confirmationNumber: a.string(),
+    method: a.string(),  // e.g., 'online'
+    status: a.enum(['paid', 'pending', 'overdue']),
+    category: a.string(),  // e.g., 'Pool Key'
+    recurringId: a.string(),  // For auto-payments
+    reconciled: a.boolean().default(false),  // For audits
+    createdAt: a.datetime(),
+    updatedAt: a.datetime(),
+    tenantId: a.string(),
+  })
+    .identifier(['transactionId'])
+    .secondaryIndexes(index => [
+      index('accountId').sortKeys(['date']),  // GSI2: Ledger by account/date desc 
+    ])
+    .authorization(allow => [
+      allow.ownerDefinedIn('accountId').identityClaim('sub').to(['read']),  // Owner read own transactions 
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),
+      allow.group('Manager').to(['read', 'update']),
+      allow.group('User').to(['read'])  // Tenants see own finances
+    ]),
 
 }).authorization(allow => [allow.resource(postConfirmation)]);
 

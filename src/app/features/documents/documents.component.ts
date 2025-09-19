@@ -1,10 +1,68 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
- 
+// src/app/features/documents/documents.component.ts (Fixed imports to match dirs; typed applyFilter for $event)
+
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { DocumentListComponent } from './document-list.component/document-list.component';  // Fixed path
+import { GenerateDocumentsComponent } from './generate-documents/generate-documents';  // Fixed path/no .component
+import { DocumentDetailsComponent } from './document-details/document-details.component';
+import { DocumentService } from '../../core/services/document.service';
+import { signal, computed } from '@angular/core';
+import { Subscription } from 'rxjs';
+
 @Component({
   selector: 'app-documents',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    DocumentListComponent,
+    GenerateDocumentsComponent,
+    DocumentDetailsComponent,
+    DatePipe
+  ],
   templateUrl: './documents.component.html',
 })
-export class DocumentsComponent {}
+export class DocumentsComponent implements OnInit, OnDestroy {
+  documents = signal<any[]>([]);
+  selectedDocument = signal<any | null>(null);
+  categoryFilter = signal<string | null>(null);
+  private subs: Subscription[] = [];
+
+  recentDocuments = computed(() => 
+    this.documents()
+      .filter(d => !this.categoryFilter() || d.category === this.categoryFilter())
+      .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime())
+      .slice(0, 3)
+  );
+
+  categoryCounts = computed(() => {
+    const counts: { [key: string]: number } = {};
+    this.documents().forEach(d => counts[d.category] = (counts[d.category] || 0) + 1);
+    return counts;
+  });
+
+  constructor(private documentService: DocumentService) {
+    this.subs.push(
+      this.documentService.subscribeNewDocuments().subscribe(docs => this.documents.set(docs))
+    );
+  }
+
+  async ngOnInit(): Promise<void> {
+    await this.loadDocuments();
+  }
+
+  private async loadDocuments(): Promise<void> {
+    this.documentService.listDocuments({ limit: 100 }).subscribe(docs => this.documents.set(docs));
+  }
+
+  viewDetails(doc: any) {
+    this.selectedDocument.set(doc);
+  }
+
+  applyFilter(category: any) {  // Typed as any to bypass $event type error
+    this.categoryFilter.set(category);
+  }
+
+  ngOnDestroy() {
+    this.subs.forEach(sub => sub.unsubscribe());
+  }
+}

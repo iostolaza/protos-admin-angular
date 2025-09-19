@@ -1,0 +1,34 @@
+<!-- src/app/features/documents/generate-documents/generate-documents.component.html -->
+
+<div class="p-4 bg-card rounded-lg shadow-custom max-w-md mx-auto w-full">
+  <div class="text-center">
+    <h1 class="text-2xl font-bold mb-4 text-foreground">Upload Document</h1>
+    @if (errorMessage()) {
+      <div class="text-destructive mb-4">{{ errorMessage() }}</div>
+    }
+    @if (successMessage()) {
+      <div class="text-green-600 mb-4">{{ successMessage() }}</div>
+    }
+    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">*File:</label>
+        <input type="file" (change)="onFileChange($event)" class="w-full p-2 border border-border rounded bg-background text-foreground" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">*Category:</label>
+        <select formControlName="category" class="w-full p-2 border border-border rounded bg-background text-foreground">
+          <option value="statements">Statements</option>
+          <option value="financial-budgets">Financial & Budgets</option>
+          <option value="policies-violations">Policies & Violations</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold mb-1 text-foreground">Description:</label>
+        <textarea formControlName="description" class="w-full p-2 border border-border rounded bg-background text-foreground h-24"></textarea>
+      </div>
+      <div>
+        <button type="submit" class="bg-primary text-primary-foreground p-2 rounded hover:bg-primary/90" [disabled]="!file">Upload</button>
+      </div>
+    </form>
+  </div>
+</div>

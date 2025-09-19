@@ -64,8 +64,9 @@ export const routes: Routes = [
       },
 
       { path: 'documents', loadComponent: () => import('./features/documents/documents.component').then(m => m.DocumentsComponent) },
+
+      { path: 'financials', loadComponent: () => import('./features/financials/financials.component').then(m => m.FinancialsComponent) }, 
       
-      // Timesheet variants (submitted/inprogress/approved) using same component
       { path: 'timesheet/submitted', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
       { path: 'timesheet/pending', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },
       { path: 'timesheet/approved', loadComponent: () => import('./features/timesheet/timesheet.component').then(m => m.Timesheet) },

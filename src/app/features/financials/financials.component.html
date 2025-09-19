@@ -1,0 +1,9 @@
+<!-- src/app/features/financials/financials.component.html -->
+
+<div class="p-4 bg-card rounded-lg shadow-custom">Financials View (Transactions Ledger)
+  <ul>
+    @for (trans of transactions(); track trans.transactionId) {
+      <li>{{ trans.description }} - Balance: {{ trans.balance }}</li>
+    }
+  </ul>
+</div>
