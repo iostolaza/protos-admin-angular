@@ -1,9 +1,9 @@
-// src/app/features/documents/documents.component.ts (Fixed imports to match dirs; typed applyFilter for $event)
+// src/app/features/documents/documents.component.ts
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
-import { DocumentListComponent } from './document-list.component/document-list.component';  // Fixed path
-import { GenerateDocumentsComponent } from './generate-documents/generate-documents';  // Fixed path/no .component
+import { DocumentListComponent } from './document-list.component/document-list.component';
+import { GenerateDocumentsComponent } from './generate-documents/generate-documents';
 import { DocumentDetailsComponent } from './document-details/document-details.component';
 import { DocumentService } from '../../core/services/document.service';
 import { signal, computed } from '@angular/core';
@@ -40,25 +40,24 @@ export class DocumentsComponent implements OnInit, OnDestroy {
     return counts;
   });
 
-  constructor(private documentService: DocumentService) {
+  constructor(private documentService: DocumentService) {}
+
+  ngOnInit(): void {
     this.subs.push(
-      this.documentService.subscribeNewDocuments().subscribe(docs => this.documents.set(docs))
+      this.documentService.listDocuments().subscribe(docs => this.documents.set(docs))  
     );
+    this.loadDocuments();
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadDocuments();
-  }
-
-  private async loadDocuments(): Promise<void> {
-    this.documentService.listDocuments({ limit: 100 }).subscribe(docs => this.documents.set(docs));
+  private loadDocuments(): void {
+    this.documentService.listDocuments().subscribe(docs => this.documents.set(docs));  
   }
 
   viewDetails(doc: any) {
     this.selectedDocument.set(doc);
   }
 
-  applyFilter(category: any) {  // Typed as any to bypass $event type error
+  applyFilter(category: string) {  
     this.categoryFilter.set(category);
   }
 

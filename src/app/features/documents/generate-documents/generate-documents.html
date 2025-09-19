@@ -16,11 +16,11 @@
       </div>
       <div>
         <label class="block text-sm font-semibold mb-1 text-foreground">*Category:</label>
-        <select formControlName="category" class="w-full p-2 border border-border rounded bg-background text-foreground">
-          <option value="statements">Statements</option>
-          <option value="financial-budgets">Financial & Budgets</option>
-          <option value="policies-violations">Policies & Violations</option>
-        </select>
+          <select formControlName="category" class="w-full p-2 border border-border rounded bg-background text-foreground">
+                    @for (cat of categories; track cat.value) {
+                      <option [value]="cat.value">{{ cat.label }}</option>
+                    }
+           </select>
       </div>
       <div>
         <label class="block text-sm font-semibold mb-1 text-foreground">Description:</label>

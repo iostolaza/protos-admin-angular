@@ -192,6 +192,7 @@ const schema = a.schema({
   Document: a.model({
     docId: a.id().required(),
     userCognitoId: a.string(),  // Optional: For personal docs; links to User.cognitoId
+    ownerIdentityId: a.string(),  // NEW: For protected file sharing (Cognito Identity ID)
     category: a.enum(['Audit', 'Budget', 'FinancialReports', 'Forms', 'Insurance', 'Certificates', 'Policies', 'Legal', 'Minutes', 'ReserveAnalysis', 'Statement', 'ViolationNotice']),  // From strategy
     subcategory: a.string(),  // e.g., 'Board' under Minutes
     fileName: a.string().required(),

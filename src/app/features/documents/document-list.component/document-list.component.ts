@@ -1,8 +1,8 @@
-// src/app/features/documents/document-list.component/document-list.component.ts (Added AngularSvgIconModule to imports)
+// src/app/features/documents/document-list.component/document-list.component.ts (Full edited script)
 
-import { Component, EventEmitter, Output } from '@angular/core';  // Added Output
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';  
+import { FormsModule } from '@angular/forms';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { DocumentService } from '../../../core/services/document.service';
@@ -38,8 +38,12 @@ export class DocumentListComponent {
   }
 
   onDelete(id: string, fileKey: string) {
-    this.documentService.deleteDocument(id, fileKey).subscribe(() => {
-      this.documents.update(docs => docs.filter(d => d.id !== id));
-    });
+    this.documentService.deleteDocument(id, fileKey)
+      .then(() => {
+        this.documents.update(docs => docs.filter(d => d.id !== id));
+      })
+      .catch((error: unknown) => {
+        console.error('Delete failed:', error);
+      });
   }
 }

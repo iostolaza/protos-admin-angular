@@ -1,74 +1,249 @@
-// src/app/core/services/document.service.ts (Full fix: Generate docId with crypto.randomUUID in create (custom IDs not auto-gen); add | null to returns; default permissions)
+// src/app/core/services/document.service.ts
 
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
-import type { Schema } from '../../../../amplify/data/resource';
-import { uploadData, getUrl, remove } from 'aws-amplify/storage';
-import { from, Observable, throwError } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { Schema } from '../../../../amplify/data/resource';  // Adjust path
+import { uploadData, getUrl, remove } from 'aws-amplify/storage';  // Removed invalid type StorageGetUrlInput (Gen2 uses inline object)
+import { fetchAuthSession } from 'aws-amplify/auth';
+import { Observable, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-@Injectable({ providedIn: 'root' })
+export interface Category {
+  value: string;
+  label: string;
+}
+
+export interface FilterOptions {
+  category?: string;
+  dateFrom?: string;  // yyyy-mm-dd
+  dateTo?: string;    // yyyy-mm-dd
+  searchTerm?: string;  // For fileName or description
+}
+
+@Injectable({
+  providedIn: 'root'
+})
 export class DocumentService {
-  private client = generateClient<Schema>();
+  private readonly client = generateClient<Schema>();
+  private readonly categories: ReadonlyArray<Category> = [
+    { value: 'Audit', label: 'Audit' },
+    { value: 'Budget', label: 'Budget' },
+    { value: 'FinancialReports', label: 'Financial Reports' },
+    { value: 'Forms', label: 'Forms' },
+    { value: 'Insurance', label: 'Insurance' },
+    { value: 'Certificates', label: 'Certificates' },
+    { value: 'Policies', label: 'Policies' },
+    { value: 'Legal', label: 'Legal' },
+    { value: 'Minutes', label: 'Minutes' },
+    { value: 'ReserveAnalysis', label: 'Reserve Analysis' },
+    { value: 'Statement', label: 'Statement' },
+    { value: 'ViolationNotice', label: 'Violation Notice' }
+  ];
 
-  // Create/Upload Document (CRUD: Create) - Generate docId (custom ID not auto-gen); defaults for requireds
-  uploadDocument(docData: Partial<Schema['Document']['type']>, file: File): Observable<Schema['Document']['type'] | null> {
-    return from(uploadData({
-      path: `protected/${docData.userCognitoId || 'shared'}/${file.name}`,
-      data: file,
-      options: { contentType: file.type }
-    }).result).pipe(
-      map(uploadResult => ({
-        docId: crypto.randomUUID(),  // Generate UUID client-side for custom identifier
-        ...docData,
-        fileKey: uploadResult.path,
+  constructor() {}
+
+  getCategories(): ReadonlyArray<Category> {
+    return this.categories;
+  }
+
+  async uploadDocument(file: File, category: string, description: string): Promise<Schema['Document']['type']> {
+    try {
+      const session = await fetchAuthSession();
+      const userId = session.userSub;  // cognitoId (sub)
+      const identityId = session.identityId;  // For ownerIdentityId
+
+      // Upload to protected (path prefix; no accessLevel)
+      const docPath = `documents/${crypto.randomUUID()}/${file.name}`;
+      const fullPath = `protected/${docPath}`;
+      const uploadResult = await uploadData({
+        data: file,
+        path: fullPath,  // Prefix for protected
+        options: { 
+          contentType: file.type
+        }
+      }).result;
+
+      const docId = crypto.randomUUID();  // Provide custom id
+      const { data: doc, errors } = await this.client.models.Document.create({
+        docId,
+        userCognitoId: userId,
+        ownerIdentityId: identityId,  // For sharing
+        category: category as any,  // Enum cast
         fileName: file.name,
-        fileType: file.type.split('/')[1].toUpperCase(),
-        uploadDate: new Date().toISOString(),
+        fileKey: fullPath,  // Store logical path 'protected/documents/uuid/name'
+        fileType: file.type,
+        description,
+        uploadDate: new Date().toISOString().split('T')[0],  // yyyy-mm-dd
+        status: 'active',
+        version: 1,
+        permissions: ['Admin', 'User'],  // Default; adjust per app logic
         size: file.size,
-        category: docData.category || 'Statement',
-        permissions: docData.permissions || []  // Required array default
-      })),
-      switchMap(meta => from(this.client.models.Document.create(meta))),
-      map(res => res.data),  // Extract data, can be null on error
-      catchError(err => throwError(() => new Error(`Upload failed: ${err.message}`)))
-    );
+        tags: [],  // Optional
+        // Other fields null/default
+      });
+
+      if (errors) throw new Error(errors[0].message);
+      return doc!;
+    } catch (error) {
+      console.error('Upload failed:', error);
+      throw error;
+    }
   }
 
-  // List Documents (CRUD: Read - with filters, e.g., by category using GSI)
-  listDocuments(filter?: { category?: string; userCognitoId?: string; limit?: number }): Observable<Schema['Document']['type'][]> {
-    return from(this.client.models.Document.list({
-      filter: filter?.category ? { category: { eq: filter.category } } : undefined,
-      limit: filter?.limit || 100
-    })).pipe(map(res => res.data || []));  // Default empty array if null
+  listDocuments(options: FilterOptions = {}): Observable<Schema['Document']['type'][]> {
+    const documents$ = new Subject<Schema['Document']['type'][]>();
+    const destroyer$ = new Subject<void>();
+
+    const filter = this.buildFilter(options);
+
+    const sub = this.client.models.Document.observeQuery({
+      filter,
+      selectionSet: [
+        'docId', 'category', 'subcategory', 'fileName', 'fileKey', 'fileType', 'description',
+        'effectiveDate', 'uploadDate', 'expiryDate', 'status', 'version', 'permissions',
+        'tags', 'size', 'createdAt', 'updatedAt', 'tenantId', 'ownerIdentityId'  // Added
+      ]
+    }).pipe(
+      takeUntil(destroyer$)
+    ).subscribe({
+      next: ({ items }) => {
+        // Client-side sort by uploadDate desc
+        const sorted = items.sort((a, b) => 
+          new Date(b.uploadDate ?? '').getTime() - new Date(a.uploadDate ?? '').getTime()
+        );
+        documents$.next(sorted);
+      },
+      error: (err) => documents$.error(err),
+      complete: () => documents$.complete()
+    });
+
+    // Cleanup
+    documents$.subscribe({ complete: () => sub.unsubscribe() });
+
+    return documents$.asObservable();
   }
 
-  // Get Single Document (CRUD: Read) - Use docId; allow null
-  getDocument(docId: string): Observable<Schema['Document']['type'] | null> {
-    return from(this.client.models.Document.get({ docId })).pipe(map(res => res.data));
+  private buildFilter(options: FilterOptions): any {
+    const filters: any[] = [];
+
+    if (options.category) {
+      filters.push({ category: { eq: options.category } });
+    }
+    if (options.dateFrom) {
+      filters.push({ uploadDate: { ge: options.dateFrom } });
+    }
+    if (options.dateTo) {
+      filters.push({ uploadDate: { le: options.dateTo } });
+    }
+    if (options.searchTerm) {
+      filters.push({
+        or: [
+          { fileName: { contains: options.searchTerm } },
+          { description: { contains: options.searchTerm } }
+        ]
+      });
+    }
+
+    return filters.length > 0 ? { and: filters } : undefined;
   }
 
-  // Get Presigned URL for View/Download
-  getDocumentUrl(fileKey: string): Observable<string> {
-    return from(getUrl({ path: fileKey, options: { expiresIn: 3600 } })).pipe(map(res => res.url.toString()));
+  async getDocument(docId: string): Promise<Schema['Document']['type'] | null> {
+    try {
+      const { data: doc, errors } = await this.client.models.Document.get({ docId });
+      if (errors) throw new Error(errors[0].message);
+      return doc;
+    } catch (error) {
+      console.error('Get document failed:', error);
+      throw error;
+    }
   }
 
-  // Update Document (CRUD: Update - e.g., status or metadata) - Use docId; allow null
-  updateDocument(docId: string, updates: Partial<Schema['Document']['type']>): Observable<Schema['Document']['type'] | null> {
-    return from(this.client.models.Document.update({ docId, ...updates })).pipe(map(res => res.data));
+  async getDocumentUrl(fileKey: string, ownerIdentityId?: string | null): Promise<string> {
+    try {
+      let path = fileKey;
+      if (ownerIdentityId) {
+        const session = await fetchAuthSession();
+        if (ownerIdentityId !== session.identityId) {
+          // Insert owner's identityId for shared protected files
+          path = path.replace('protected/', `protected/${ownerIdentityId}/`);
+        }
+      }
+      const { url } = await getUrl({
+        path,
+        options: { expiresIn: 3600 }  // 1 hour signed URL
+      });
+      return url.toString();
+    } catch (error) {
+      console.error('Get URL failed:', error);
+      throw error;
+    }
   }
 
-  // Delete Document (CRUD: Delete - also remove from S3) - Use docId
-  deleteDocument(docId: string, fileKey: string): Observable<void> {
-    return from(this.client.models.Document.delete({ docId })).pipe(
-      switchMap(() => from(remove({ path: fileKey }))),
-      map(() => undefined),
-      catchError(err => throwError(() => new Error(`Delete failed: ${err.message}`)))
-    );
+  async updateDocument(docId: string, updates: Partial<Schema['Document']['type']>, newFile?: File): Promise<Schema['Document']['type']> {
+    try {
+      let fileKey = updates.fileKey;
+      if (newFile) {
+        // Upload new file, delete old if exists
+        const oldDoc = await this.getDocument(docId);
+        if (oldDoc?.fileKey) {
+          await this.deleteFile(oldDoc.fileKey, oldDoc.ownerIdentityId);
+        }
+        const session = await fetchAuthSession();
+        const identityId = session.identityId;
+        const docPath = `documents/${crypto.randomUUID()}/${newFile.name}`;
+        const fullPath = `protected/${docPath}`;
+        const uploadResult = await uploadData({
+          data: newFile,
+          path: fullPath,
+          options: { 
+            contentType: newFile.type
+          }
+        }).result;
+        fileKey = fullPath;
+        updates = {
+          ...updates,
+          ownerIdentityId: identityId,  // Update if new file
+          fileName: newFile.name,
+          fileType: newFile.type,
+          size: newFile.size,
+          uploadDate: new Date().toISOString().split('T')[0]
+        };
+      }
+
+      const { data: doc, errors } = await this.client.models.Document.update({
+        docId,
+        ...updates,
+        fileKey,  // Updated if new file
+        updatedAt: new Date().toISOString()
+      });
+
+      if (errors) throw new Error(errors[0].message);
+      return doc!;
+    } catch (error) {
+      console.error('Update failed:', error);
+      throw error;
+    }
   }
 
-  // Subscription for Real-Time (e.g., new uploads)
-  subscribeNewDocuments(): Observable<Schema['Document']['type'][]> {
-    return this.client.models.Document.observeQuery().pipe(map(snapshot => snapshot.items));
+  async deleteDocument(docId: string, fileKey: string, ownerIdentityId?: string | null): Promise<void> {
+    try {
+      const { errors } = await this.client.models.Document.delete({ docId });
+      if (errors) throw new Error(errors[0].message);
+      await this.deleteFile(fileKey, ownerIdentityId);
+    } catch (error) {
+      console.error('Delete failed:', error);
+      throw error;
+    }
+  }
+
+  private async deleteFile(fileKey: string, ownerIdentityId?: string | null): Promise<void> {
+    let path = fileKey;
+    if (ownerIdentityId) {
+      const session = await fetchAuthSession();
+      if (ownerIdentityId !== session.identityId) {
+        path = path.replace('protected/', `protected/${ownerIdentityId}/`);
+      }
+    }
+    await remove({ path });
   }
 }
