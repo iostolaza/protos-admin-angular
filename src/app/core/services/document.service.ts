@@ -1,4 +1,4 @@
-// src/app/core/services/document.service.ts
+// src/app/core/services/document.service.ts (Full edited script)
 
 import { Injectable } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
@@ -89,7 +89,7 @@ export class DocumentService {
       throw error;
     }
   }
-  
+
   listDocuments(options: FilterOptions = {}): Observable<Schema['Document']['type'][]> {
     const documents$ = new Subject<Schema['Document']['type'][]>();
     const destroyer$ = new Subject<void>();
@@ -108,7 +108,7 @@ export class DocumentService {
     ).subscribe({
       next: ({ items }) => {
         // Client-side sort by uploadDate desc
-        const sorted = items.sort((a, b) => 
+        const sorted = items.sort((a, b) =>
           new Date(b.uploadDate ?? '').getTime() - new Date(a.uploadDate ?? '').getTime()
         );
         documents$.next(sorted);
@@ -162,11 +162,7 @@ export class DocumentService {
     try {
       let path = fileKey;
       if (ownerIdentityId) {
-        const session = await fetchAuthSession();
-        if (ownerIdentityId !== session.identityId) {
-          // Insert owner's identityId for shared protected files
-          path = path.replace('protected/', `protected/${ownerIdentityId}/`);
-        }
+        path = path.replace('protected/', `protected/${ownerIdentityId}/`);
       }
       const { url } = await getUrl({
         path,
@@ -195,7 +191,7 @@ export class DocumentService {
         const uploadResult = await uploadData({
           data: newFile,
           path: fullPath,
-          options: { 
+          options: {
             contentType: newFile.type
           }
         }).result;
@@ -239,10 +235,7 @@ export class DocumentService {
   private async deleteFile(fileKey: string, ownerIdentityId?: string | null): Promise<void> {
     let path = fileKey;
     if (ownerIdentityId) {
-      const session = await fetchAuthSession();
-      if (ownerIdentityId !== session.identityId) {
-        path = path.replace('protected/', `protected/${ownerIdentityId}/`);
-      }
+      path = path.replace('protected/', `protected/${ownerIdentityId}/`);
     }
     await remove({ path });
   }

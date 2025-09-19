@@ -4,38 +4,41 @@
   <h3 class="text-md font-bold text-foreground mb-4">Documents List</h3>
   <!-- Search and Filter -->
   <div class="mb-4 flex gap-4">
-    <input [(ngModel)]="searchTerm" placeholder="Search by name/description" class="p-2 border border-border rounded bg-background text-foreground flex-1" />
-    <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="p-2 border border-border rounded bg-background text-foreground">
+    <input [(ngModel)]="searchTerm" placeholder="Search by name/description" class="flex-1 p-2 border border-border rounded bg-background text-foreground" />
+    <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="flex-1 p-2 border border-border rounded bg-background text-foreground">
       <option value="">All Categories</option>
-      <option value="statements">Statements</option>
-      <option value="financial-budgets">Financial & Budgets</option>
-      <option value="policies-violations">Policies & Violations</option>
+      @for (cat of categories(); track cat.value) {
+        <option [value]="cat.value">{{ cat.label }}</option>
+      }
     </select>
   </div>
   <div class="relative overflow-x-auto">
     <table class="w-full table-auto">
       <thead class="text-xs uppercase text-muted-foreground">
         <tr>
-          <th class="py-3 text-left">File Name</th>
-          <th class="py-3 text-left">Category</th>
-          <th class="py-3 text-left">Description</th>
           <th class="py-3 text-center">Upload Date</th>
+          <th class="py-3 text-left">File Name</th>
+          <th class="py-3 text-left">Description</th>
           <th class="py-3 text-center">Type</th>
+          <th class="py-3 text-left">Category</th>
           <th class="py-3 text-right">Actions</th>
         </tr>
       </thead>
       <tbody>
         @for (doc of filteredDocuments(); track doc.id) {
           <tr class="border-b border-dashed border-border hover:bg-card">
-            <td class="py-3 text-left text-foreground">{{ doc.fileName | slice:0:60 }}...</td>
-            <td class="py-3 text-left text-foreground">{{ doc.category }}</td>
-            <td class="py-3 text-left text-foreground">{{ doc.description | slice:0:60 }}...</td>
             <td class="py-3 text-center text-foreground">{{ doc.uploadDate | date:'shortDate' }}</td>
+            <td class="py-3 text-left text-foreground">{{ doc.fileName | slice:0:60 }}...</td>
+            <td class="py-3 text-left text-foreground">{{ doc.description | slice:0:60 }}...</td>
             <td class="py-3 text-center text-foreground">{{ doc.fileType }}</td>
+            <td class="py-3 text-left text-foreground">{{ doc.category }}</td>
             <td class="py-3 text-right flex justify-end gap-2 pr-4">
-              <button (click)="onDelete(doc.id, doc.fileKey)" class="rounded-full bg-transparent p-1 hover:bg-destructive/10">
-                <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+              <button (click)="onView(doc)" class="rounded-full bg-transparent p-1 hover:bg-accent/10">
+                <svg-icon [src]="getIconPath('eye')" svgClass="h-4 w-4 text-accent"></svg-icon>
               </button>
+              <!-- <button (click)="onDelete(doc.id, doc.fileKey, doc.ownerIdentityId)" class="rounded-full bg-transparent p-1 hover:bg-destructive/10">
+                <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+              </button> -->
             </td>
           </tr>
         } @empty {
@@ -46,4 +49,17 @@
       </tbody>
     </table>
   </div>
+  @if (showModal()) {
+    <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-card w-full max-w-4xl h-[80vh] rounded-lg shadow-lg relative p-4">
+        <button (click)="showModal.set(false)" class="absolute top-2 right-2 rounded-full bg-transparent p-1 hover:bg-destructive/10">
+          <svg-icon [src]="getIconPath('x-mark')" svgClass="h-4 w-4 text-destructive"></svg-icon>
+        </button>
+        <iframe [src]="safeUrl()" class="w-full h-[90%]" title="Document Viewer"></iframe>
+        <!-- <div class="flex justify-end mt-2">
+          <a [href]="selectedDocUrl()" [attr.download]="selectedDoc()?.fileName" target="_blank" class="text-primary hover:underline">Download</a>
+        </div> -->
+      </div>
+    </div>
+  }
 </div>
