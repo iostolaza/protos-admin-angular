@@ -4,6 +4,7 @@ import { Component, EventEmitter, Output } from '@angular/core';  // Added Outpu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';  
 import { AngularSvgIconModule } from 'angular-svg-icon';
+import { getIconPath } from '../../../core/services/icon-preloader.service';
 import { DocumentService } from '../../../core/services/document.service';
 import { signal, computed } from '@angular/core';
 
@@ -18,6 +19,8 @@ export class DocumentListComponent {
   documents = signal<any[]>([]);
   searchTerm = signal<string>('');
   selectedCategory = signal<string>('');
+
+  getIconPath = getIconPath;
 
   filteredDocuments = computed(() => 
     this.documents().filter(d => 
