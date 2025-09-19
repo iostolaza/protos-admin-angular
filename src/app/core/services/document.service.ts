@@ -49,47 +49,47 @@ export class DocumentService {
   async uploadDocument(file: File, category: string, description: string): Promise<Schema['Document']['type']> {
     try {
       const session = await fetchAuthSession();
-      const userId = session.userSub;  // cognitoId (sub)
-      const identityId = session.identityId;  // For ownerIdentityId
+      if (!session.credentials || !session.identityId) {
+        throw new Error('User not authenticated or missing identityId');
+      }
+      const userId = session.userSub;
+      const identityId = session.identityId;
 
-      // Upload to protected (path prefix; no accessLevel)
-      const docPath = `documents/${crypto.randomUUID()}/${file.name}`;
-      const fullPath = `protected/${docPath}`;
+      const docPath = `documents/${crypto.randomUUID()}/${file.name.replace(/\s/g, '%20')}`;
+      const fullPath = `protected/${identityId}/${docPath}`;
       const uploadResult = await uploadData({
         data: file,
-        path: fullPath,  // Prefix for protected
-        options: { 
-          contentType: file.type
-        }
+        path: fullPath,
+        options: { contentType: file.type }
       }).result;
 
-      const docId = crypto.randomUUID();  // Provide custom id
+      const docId = crypto.randomUUID();
       const { data: doc, errors } = await this.client.models.Document.create({
         docId,
         userCognitoId: userId,
-        ownerIdentityId: identityId,  // For sharing
-        category: category as any,  // Enum cast
+        ownerIdentityId: identityId,
+        category: category as any,
         fileName: file.name,
-        fileKey: fullPath,  // Store logical path 'protected/documents/uuid/name'
+        fileKey: `protected/${docPath}`,
         fileType: file.type,
         description,
-        uploadDate: new Date().toISOString().split('T')[0],  // yyyy-mm-dd
+        uploadDate: new Date().toISOString().split('T')[0],
         status: 'active',
         version: 1,
-        permissions: ['Admin', 'User'],  // Default; adjust per app logic
+        permissions: ['Admin', 'User'],
         size: file.size,
-        tags: [],  // Optional
-        // Other fields null/default
+        tags: [],
       });
 
       if (errors) throw new Error(errors[0].message);
+      console.log('Upload success:', doc);  // Debug log
       return doc!;
     } catch (error) {
       console.error('Upload failed:', error);
       throw error;
     }
   }
-
+  
   listDocuments(options: FilterOptions = {}): Observable<Schema['Document']['type'][]> {
     const documents$ = new Subject<Schema['Document']['type'][]>();
     const destroyer$ = new Subject<void>();
@@ -190,8 +190,8 @@ export class DocumentService {
         }
         const session = await fetchAuthSession();
         const identityId = session.identityId;
-        const docPath = `documents/${crypto.randomUUID()}/${newFile.name}`;
-        const fullPath = `protected/${docPath}`;
+        const docPath = `documents/${crypto.randomUUID()}/${newFile.name.replace(/\s/g, '%20')}`;
+        const fullPath = `protected/${identityId}/${docPath}`;
         const uploadResult = await uploadData({
           data: newFile,
           path: fullPath,
@@ -199,7 +199,7 @@ export class DocumentService {
             contentType: newFile.type
           }
         }).result;
-        fileKey = fullPath;
+        fileKey = `protected/${docPath}`;
         updates = {
           ...updates,
           ownerIdentityId: identityId,  // Update if new file
