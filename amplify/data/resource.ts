@@ -1,5 +1,3 @@
-// amplify/backend/data/resource.ts (UPDATED)
-
 import { a, defineData, type ClientSchema } from '@aws-amplify/backend';
 import { postConfirmation } from '../auth/post-confirmation/resource';
 
@@ -45,11 +43,12 @@ const schema = a.schema({
     comments: a.hasMany('Comment', 'userCognitoId'),  
     notifications: a.hasMany('Notification', 'userCognitoId'),  
     channels: a.hasMany('UserChannel', 'userCognitoId'),
+    messagesSent: a.hasMany('Message', 'senderCognitoId'),  // Added inverse
   })
     .identifier(['cognitoId'])
     .secondaryIndexes(index => [index('email')])
     .authorization(allow => [
-      allow.ownerDefinedIn('cognitoId').identityClaim('sub').to(['read', 'update', 'delete']),  // Map to Cognito sub
+      allow.ownerDefinedIn('cognitoId').identityClaim('sub').to(['read', 'update', 'delete']),  
       allow.authenticated().to(['create', 'read']),
     ]),
 
@@ -71,23 +70,23 @@ const schema = a.schema({
   })
     .identifier(['userCognitoId', 'friendCognitoId'])  
     .secondaryIndexes(index => [index('userCognitoId')])
-    .authorization(allow => [allow.ownerDefinedIn('userCognitoId').identityClaim('sub')]),
+    .authorization(allow => [allow.ownerDefinedIn('userCognitoId').identityClaim('sub').to(['create', 'read', 'update', 'delete'])]),  
 
   Channel: a.model({
     name: a.string(),
-    creatorCognitoId: a.string().required(),  // NEW: For owner auth
-    type: a.enum(['direct', 'group']),  // NEW: Differentiate 1:1 vs group
-    directKey: a.string(),  // NEW: Deterministic key for direct (e.g., 'userA_userB' sorted)
+    creatorCognitoId: a.string().required(),  
+    type: a.enum(['direct', 'group']),  
+    directKey: a.string(),  
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
-    members: a.hasMany('UserChannel', 'channelId'),  // NEW: Relation
-    messages: a.hasMany('Message', 'channelId'),  // NEW: Relation
+    members: a.hasMany('UserChannel', 'channelId'),  
+    messages: a.hasMany('Message', 'channelId'),  
   })
-    .secondaryIndexes(index => [index('directKey')])  // NEW: For quick 1:1 lookup
+    .secondaryIndexes(index => [index('directKey')])  
     .authorization(allow => [
       allow.ownerDefinedIn('creatorCognitoId').identityClaim('sub').to(['update', 'delete']),
       allow.authenticated().to(['create', 'read']),
-      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  // Added group override
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  
     ]),
 
   UserChannel: a.model({
@@ -95,15 +94,15 @@ const schema = a.schema({
     channelId: a.id().required(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
-    user: a.belongsTo('User', 'userCognitoId'),  // Added
-    channel: a.belongsTo('Channel', 'channelId'),  // Added
+    user: a.belongsTo('User', 'userCognitoId'),  
+    channel: a.belongsTo('Channel', 'channelId'),  
   })
     .identifier(['userCognitoId', 'channelId'])  
     .secondaryIndexes(index => [index('userCognitoId'), index('channelId')])
     .authorization(allow => [
-      allow.authenticated().to(['create', 'read']),  // Allow creating for others in direct chats
+      allow.authenticated().to(['create', 'read']),  
       allow.ownerDefinedIn('userCognitoId').identityClaim('sub').to(['update', 'delete']),
-      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  // Group override
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  
     ]),
 
   Message: a.model({
@@ -115,14 +114,14 @@ const schema = a.schema({
     readBy: a.string().array(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
-    sender: a.belongsTo('User', 'senderCognitoId'),  // NEW: Relation
-    channel: a.belongsTo('Channel', 'channelId'),  // NEW: Relation
+    sender: a.belongsTo('User', 'senderCognitoId'),  
+    channel: a.belongsTo('Channel', 'channelId'),  
   })
     .secondaryIndexes(index => [index('channelId').sortKeys(['timestamp'])])
     .authorization(allow => [
       allow.authenticated().to(['create', 'read']),
       allow.ownerDefinedIn('senderCognitoId').identityClaim('sub').to(['update', 'delete']),
-      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  // Group override
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  
     ]),
 
   Team: a.model({
@@ -133,11 +132,11 @@ const schema = a.schema({
     memberCount: a.integer().default(0),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
-    teamLead: a.belongsTo('User', 'teamLeadCognitoId'),  // Added back-reference
+    teamLead: a.belongsTo('User', 'teamLeadCognitoId'),  
     members: a.hasMany('TeamMember', 'teamId'),
-    tickets: a.hasMany('Ticket', 'teamId'),  // Added for consistency
+    tickets: a.hasMany('Ticket', 'teamId'),  
   }).authorization(allow => [
-      allow.ownerDefinedIn('teamLeadCognitoId').identityClaim('sub').to(['read', 'update', 'delete']),  // Fixed owner auth
+      allow.ownerDefinedIn('teamLeadCognitoId').identityClaim('sub').to(['read', 'update', 'delete']),  
       allow.group('Admin').to(['create', 'read', 'update', 'delete']),
       allow.group('team_lead').to(['create', 'read']),
       allow.authenticated().to(['read']),
