@@ -1,18 +1,15 @@
-
-// src/app/core/services/message.service.ts
-
+// src/app/core/services/message.service.ts (Full edited script)
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
 import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
 import { uploadData, getUrl } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
-import { Observable } from 'rxjs';
+import { Observable, from, Subject, Subscription } from 'rxjs';
 import { tap, takeUntil, debounceTime } from 'rxjs/operators';
-import { Subject } from 'rxjs';
-import { Hub } from 'aws-amplify/utils'; 
+import { Hub } from 'aws-amplify/utils';
 
-interface ChatItem { id: string; name: string; snippet?: string; avatar?: string; timestamp?: Date; }
-interface Message { id: string; text: string; sender: string; senderAvatar?: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }  // Added id for dedupe
+interface ChatItem { id: string; name: string; snippet: string; avatar: string; timestamp?: Date; otherUserId: string; }
+interface Message { id: string; text: string; sender: string; senderAvatar?: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
 
 @Injectable({
   providedIn: 'root',
@@ -26,6 +23,7 @@ export class MessageService {
   private userCache = new Map<string, Schema['User']['type']>();
   private destroy$ = new Subject<void>();
   private reloadSubject = new Subject<void>();
+  private subscriptions: Subscription[] = [];
 
   constructor() {
     this.setupRealTimeSubscriptions();
@@ -56,66 +54,42 @@ export class MessageService {
 
   async getCurrentUserId(): Promise<string> {
     const session = await fetchAuthSession();
-    console.log('Auth session:', session);
     if (!session.tokens) {
       throw new Error('User not authenticated');
     }
     const { userId } = await getCurrentUser();
-    console.log('Current user ID:', userId);
     return userId;
   }
 
-  async getUserChannels(userCognitoId: string): Promise<Schema['Channel']['type'][]> {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
-    const { data: userChannels, errors } = await this.client.models.UserChannel.listUserChannelByUserCognitoId({ userCognitoId });
-    console.log('User channels response:', { userChannels, errors });
-    this.handleErrors(errors, 'List user channels failed');
-    const channelIds = userChannels.map((uc: Schema['UserChannel']['type']) => uc.channelId);
-    const channels: Schema['Channel']['type'][] = [];
-    for (const id of channelIds) {
-      const { data, errors: getErrors } = await this.client.models.Channel.get({ id });
-      console.log('Channel get response:', { id, data, getErrors });
-      if (getErrors?.length) {
-        console.warn(`Get channel failed for ID ${id}: ${getErrors.map(e => e.message).join(', ')}`);
-        continue;
-      }
-      if (data && data.name) {
-        channels.push(data);
-      }
-    }
-    return channels;
+  getUserChannels(userCognitoId: string): Observable<Schema['UserChannel']['type'][]> {
+    const userChannels$ = new Subject<Schema['UserChannel']['type'][]>();
+    const destroyer$ = new Subject<void>();
+
+    this.client.models.UserChannel.observeQuery({
+      filter: { userCognitoId: { eq: userCognitoId } }
+    }).pipe(
+      takeUntil(destroyer$)
+    ).subscribe({
+      next: ({ items }) => userChannels$.next(items),
+      error: (err) => userChannels$.error(err),
+      complete: () => userChannels$.complete()
+    });
+
+    userChannels$.subscribe({ complete: () => destroyer$.next() });
+    return userChannels$.asObservable();
   }
 
   async getOtherUserId(channelId: string, currentUserCognitoId: string): Promise<string | null> {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const { data: userChannels, errors } = await this.client.models.UserChannel.listUserChannelByChannelId({ channelId });
-    console.log('Other user channels response:', { userChannels, errors });
     this.handleErrors(errors, 'List user channels failed');
-    const userCognitoIds = userChannels.map((uc: Schema['UserChannel']['type']) => uc.userCognitoId);
-    const otherId = userCognitoIds.find((id: string) => id !== currentUserCognitoId);
-    return otherId || null;
+    const userCognitoIds = userChannels.map(uc => uc.userCognitoId);
+    return userCognitoIds.find(id => id !== currentUserCognitoId) || null;
   }
 
   async getUserById(userCognitoId: string): Promise<Schema['User']['type']> {
-    if (!userCognitoId) {
-      throw new Error('Invalid user ID: cannot be empty');
-    }
+    if (!userCognitoId) throw new Error('Invalid user ID');
     if (this.userCache.has(userCognitoId)) return this.userCache.get(userCognitoId)!;
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const { data, errors } = await this.client.models.User.get({ cognitoId: userCognitoId });
-    console.log('User by ID response:', { userCognitoId, data, errors });
     this.handleErrors(errors, 'Get user failed');
     if (!data) throw new Error('User not found');
     this.userCache.set(userCognitoId, data);
@@ -123,52 +97,46 @@ export class MessageService {
   }
 
   async deleteMessage(id: string): Promise<void> {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const { errors } = await this.client.models.Message.delete({ id });
-    console.log('Delete message response:', { id, errors });
     this.handleErrors(errors, 'Delete message failed');
   }
 
   async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const { data, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp({ channelId }, { sortDirection: 'DESC', limit: 1 });
-    console.log('Last message response:', { channelId, data, errors });
     this.handleErrors(errors, 'List messages failed');
-    return data?.[0] ?? null;
+    return data[0] ?? null;
   }
 
   async loadRecentChats() {
     try {
       const userCognitoId = await this.getCurrentUserId();
-      const channels = await this.getUserChannels(userCognitoId);
-      const chats: ChatItem[] = [];
-      for (const channel of channels) {
-        const otherUserCognitoId = await this.getOtherUserId(channel.id, userCognitoId);
-        if (!otherUserCognitoId) {
-          console.warn(`Skipping invalid channel ${channel.id}: no other user found`);
-          continue;
-        }
-        const otherUser = await this.getUserById(otherUserCognitoId);
-        const lastMsg = await this.getLastMessage(channel.id);
-        chats.push({
-          id: channel.id,
-          name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`,
-          snippet: lastMsg?.content ?? '',
-          avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
-          timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
-        });
-      }
-      chats.sort((a: ChatItem, b: ChatItem) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
-      console.log('Recent chats loaded:', chats);
-      this.recentChats.set(chats);
+      this.getUserChannels(userCognitoId).pipe(takeUntil(this.destroy$)).subscribe(userChannels => {
+        Promise.all(userChannels.map(async uc => {
+          const { data: channel, errors } = await this.client.models.Channel.get({ id: uc.channelId });
+          this.handleErrors(errors);
+          if (!channel) return null;
+          return channel;
+        })).then(async channelResults => {
+          const channels = channelResults.filter((c): c is NonNullable<typeof c> => !!c);
+          const chats = await Promise.all(channels.map(async channel => {
+            const otherUserCognitoId = await this.getOtherUserId(channel.id, userCognitoId);
+            if (!otherUserCognitoId) return null;
+            const otherUser = await this.getUserById(otherUserCognitoId);
+            const lastMsg = await this.getLastMessage(channel.id);
+            return {
+              id: channel.id,
+              name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim(),
+              snippet: lastMsg?.content ?? '',
+              avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
+              timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined,
+              otherUserId: otherUserCognitoId
+            };
+          }));
+          const filteredChats = chats.filter((c) => !!c) as ChatItem[];
+          filteredChats.sort((a, b) => (b?.timestamp?.getTime() || 0) - (a?.timestamp?.getTime() || 0));
+          this.recentChats.set(filteredChats);
+        }).catch(error => console.error('Process channels error:', error));
+      });
     } catch (error) {
       console.error('Load recent chats error:', error);
       this.recentChats.set([]);
@@ -179,21 +147,18 @@ export class MessageService {
     try {
       const messages = await this.fetchMessages(channelId);
       const currentUserCognitoId = await this.getCurrentUserId();
-      const mapped: Message[] = await Promise.all(
-        messages.map(async (msg) => {
-          const sender = await this.getUserById(msg.senderCognitoId);
-          return {
-            id: msg.id,
-            text: msg.content ?? '',
-            sender: `${sender.firstName || ''} ${sender.lastName || ''}`,  // Ensure name
-            senderAvatar: await this.getAvatarUrl(sender.profileImageKey || ''),
-            isSelf: msg.senderCognitoId === currentUserCognitoId,
-            timestamp: new Date(msg.timestamp),
-            read: msg.readBy?.includes(currentUserCognitoId),
-          };
-        })
-      );
-      console.log('Messages loaded:', mapped);
+      const mapped = await Promise.all(messages.map(async msg => {
+        const sender = await this.getUserById(msg.senderCognitoId);
+        return {
+          id: msg.id,
+          text: msg.content ?? '',
+          sender: `${sender.firstName || ''} ${sender.lastName || ''}`,
+          senderAvatar: await this.getAvatarUrl(sender.profileImageKey || ''),
+          isSelf: msg.senderCognitoId === currentUserCognitoId,
+          timestamp: new Date(msg.timestamp),
+          read: msg.readBy?.includes(currentUserCognitoId) ?? false,
+        };
+      }));
       this.messages.set(mapped);
     } catch (error) {
       console.error('Load messages error:', error);
@@ -204,27 +169,26 @@ export class MessageService {
   async searchChats(query: string): Promise<ChatItem[]> {
     try {
       const userCognitoId = await this.getCurrentUserId();
-      const channels = await this.getUserChannels(userCognitoId);
-      const chats: ChatItem[] = [];
-      for (const channel of channels) {
-        const otherUserCognitoId = await this.getOtherUserId(channel.id, userCognitoId);
-        if (!otherUserCognitoId) continue;
+      const userChannels = await this.getUserChannels(userCognitoId).pipe(takeUntil(this.destroy$)).toPromise() ?? [];
+      const chats = await Promise.all(userChannels.map(async uc => {
+        const otherUserCognitoId = await this.getOtherUserId(uc.channelId, userCognitoId);
+        if (!otherUserCognitoId) return null;
         const otherUser = await this.getUserById(otherUserCognitoId);
-        const lastMsg = await this.getLastMessage(channel.id);
-        chats.push({
-          id: channel.id,
-          name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`,  // Ensure name
+        const lastMsg = await this.getLastMessage(uc.channelId);
+        return {
+          id: uc.channelId,
+          name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim(),
           snippet: lastMsg?.content ?? '',
           avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
-          timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined
-        });
-      }
-      const filteredChats = chats.filter(chat =>
-        chat.name.toLowerCase().includes(query.toLowerCase()) ||
-        (chat.snippet && chat.snippet.toLowerCase().includes(query.toLowerCase()))
+          timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined,
+          otherUserId: otherUserCognitoId
+        };
+      }));
+      const filteredChats = chats.filter((c) => !!c) as ChatItem[];
+      filteredChats.sort((a, b) => (b?.timestamp?.getTime() || 0) - (a?.timestamp?.getTime() || 0));
+      return filteredChats.filter(chat => 
+        chat.name.toLowerCase().includes(query.toLowerCase()) || chat.snippet.toLowerCase().includes(query.toLowerCase())
       );
-      console.log('Search chats result:', filteredChats);
-      return filteredChats.sort((a: ChatItem, b: ChatItem) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
     } catch (error) {
       console.error('Search chats error:', error);
       return [];
@@ -232,123 +196,94 @@ export class MessageService {
   }
 
   async getContacts(): Promise<Schema['User']['type'][]> {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const currentUserCognitoId = await this.getCurrentUserId();
     const { data, errors } = await this.client.models.User.list();
-    console.log('Get contacts response:', { data, errors });
     this.handleErrors(errors, 'List users failed');
     return data.filter(user => user.cognitoId !== currentUserCognitoId);
   }
 
   async getOrCreateChannel(contactCognitoId: string): Promise<Schema['Channel']['type']> {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const currentUserCognitoId = await this.getCurrentUserId();
-    // Validate
     try {
       await this.getUserById(contactCognitoId);
-    } catch (err) {
-      throw new Error('Contact ID invalid or not found');
+    } catch {
+      throw new Error('Contact not found');
     }
     const { data: userChannels, errors } = await this.client.models.UserChannel.list({
       filter: { or: [{ userCognitoId: { eq: currentUserCognitoId } }, { userCognitoId: { eq: contactCognitoId } }] },
     });
-    console.log('User channels for channel creation:', { userChannels, errors });
-    this.handleErrors(errors, 'List user channels failed');
-    const potentialChannel = userChannels.reduce((acc: Record<string, number>, uc: Schema['UserChannel']['type']) => {
+    this.handleErrors(errors);
+    const potentialChannels = userChannels.reduce((acc: Record<string, number>, uc) => {
       acc[uc.channelId] = (acc[uc.channelId] || 0) + 1;
       return acc;
     }, {});
-    const potentialChannelId = Object.keys(potentialChannel).find(id => potentialChannel[id] === 2);
+    const potentialChannelId = Object.keys(potentialChannels).find(id => potentialChannels[id] === 2);
     if (potentialChannelId) {
       const { data, errors: getErrors } = await this.client.models.Channel.get({ id: potentialChannelId });
-      console.log('Existing channel response:', { potentialChannelId, data, getErrors });
-      this.handleErrors(getErrors, 'Get channel failed');
+      this.handleErrors(getErrors);
       if (!data) throw new Error('Channel not found');
       return data;
     }
-    // Create with retry
     let attempts = 3;
     while (attempts > 0) {
       try {
         const now = new Date().toISOString();
-        const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({ name: `Chat with ${contactCognitoId}`, createdAt: now, updatedAt: now });
-        console.log('Create channel response:', { newChannel, createErrors });
-        this.handleErrors(createErrors, 'Create channel failed');
+        const directKey = [currentUserCognitoId, contactCognitoId].sort().join('_');
+        const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({
+          name: `Chat with ${contactCognitoId}`,
+          creatorCognitoId: currentUserCognitoId,
+          type: 'direct',
+          directKey,
+          createdAt: now,
+          updatedAt: now
+        });
+        this.handleErrors(createErrors);
         if (!newChannel) throw new Error('Failed to create channel');
         const { errors: senderErr } = await this.client.models.UserChannel.create({ userCognitoId: currentUserCognitoId, channelId: newChannel.id, createdAt: now, updatedAt: now });
-        this.handleErrors(senderErr, 'Create sender UserChannel failed');
+        this.handleErrors(senderErr);
         const { errors: receiverErr } = await this.client.models.UserChannel.create({ userCognitoId: contactCognitoId, channelId: newChannel.id, createdAt: now, updatedAt: now });
-        this.handleErrors(receiverErr, 'Create receiver UserChannel failed');
-        // Verify
+        this.handleErrors(receiverErr);
         const { data: verify } = await this.client.models.UserChannel.list({ filter: { channelId: { eq: newChannel.id } } });
         if (verify.length === 2) {
-          await this.client.models.Channel.update({ id: newChannel.id, name: newChannel.name, updatedAt: new Date().toISOString() }); // Touch
+          await this.client.models.Channel.update({ id: newChannel.id, updatedAt: new Date().toISOString() });
           return newChannel;
-        } else {
-          throw new Error('Verification failed');
         }
+        throw new Error('Verification failed');
       } catch (err) {
-        console.error('Channel create attempt failed:', err);
         attempts--;
         if (attempts === 0) throw err;
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
     throw new Error('Failed after retries');
   }
 
   async fetchMessages(channelId: string): Promise<Schema['Message']['type'][]> {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const currentUserCognitoId = await this.getCurrentUserId();
     const { data: messages, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp({ channelId }, { sortDirection: 'ASC' });
-    console.log('Fetch messages response:', { channelId, messages, errors });
-    this.handleErrors(errors, 'List messages failed');
+    this.handleErrors(errors);
     for (const msg of messages) {
       if (!msg.readBy?.includes(currentUserCognitoId)) {
-        const { errors: updateErrors } = await this.client.models.Message.update({
-          id: msg.id,
-          readBy: [...(msg.readBy || []), currentUserCognitoId],
-          updatedAt: new Date().toISOString(),
-        });
-        console.log('Update message readBy response:', { id: msg.id, updateErrors });
-        this.handleErrors(updateErrors, 'Update message failed');
+        const readBy = [...(msg.readBy || []), currentUserCognitoId];
+        const { errors: updateErrors } = await this.client.models.Message.update({ id: msg.id, readBy, updatedAt: new Date().toISOString() });
+        this.handleErrors(updateErrors);
       }
     }
     return messages;
   }
 
-  subscribeMessages(channelId: string | null, onNewMessage: (msg: Schema['Message']['type']) => void): Observable<{ items: Schema['Message']['type'][] }> {
+  subscribeMessages(channelId: string | null): Observable<{ items: Schema['Message']['type'][], isSynced: boolean }> {
     const filter = channelId ? { channelId: { eq: channelId } } : undefined;
     return this.client.models.Message.observeQuery({ filter }).pipe(
-      tap((snapshot: { items: Schema['Message']['type'][], isSynced: boolean }) => {
-        if (channelId) {
-          // For specific channel, set full messages from snapshot to avoid dups
-          this.updateMessagesFromSnapshot(snapshot.items);
-        } else {
-          // Global: only trigger recent chats reload on new
-          if (snapshot.items.length > this.messages().length) {
-            this.reloadSubject.next();
-          }
-        }
+      tap(snapshot => {
+        if (channelId) this.updateMessagesFromSnapshot(snapshot.items);
       })
     );
   }
 
   private async updateMessagesFromSnapshot(items: Schema['Message']['type'][]) {
     const currentUserCognitoId = await this.getCurrentUserId();
-    const mapped = await Promise.all(items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map(async (msg) => {
+    const mapped = await Promise.all(items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map(async msg => {
       const sender = await this.getUserById(msg.senderCognitoId);
       return {
         id: msg.id,
@@ -357,21 +292,16 @@ export class MessageService {
         senderAvatar: await this.getAvatarUrl(sender.profileImageKey || ''),
         isSelf: msg.senderCognitoId === currentUserCognitoId,
         timestamp: new Date(msg.timestamp),
-        read: msg.readBy?.includes(currentUserCognitoId),
+        read: msg.readBy?.includes(currentUserCognitoId) ?? false,
       };
     }));
     this.messages.set(mapped);
   }
 
-  async sendMessage(channelId: string, content: string, attachment?: string) {
-    const session = await fetchAuthSession();
-    console.log('Auth session:', session);
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
+  async sendMessage(channelId: string, content: string, attachment?: string): Promise<Schema['Message']['type']> {
     const currentUserCognitoId = await this.getCurrentUserId();
     const now = new Date().toISOString();
-    const { errors } = await this.client.models.Message.create({
+    const { data, errors } = await this.client.models.Message.create({
       content,
       senderCognitoId: currentUserCognitoId,
       channelId,
@@ -381,95 +311,58 @@ export class MessageService {
       createdAt: now,
       updatedAt: now,
     });
-    console.log('Send message response:', { channelId, content, errors });
-    this.handleErrors(errors, 'Create message failed');
+    this.handleErrors(errors);
+    return data!;
   }
 
   async uploadAttachment(file: File): Promise<string> {
-    try {
-      const session = await fetchAuthSession();
-      console.log('Auth session:', session);
-      if (!session.tokens) {
-        throw new Error('User not authenticated');
-      }
-      const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/attachments/${file.name}`;
-      const result = await uploadData({
-        path,
-        data: file,
-      }).result;
-      console.log('Upload attachment success:', result.path);
-      return result.path;
-    } catch (error) {
-      console.error('Upload attachment error:', error);
-      throw error;
-    }
+    const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/attachments/${file.name}`;
+    const result = await uploadData({ path, data: file }).result;
+    return result.path;
   }
 
   async getAvatarUrl(profileImageKey: string): Promise<string> {
-    if (!profileImageKey) {
-      return 'assets/profile/avatar-default.svg';
-    }
-    try {
-      const session = await fetchAuthSession();
-      console.log('Auth session:', session);
-      if (!session.tokens) {
-        throw new Error('User not authenticated');
-      }
-      const { url } = await getUrl({ path: profileImageKey });
-      console.log('Avatar URL:', url.toString());
-      return url.toString();
-    } catch (error) {
-      console.error('Get avatar URL error:', error);
-      return 'assets/profile/avatar-default.svg';
-    }
+    if (!profileImageKey) return 'assets/profile/avatar-default.svg';
+    const { url } = await getUrl({ path: profileImageKey });
+    return url.toString();
   }
 
   async deleteChat(channelId: string) {
-    try {
-      const session = await fetchAuthSession();
-      console.log('Auth session:', session);
-      if (!session.tokens) {
-        throw new Error('User not authenticated');
-      }
-      const userCognitoId = await this.getCurrentUserId();
-      const { data: userChannel, errors } = await this.client.models.UserChannel.get({ userCognitoId, channelId });
-      console.log('User channel for deletion:', { userChannel, errors });
-      this.handleErrors(errors, 'Get user channel failed');
-      if (userChannel) {
-        const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ userCognitoId, channelId });
-        console.log('Delete user channel response:', { userCognitoId, channelId, deleteErrors });
-        this.handleErrors(deleteErrors, 'Delete user channel failed');
-      }
-      this.reloadSubject.next();
-    } catch (error) {
-      console.error('Delete chat error:', error);
+    const userCognitoId = await this.getCurrentUserId();
+    const { data: userChannel, errors } = await this.client.models.UserChannel.get({ userCognitoId, channelId });
+    this.handleErrors(errors);
+    if (userChannel) {
+      const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ userCognitoId, channelId });
+      this.handleErrors(deleteErrors);
     }
+    this.reloadSubject.next();
   }
 
-  private setupRealTimeSubscriptions() {
-    const userCognitoIdPromise = this.getCurrentUserId();
-    userCognitoIdPromise.then(userCognitoId => {
-      this.client.models.UserChannel.observeQuery({})
-        .pipe(
-          takeUntil(this.destroy$)
-        )
-        .subscribe({
-          next: (snapshot: { items: Schema['UserChannel']['type'][], isSynced: boolean }) => {
-            const filteredItems = snapshot.items.filter(item => item.userCognitoId === userCognitoId);
-            if (snapshot.isSynced) {
-              console.log('Synced UserChannel snapshot received (client filtered); reloading recent chats');
-              this.reloadSubject.next();
-            } else {
-              console.log('Partial UserChannel snapshot (client filtered)');
-            }
-          },
-          error: (err) => console.error('UserChannel observeQuery error:', JSON.stringify(err, null, 2)),
-        });
-    }).catch(err => console.error('Failed to get userCognitoId for subscription:', err));
+  private async setupRealTimeSubscriptions() {
+    const userCognitoId = await this.getCurrentUserId();
+    this.subscriptions.push(
+      this.client.models.UserChannel.observeQuery({ filter: { userCognitoId: { eq: userCognitoId } } }).pipe(
+        takeUntil(this.destroy$)
+      ).subscribe(snapshot => {
+        if (snapshot.isSynced) this.reloadSubject.next();
+      })
+    );
+
+    this.subscriptions.push(
+      this.client.models.Message.onCreate().subscribe({
+        next: async (msg) => {
+          const channelId = msg.channelId;
+          const { data: uc } = await this.client.models.UserChannel.get({ userCognitoId, channelId });
+          if (uc) this.reloadSubject.next();  // Reload recent if user's channel
+        },
+        error: err => console.error('Message onCreate error:', err)
+      })
+    );
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

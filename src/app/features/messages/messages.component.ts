@@ -1,3 +1,4 @@
+// src/app/features/messages/messages.component.ts
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -81,9 +82,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
       }
       
       // Global sub only for recent chats updates
-      this.subscriptions.push(this.messageService.subscribeMessages(null, (newMsg: Schema['Message']['type']) => {
-        this.updateConversationsOnNewMessage(newMsg);
-      }).pipe(takeUntil(this.destroy$)).subscribe());
+      this.subscriptions.push(this.messageService.subscribeMessages(null).pipe(takeUntil(this.destroy$)).subscribe());
     } catch (error) {
       console.error('Init error:', error);
     }
@@ -113,8 +112,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
           this.messageCache.set(channelId, loadedMessages);
         }
         // Channel-specific sub sets full messages from snapshot
-        this.chatSub = this.messageService.subscribeMessages(channelId, () => {})  // No onNewMessage, as tap handles set
-          .pipe(takeUntil(this.destroy$)).subscribe();
+        this.chatSub = this.messageService.subscribeMessages(channelId).pipe(takeUntil(this.destroy$)).subscribe();
       } catch (error) {
         console.error('Load messages error:', error);
       } finally {

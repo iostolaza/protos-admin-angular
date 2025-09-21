@@ -1,4 +1,6 @@
-import { Component, OnInit, OnDestroy, signal } from '@angular/core'; // UPDATED: Added signal
+// src/app/features/contacts/contacts.component.ts (Full edited script)
+
+import { Component, OnInit, OnDestroy, signal } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ContactService } from '../../core/services/contact.service';
@@ -11,8 +13,8 @@ import { ContactsTableItemComponent } from './contacts-table-item/contacts-table
 import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import type { Schema } from '../../../../amplify/data/resource';
-import { Router } from '@angular/router'; // NEW: For navigation
-import { getCurrentUser } from 'aws-amplify/auth'; // NEW: For self exclusion
+import { Router } from '@angular/router'; 
+import { getCurrentUser } from 'aws-amplify/auth'; 
 
 type UserType = Schema['User']['type'];
 
@@ -24,8 +26,8 @@ type UserType = Schema['User']['type'];
   imports: [CommonModule, FormsModule, ContactsTableItemComponent, AngularSvgIconModule],
 })
 export class ContactsComponent implements OnInit, OnDestroy {
-  public contacts = signal<InputContact[]>([]); // UPDATED: Signal for reactivity
-  public searchResults = signal<InputContact[]>([]); // UPDATED: Signal for reactivity
+  public contacts = signal<InputContact[]>([]); 
+  public searchResults = signal<InputContact[]>([]); 
   public searchQuery: string = '';
   public updatedAgo: string = 'a moment ago';
   public onlineContacts: number = 0;
@@ -36,78 +38,66 @@ export class ContactsComponent implements OnInit, OnDestroy {
   constructor(
     private contactsService: ContactService, 
     private userService: UserService,
-    private router: Router // NEW: Inject Router
+    private router: Router 
   ) {}
 
   getIconPath = getIconPath;
 
-  trackByCognitoId(index: number, item: InputContact): string { // NEW: trackBy for ngFor perf
+  trackByCognitoId(index: number, item: InputContact): string { 
     return item.cognitoId;
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.userService.load();
-    await this.loadContacts();
+  ngOnInit(): void {
+    this.userService.load();
     this.setupSearch();
     this.setupRealTime();
+    this.loadContacts();
   }
 
-  private async loadContacts(): Promise<void> {
-    try {
-      const accumulated: InputContact[] = []; // NEW: Accumulate then set signal
-      let nextToken: string | null = null;
-      do {
-        const { friends, nextToken: newToken } = await this.contactsService.getContacts(nextToken);
-        const extendedFriends = await Promise.all(
-          friends.map(async (f: UserType & { imageUrl?: string }) => {
-            let imageUrl: string | undefined;
-            if (f.profileImageKey) {
-              try {
-                const { url } = await getUrl({
-                  path: f.profileImageKey,
-                  options: { expiresIn: 3600 },
-                });
-                imageUrl = url.toString();
-              } catch (err) {
-                console.error('Error getting image URL:', err);
-                imageUrl = 'assets/profile/avatar-default.svg';
-              }
-            } else {
+  private loadContacts(): void {
+    this.contactsService.getContacts().pipe(takeUntil(this.destroy$)).subscribe((friends) => {
+      Promise.all(
+        friends.map(async (f: UserType & { imageUrl?: string }) => {
+          let imageUrl: string | undefined;
+          if (f.profileImageKey) {
+            try {
+              const { url } = await getUrl({
+                path: f.profileImageKey,
+                options: { expiresIn: 3600 },
+              });
+              imageUrl = url.toString();
+            } catch (err) {
+              console.error('Error getting image URL:', err);
               imageUrl = 'assets/profile/avatar-default.svg';
             }
-            return {
-              ...f,
-              imageUrl,
-              firstName: f.firstName ?? '',
-              lastName: f.lastName ?? '',
-              username: f.username ?? '',
-              createdAt: f.createdAt ?? null,
-              dateAdded: f.createdAt ?? new Date().toISOString(),
-            } as InputContact;
-          })
-        );
-        accumulated.push(...extendedFriends);
-        nextToken = newToken ?? null;
-      } while (nextToken);
-      this.contacts.set(accumulated); // UPDATED: Set signal
-      console.log('Contacts loaded:', this.contacts());
-      this.updateSummary();
-      this.updatedAgo = this.computeUpdatedAgo();
-    } catch (err) {
-      console.error('Load contacts error:', err);
-    }
+          } else {
+            imageUrl = 'assets/profile/avatar-default.svg';
+          }
+          return {
+            ...f,
+            imageUrl,
+            firstName: f.firstName ?? '',
+            lastName: f.lastName ?? '',
+            username: f.username ?? '',
+            createdAt: f.createdAt ?? null,
+            dateAdded: f.createdAt ?? new Date().toISOString(),
+          } as InputContact;
+        })
+      ).then((extendedFriends) => {
+        this.contacts.set(extendedFriends);
+        console.log('Contacts loaded:', this.contacts());
+        this.updateSummary();
+        this.updatedAgo = this.computeUpdatedAgo();
+      }).catch((err) => console.error('Process friends error:', err));
+    });
   }
 
-  async performSearch(): Promise<void> {
-    try {
-      const { userId: currentUserId } = await getCurrentUser(); // NEW: Get current ID for exclusion
-      const accumulated: InputContact[] = []; // NEW: Accumulate
-      let nextToken: string | null = null;
-      do {
-        const { users, nextToken: newToken } = await this.contactsService.searchPool(this.searchQuery, nextToken);
+  performSearch(): void {
+    this.contactsService.searchPool(this.searchQuery).pipe(takeUntil(this.destroy$)).subscribe((users) => {
+      getCurrentUser().then(({ userId }) => {
         const existingIds = new Set(this.contacts().map((c) => c.cognitoId));
-        const filtered = users.filter((u) => !existingIds.has(u.cognitoId) && u.cognitoId !== currentUserId); // UPDATED: Exclude self and existing
-        const extendedFiltered = await Promise.all(
+        const filtered = users.filter((u) => !existingIds.has(u.cognitoId) && u.cognitoId !== userId);
+        Promise.all(
           filtered.map(async (u) => {
             let imageUrl: string | undefined;
             if (u.profileImageKey) {
@@ -130,15 +120,12 @@ export class ContactsComponent implements OnInit, OnDestroy {
               createdAt: u.createdAt ?? null,
             } as InputContact;
           })
-        );
-        accumulated.push(...extendedFiltered);
-        nextToken = newToken ?? null;
-      } while (nextToken);
-      this.searchResults.set(accumulated); // UPDATED: Set signal
-      console.log('Search results:', this.searchResults());
-    } catch (err) {
-      console.error('Search error:', err);
-    }
+        ).then((extendedFiltered) => {
+          this.searchResults.set(extendedFiltered);
+          console.log('Search results:', this.searchResults());
+        }).catch((err) => console.error('Process search error:', err));
+      }).catch((err) => console.error('Get current user error:', err));
+    });
   }
 
   private setupSearch() {
@@ -156,12 +143,12 @@ export class ContactsComponent implements OnInit, OnDestroy {
 
   async addContact(user: InputContact): Promise<void> {
     try {
-      const { userId } = await getCurrentUser(); // NEW: Check not self
-      if (user.cognitoId === userId) return; // Prevent self-add
+      const { userId } = await getCurrentUser(); 
+      if (user.cognitoId === userId) return; 
       await this.contactsService.addContact(user.cognitoId);
       const extendedUser = { ...user, dateAdded: new Date().toISOString() };
-      this.contacts.update(curr => [...curr, extendedUser]); // UPDATED: Update signal (incremental)
-      this.searchResults.update(curr => curr.filter((u) => u.cognitoId !== user.cognitoId)); // UPDATED: Signal
+      this.contacts.update(curr => [...curr, extendedUser]); 
+      this.searchResults.update(curr => curr.filter((u) => u.cognitoId !== user.cognitoId)); 
       this.updateSummary();
       console.log('Contact added:', user);
     } catch (err) {
@@ -172,7 +159,7 @@ export class ContactsComponent implements OnInit, OnDestroy {
   async onDelete(id: string): Promise<void> {
     try {
       await this.contactsService.deleteContact(id);
-      this.contacts.update(curr => curr.filter((c) => c.cognitoId !== id)); // UPDATED: Update signal (incremental)
+      this.contacts.update(curr => curr.filter((c) => c.cognitoId !== id)); 
       this.updateSummary();
       console.log('Contact deleted:', id);
     } catch (err) {
@@ -180,16 +167,16 @@ export class ContactsComponent implements OnInit, OnDestroy {
     }
   }
 
-async onMessage(id: string): Promise<void> { // NEW: Handle message navigation
+  async onMessage(id: string): Promise<void> { 
     try {
       const channel = await this.contactsService.getOrCreateChannel(id);
-      this.router.navigate(['/main-layout/messages/incoming', channel.id]); // UPDATED: Use correct absolute path with parameter
+      this.router.navigate(['/main-layout/messages/incoming', channel.id]); 
     } catch (err) {
       console.error('Start message error:', err);
     }
   }
   
-private updateSummary(): void {
+  private updateSummary(): void {
     this.onlineContacts = this.contacts().filter((c) => c.status === 'online').length;
     this.recentContacts = this.contacts()
       .slice()
@@ -198,7 +185,7 @@ private updateSummary(): void {
     this.updatedAgo = this.computeUpdatedAgo();  
   }
 
- private computeUpdatedAgo(): string {
+  private computeUpdatedAgo(): string {
     const contacts = this.contacts();
     if (contacts.length === 0) return 'never';
     const maxDate = Math.max(...contacts.map(c => new Date(c.dateAdded || '0').getTime()));

@@ -39,11 +39,12 @@ const schema = a.schema({
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
     teams: a.hasMany('TeamMember', 'userCognitoId'),  
-    ledTeams: a.hasMany('Team', 'teamLeadCognitoId'),  // Fixed reference field
+    ledTeams: a.hasMany('Team', 'teamLeadCognitoId'),  
     ticketsRequested: a.hasMany('Ticket', 'requesterId'),
     ticketsAssigned: a.hasMany('Ticket', 'assigneeId'),
     comments: a.hasMany('Comment', 'userCognitoId'),  
     notifications: a.hasMany('Notification', 'userCognitoId'),  
+    channels: a.hasMany('UserChannel', 'userCognitoId'),
   })
     .identifier(['cognitoId'])
     .secondaryIndexes(index => [index('email')])
@@ -74,22 +75,35 @@ const schema = a.schema({
 
   Channel: a.model({
     name: a.string(),
+    creatorCognitoId: a.string().required(),  // NEW: For owner auth
+    type: a.enum(['direct', 'group']),  // NEW: Differentiate 1:1 vs group
+    directKey: a.string(),  // NEW: Deterministic key for direct (e.g., 'userA_userB' sorted)
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
+    members: a.hasMany('UserChannel', 'channelId'),  // NEW: Relation
+    messages: a.hasMany('Message', 'channelId'),  // NEW: Relation
   })
-    .authorization(allow => [allow.authenticated()]),
+    .secondaryIndexes(index => [index('directKey')])  // NEW: For quick 1:1 lookup
+    .authorization(allow => [
+      allow.ownerDefinedIn('creatorCognitoId').identityClaim('sub').to(['update', 'delete']),
+      allow.authenticated().to(['create', 'read']),
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  // Added group override
+    ]),
 
   UserChannel: a.model({
     userCognitoId: a.string().required(),  
     channelId: a.id().required(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
+    user: a.belongsTo('User', 'userCognitoId'),  // Added
+    channel: a.belongsTo('Channel', 'channelId'),  // Added
   })
     .identifier(['userCognitoId', 'channelId'])  
     .secondaryIndexes(index => [index('userCognitoId'), index('channelId')])
     .authorization(allow => [
-      allow.authenticated().to(['create', 'read']),
+      allow.authenticated().to(['create', 'read']),  // Allow creating for others in direct chats
       allow.ownerDefinedIn('userCognitoId').identityClaim('sub').to(['update', 'delete']),
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  // Group override
     ]),
 
   Message: a.model({
@@ -101,9 +115,15 @@ const schema = a.schema({
     readBy: a.string().array(),
     createdAt: a.datetime(),
     updatedAt: a.datetime(),
+    sender: a.belongsTo('User', 'senderCognitoId'),  // NEW: Relation
+    channel: a.belongsTo('Channel', 'channelId'),  // NEW: Relation
   })
     .secondaryIndexes(index => [index('channelId').sortKeys(['timestamp'])])
-    .authorization(allow => [allow.authenticated()]),
+    .authorization(allow => [
+      allow.authenticated().to(['create', 'read']),
+      allow.ownerDefinedIn('senderCognitoId').identityClaim('sub').to(['update', 'delete']),
+      allow.group('Admin').to(['create', 'read', 'update', 'delete']),  // Group override
+    ]),
 
   Team: a.model({
     name: a.string().required(),
