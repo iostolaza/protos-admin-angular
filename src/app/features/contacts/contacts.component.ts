@@ -1,4 +1,4 @@
-// src/app/features/contacts/contacts.component.ts (Full edited script)
+// src/app/features/contacts/contacts.component.ts 
 
 import { Component, OnInit, OnDestroy, signal } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
@@ -50,7 +50,6 @@ export class ContactsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.userService.load();
     this.setupSearch();
-    this.setupRealTime();
     this.loadContacts();
   }
 
@@ -198,14 +197,6 @@ export class ContactsComponent implements OnInit, OnDestroy {
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
-  }
-
-  private setupRealTime() {
-    this.contactsService.observeContacts()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(() => {
-        this.loadContacts();
-      });
   }
 
   ngOnDestroy() {

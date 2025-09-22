@@ -70,7 +70,10 @@ const schema = a.schema({
   })
     .identifier(['userCognitoId', 'friendCognitoId'])  
     .secondaryIndexes(index => [index('userCognitoId')])
-    .authorization(allow => [allow.ownerDefinedIn('userCognitoId').identityClaim('sub').to(['create', 'read', 'update', 'delete'])]),  
+    .authorization(allow => [
+      allow.ownerDefinedIn('userCognitoId').identityClaim('sub').to(['create', 'read', 'update', 'delete']),
+      allow.ownerDefinedIn('friendCognitoId').identityClaim('sub').to(['create', 'read', 'update', 'delete'])
+    ]),  
 
   Channel: a.model({
     name: a.string(),

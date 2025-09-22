@@ -46,28 +46,30 @@ export class ContactService {
       console.error('Delete contact error:', error);
     }
   }
-private handleErrors(errors?: { message: string }[], message: string = 'Operation failed'): void {
-  if (errors?.length) {
-    throw new Error(`${message}: ${errors.map(e => e.message).join(', ')}`);
-  }
-}
 
-async getCurrentUserId(): Promise<string> {
-  const session = await fetchAuthSession();
-  if (!session.tokens) {
-    throw new Error('User not authenticated');
+  private handleErrors(errors?: { message: string }[], message: string = 'Operation failed'): void {
+    if (errors?.length) {
+      throw new Error(`${message}: ${errors.map(e => e.message).join(', ')}`);
+    }
   }
-  const { userId } = await getCurrentUser();
-  return userId;
-}
 
-async getUserById(userCognitoId: string): Promise<Schema['User']['type']> {
-  if (!userCognitoId) throw new Error('Invalid user ID');
-  const { data, errors } = await this.client.models.User.get({ cognitoId: userCognitoId });
-  this.handleErrors(errors, 'Get user failed');
-  if (!data) throw new Error('User not found');
-  return data;
-}
+  async getCurrentUserId(): Promise<string> {
+    const session = await fetchAuthSession();
+    if (!session.tokens) {
+      throw new Error('User not authenticated');
+    }
+    const { userId } = await getCurrentUser();
+    return userId;
+  }
+
+  async getUserById(userCognitoId: string): Promise<Schema['User']['type']> {
+    if (!userCognitoId) throw new Error('Invalid user ID');
+    const { data, errors } = await this.client.models.User.get({ cognitoId: userCognitoId });
+    this.handleErrors(errors, 'Get user failed');
+    if (!data) throw new Error('User not found');
+    return data;
+  }
+
   getContacts(): Observable<UserType[]> {
     const contacts$ = new Subject<UserType[]>();
     const destroyer$ = new Subject<void>();
@@ -80,8 +82,10 @@ async getUserById(userCognitoId: string): Promise<Schema['User']['type']> {
     ).subscribe({
       next: async ({ items, isSynced }) => {
         console.log('Friend observeQuery snapshot:', { items: items.length, isSynced });
+        const uniqueFriends = new Map<string, FriendType>(); // Dedupe if bidirectional
+        items.forEach(f => uniqueFriends.set(f.friendCognitoId, f));
         const users = await Promise.all(
-          items.map(async (f: FriendType) => {
+          Array.from(uniqueFriends.values()).map(async (f: FriendType) => {
             const { data: userData, errors: userErrors } = await this.client.models.User.get({
               cognitoId: f.friendCognitoId,
             });
@@ -144,6 +148,9 @@ async getUserById(userCognitoId: string): Promise<Schema['User']['type']> {
     try {
       const { errors } = await this.client.models.Friend.create({ userCognitoId, friendCognitoId }); // Amplify auto-populates timestamps
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+      // Bidirectional
+      const { errors: reverseErrors } = await this.client.models.Friend.create({ userCognitoId: friendCognitoId, friendCognitoId: userCognitoId });
+      if (reverseErrors) throw new Error(reverseErrors.map((e: any) => e.message).join(', '));
     } catch (error: unknown) {
       console.error('Add friend error:', error);
     }
@@ -153,20 +160,11 @@ async getUserById(userCognitoId: string): Promise<Schema['User']['type']> {
     try {
       const { errors } = await this.client.models.Friend.delete({ userCognitoId, friendCognitoId });
       if (errors) throw new Error(errors.map((e: any) => e.message).join(', '));
+      // Bidirectional - ignore if reverse not found
+      await this.client.models.Friend.delete({ userCognitoId: friendCognitoId, friendCognitoId: userCognitoId }).catch(() => console.warn('Reverse friend record not found'));
     } catch (error: unknown) {
       console.error('Remove friend error:', error);
     }
-  }
-
-  // NEW: Real-time observation for Friend model changes.
-  observeContacts(): Observable<void> {
-    return new Observable(observer => {
-      const sub = this.client.models.Friend.observeQuery().subscribe({
-        next: () => observer.next(),
-        error: (err) => observer.error(err),
-      });
-      return () => sub.unsubscribe();
-    });
   }
 
   async getOrCreateChannel(contactCognitoId: string): Promise<Schema['Channel']['type']> {
