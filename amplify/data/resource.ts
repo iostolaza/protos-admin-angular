@@ -43,7 +43,9 @@ const schema = a.schema({
     comments: a.hasMany('Comment', 'userCognitoId'),  
     notifications: a.hasMany('Notification', 'userCognitoId'),  
     channels: a.hasMany('UserChannel', 'userCognitoId'),
-    messagesSent: a.hasMany('Message', 'senderCognitoId'),  // Added inverse
+    messagesSent: a.hasMany('Message', 'senderCognitoId'),
+    contacts: a.hasMany('Friend', 'ownerCognitoId'),  
+    friendsOf: a.hasMany('Friend', 'friendCognitoId'),
   })
     .identifier(['cognitoId'])
     .secondaryIndexes(index => [index('email')])
@@ -62,18 +64,20 @@ const schema = a.schema({
     .secondaryIndexes(index => [index('userCognitoId')])  
     .authorization(allow => [allow.ownerDefinedIn('userCognitoId').identityClaim('sub')]),  
 
-  Friend: a.model({
-    userCognitoId: a.string().required(),  
-    friendCognitoId: a.string().required(),  
-    createdAt: a.datetime(),
-    updatedAt: a.datetime(),
-  })
-    .identifier(['userCognitoId', 'friendCognitoId'])  
-    .secondaryIndexes(index => [index('userCognitoId')])
-    .authorization(allow => [
-      allow.ownerDefinedIn('userCognitoId').identityClaim('sub').to(['create', 'read', 'update', 'delete']),
-      allow.ownerDefinedIn('friendCognitoId').identityClaim('sub').to(['create', 'read', 'update', 'delete'])
-    ]),  
+  Friend: a.model({  // NEW: Complete Friend model for one-way contacts
+      ownerCognitoId: a.string().required(),
+      friendCognitoId: a.string().required(),
+      addedAt: a.datetime().required(),
+      owner: a.belongsTo('User', 'ownerCognitoId'),
+      friend: a.belongsTo('User', 'friendCognitoId'),
+    })
+      .identifier(['ownerCognitoId', 'friendCognitoId'])
+      .secondaryIndexes(index => [index('ownerCognitoId').sortKeys(['addedAt'])])  // For sorted lists
+      .authorization(allow => [
+        allow.ownerDefinedIn('ownerCognitoId').identityClaim('sub').to(['read', 'update', 'delete']),
+        allow.group('Admin').to(['create', 'read', 'update', 'delete']),
+        allow.authenticated().to(['create']),  // Any auth can create (but owner set to sub)
+      ]),
 
   Channel: a.model({
     name: a.string(),

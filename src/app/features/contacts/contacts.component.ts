@@ -1,5 +1,4 @@
 // src/app/features/contacts/contacts.component.ts 
-
 import { Component, OnInit, OnDestroy, signal } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -10,8 +9,7 @@ import { getUrl } from 'aws-amplify/storage';
 import { getIconPath } from '../../core/services/icon-preloader.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ContactsTableItemComponent } from './contacts-table-item/contacts-table-item.component';
-import { Subject } from 'rxjs';
-import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import type { Schema } from '../../../../amplify/data/resource';
 import { Router } from '@angular/router'; 
 import { getCurrentUser } from 'aws-amplify/auth'; 
@@ -51,12 +49,14 @@ export class ContactsComponent implements OnInit, OnDestroy {
     this.userService.load();
     this.setupSearch();
     this.loadContacts();
+    this.contactsService.observeContacts().pipe(takeUntil(this.destroy$)).subscribe(() => this.loadContacts());
   }
 
-  private loadContacts(): void {
-    this.contactsService.getContacts().pipe(takeUntil(this.destroy$)).subscribe((friends) => {
-      Promise.all(
-        friends.map(async (f: UserType & { imageUrl?: string }) => {
+  private async loadContacts(): Promise<void> {
+    try {
+      const { friends } = await this.contactsService.getContacts();
+      const extendedFriends = await Promise.all(
+        friends.map(async (f: UserType & { addedAt: string }) => {
           let imageUrl: string | undefined;
           if (f.profileImageKey) {
             try {
@@ -79,52 +79,60 @@ export class ContactsComponent implements OnInit, OnDestroy {
             lastName: f.lastName ?? '',
             username: f.username ?? '',
             createdAt: f.createdAt ?? null,
-            dateAdded: f.createdAt ?? new Date().toISOString(),
+            dateAdded: f.addedAt ?? new Date().toISOString(),
           } as InputContact;
         })
-      ).then((extendedFriends) => {
-        this.contacts.set(extendedFriends);
-        console.log('Contacts loaded:', this.contacts());
-        this.updateSummary();
-        this.updatedAgo = this.computeUpdatedAgo();
-      }).catch((err) => console.error('Process friends error:', err));
-    });
+      );
+      this.contacts.set(extendedFriends);
+      console.log('Contacts loaded:', this.contacts());
+      this.updateSummary();
+      this.updatedAgo = this.computeUpdatedAgo();
+    } catch (err) {
+      console.error('Load contacts error:', err);
+    }
   }
 
-  performSearch(): void {
-    this.contactsService.searchPool(this.searchQuery).pipe(takeUntil(this.destroy$)).subscribe((users) => {
-      getCurrentUser().then(({ userId }) => {
-        const existingIds = new Set(this.contacts().map((c) => c.cognitoId));
-        const filtered = users.filter((u) => !existingIds.has(u.cognitoId) && u.cognitoId !== userId);
-        Promise.all(
-          filtered.map(async (u) => {
-            let imageUrl: string | undefined;
-            if (u.profileImageKey) {
-              try {
-                const { url } = await getUrl({
-                  path: u.profileImageKey,
-                  options: { expiresIn: 3600 },
-                });
-                imageUrl = url.toString();
-              } catch (err) {
-                console.error('Error getting image URL:', err);
-                imageUrl = 'assets/profile/avatar-default.svg';
-              }
-            } else {
-              imageUrl = 'assets/profile/avatar-default.svg';
+  onSearchChange(query: string) {
+    this.searchQuery = query;
+    this.searchSubject.next(query);
+  }
+
+  public onPerformSearch(): void {
+    this.performSearch();
+  }
+
+  public async performSearch(): Promise<void> {
+    try {
+      const { users } = await this.contactsService.searchPool(this.searchQuery);
+      const { userId } = await getCurrentUser();
+      const existingIds = new Set(this.contacts().map((c) => c.cognitoId));
+      const filtered = users.filter((u) => u.cognitoId && !existingIds.has(u.cognitoId) && u.cognitoId !== userId);
+      const extendedFiltered = await Promise.all(
+        filtered.map(async (u) => {
+          let imageUrl: string = 'assets/profile/avatar-default.svg';
+          if (u.profileImageKey) {
+            try {
+              const { url } = await getUrl({
+                path: u.profileImageKey,
+                options: { expiresIn: 3600 },
+              });
+              imageUrl = url.toString();
+            } catch (err) {
+              console.error('Error getting image URL:', err);
             }
-            return {
-              ...u,
-              imageUrl,
-              createdAt: u.createdAt ?? null,
-            } as InputContact;
-          })
-        ).then((extendedFiltered) => {
-          this.searchResults.set(extendedFiltered);
-          console.log('Search results:', this.searchResults());
-        }).catch((err) => console.error('Process search error:', err));
-      }).catch((err) => console.error('Get current user error:', err));
-    });
+          }
+          return {
+            ...u,
+            imageUrl,
+            createdAt: u.createdAt ?? null,
+          } as InputContact;
+        })
+      );
+      this.searchResults.set(extendedFiltered);
+      console.log('Search results:', this.searchResults());
+    } catch (err) {
+      console.error('Perform search error:', err);
+    }
   }
 
   private setupSearch() {
@@ -133,11 +141,6 @@ export class ContactsComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.performSearch();
       });
-  }
-
-  onSearchChange(query: string) {
-    this.searchQuery = query;
-    this.searchSubject.next(query);
   }
 
   async addContact(user: InputContact): Promise<void> {
