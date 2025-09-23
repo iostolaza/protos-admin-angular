@@ -8,7 +8,6 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import { Observable, Subject, from, of } from 'rxjs';
 import { takeUntil, switchMap, catchError } from 'rxjs/operators';
 import { v4 as uuidv4 } from 'uuid';
-import { ContactService } from './contact.service';
 import { UserService } from './user.service';
 import { ChatItem, Message } from '../models/message.model';
 
@@ -20,14 +19,13 @@ export class MessageService {
   private messages = signal<Message[]>([]);
   private channelMembersCache = new Map<string, string[]>();
 
-  constructor(private contactService: ContactService, private userService: UserService) {}
+  constructor(private userService: UserService) {} // Removed ContactService
 
   async getCurrentUserId(): Promise<string> {
     const { userId } = await getCurrentUser();
     return userId;
   }
 
-  // CRUD: Read - Load recent chats
   async loadRecentChats(): Promise<void> {
     try {
       const userId = await this.getCurrentUserId();
@@ -35,8 +33,11 @@ export class MessageService {
         filter: { userCognitoId: { eq: userId } },
       });
 
-      const friends = await this.contactService.getContacts();
-      const friendIds = new Set(friends.map((f) => f.cognitoId));
+      // Direct fetch friends to break cycle
+      const { data: friends } = await this.client.models.Friend.list({
+        filter: { ownerCognitoId: { eq: userId } },
+      });
+      const friendIds = new Set(friends.map((f: Schema['Friend']['type']) => f.friendCognitoId));
 
       const chats: (ChatItem | null)[] = await Promise.all(
         userChannels.map(async (uc: Schema['UserChannel']['type']) => {
@@ -92,7 +93,6 @@ export class MessageService {
     return this.recentChats;
   }
 
-  // CRUD: Create/Read - Get or create direct channel
   async getOrCreateChannel(otherUserId: string): Promise<Schema['Channel']['type']> {
     const me = await this.getCurrentUserId();
     const ids = [me, otherUserId].sort();
@@ -118,26 +118,11 @@ export class MessageService {
         this.client.models.UserChannel.create({ userCognitoId: me, channelId: channel.id, createdAt: now, updatedAt: now }),
         this.client.models.UserChannel.create({ userCognitoId: otherUserId, channelId: channel.id, createdAt: now, updatedAt: now }),
       ]);
-      // Refresh recent chats after creation
       await this.loadRecentChats();
     }
     return channel;
   }
 
-  // CRUD: Update - Update channel (e.g., name)
-  async updateChannel(channelId: string, updates: Partial<Schema['Channel']['type']>): Promise<Schema['Channel']['type']> {
-    const { data: updated, errors } = await this.client.models.Channel.update({
-      id: channelId,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    });
-    if (errors) throw new Error(errors.map((e: { message: string }) => e.message).join(', '));
-    if (!updated) throw new Error('Channel update failed');
-    await this.loadRecentChats(); // Refresh
-    return updated;
-  }
-
-  // CRUD: Read - Load messages for channel
   async loadMessages(channelId: string): Promise<void> {
     try {
       const userId = await this.getCurrentUserId();
@@ -191,7 +176,6 @@ export class MessageService {
     return this.messages;
   }
 
-  // CRUD: Create - Send message
   async sendMessage(channelId: string, text: string, attachment?: string): Promise<void> {
     try {
       const userId = await this.getCurrentUserId();
@@ -211,37 +195,18 @@ export class MessageService {
     }
   }
 
-  // CRUD: Update - Update message (e.g., edit content)
-  async updateMessage(messageId: string, updates: Partial<Schema['Message']['type']>): Promise<Schema['Message']['type']> {
-    const { data: updated, errors } = await this.client.models.Message.update({
-      id: messageId,
-      ...updates,
-      updatedAt: new Date().toISOString(),
-    });
-    if (errors) throw new Error(errors.map((e: { message: string }) => e.message).join(', '));
-    if (!updated) throw new Error('Message update failed');
-    return updated;
-  }
-
-  // CRUD: Delete - Delete message
-  async deleteMessage(messageId: string): Promise<void> {
-    await this.client.models.Message.delete({ id: messageId });
-  }
-
   async uploadAttachment(file: File): Promise<string> {
     const key = `attachments/${uuidv4()}-${file.name}`;
     await uploadData({ path: key, data: file });
     return key;
   }
 
-  // CRUD: Delete - Delete channel and associated data
   async deleteChat(channelId: string): Promise<void> {
     const { data: msgs } = await this.client.models.Message.list({
       filter: { channelId: { eq: channelId } },
     });
     await Promise.all(msgs.map((msg: Schema['Message']['type']) => this.client.models.Message.delete({ id: msg.id })));
     await this.client.models.Channel.delete({ id: channelId });
-    await this.loadRecentChats(); // Refresh after delete
   }
 
   subscribeMessages(channelId: string | null): Observable<any> {
@@ -269,7 +234,7 @@ export class MessageService {
     return members;
   }
 
-  private async getUserProfile(userId: string): Promise<{ name: string; avatar: string }> {
+  public async getUserProfile(userId: string): Promise<{ name: string; avatar: string }> { // Made public
     const allUsers = await this.userService.getAllUsers();
     const user = allUsers.find((u: Schema['User']['type']) => u.cognitoId === userId);
     const name =

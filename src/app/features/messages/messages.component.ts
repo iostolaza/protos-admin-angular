@@ -16,7 +16,7 @@ import { ChatHeaderComponent } from './chatlayout/chat-header.component';
 import { ChatMessagesComponent } from './chatlayout/chat-messages.component';
 import { MessageInputComponent } from './chatlayout/message-input.component';
 import { ActivatedRoute } from '@angular/router';
-import { ChatItem, Message, Conversation } from '../../core/models/message.model'; // Imported
+import { ChatItem, Message, Conversation } from '../../core/models/message.model';
 
 @Component({
   selector: 'app-messages',
@@ -106,12 +106,16 @@ export class MessagesComponent implements OnInit, OnDestroy {
         }
       }
 
+      // Global sub for recent updates
       this.subscriptions.push(
-        this.messageService.subscribeMessages(null).subscribe((newMsg: Schema['Message']['type']) => {
-          if (newMsg) {
-            this.updateConversationsOnNewMessage(newMsg);
-            if (this.selectedConversation()?.channel.id === newMsg.channelId) {
-              this.messageService.loadMessages(newMsg.channelId);
+        this.messageService.subscribeMessages(null).subscribe((snapshot) => {
+          if (snapshot) {
+            const newMsg = snapshot.items[snapshot.items.length - 1]; // Latest from snapshot
+            if (newMsg) {
+              this.updateConversationsOnNewMessage(newMsg);
+              if (this.selectedConversation()?.channel.id === newMsg.channelId) {
+                this.appendMessage(newMsg); // Append instead of reload
+              }
             }
           }
         })
@@ -144,7 +148,15 @@ export class MessagesComponent implements OnInit, OnDestroy {
           this.messages.set(loadedMessages);
           this.messageCache.set(channelId, loadedMessages);
         }
-        this.chatSub = this.messageService.subscribeMessages(channelId).pipe(takeUntil(this.destroy$)).subscribe();
+        // Channel sub for real-time append
+        this.chatSub = this.messageService.subscribeMessages(channelId).pipe(takeUntil(this.destroy$)).subscribe((snapshot) => {
+          if (snapshot) {
+            const newMsg = snapshot.items[snapshot.items.length - 1]; // Latest
+            if (newMsg) {
+              this.appendMessage(newMsg);
+            }
+          }
+        });
       } catch (error) {
         console.error('Load messages error:', error);
       } finally {
@@ -158,6 +170,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
     if (this.newMessage().trim() && this.selectedConversation()?.channel.id) {
       await this.messageService.sendMessage(this.selectedConversation()!.channel.id, this.newMessage());
       this.newMessage.set('');
+      // Subscription will append
     }
   }
 
@@ -169,6 +182,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
       await this.messageService.sendMessage(this.selectedConversation()!.channel.id, this.newMessage(), attachment);
       this.newMessage.set('');
       this.file.set(null);
+      // Subscription will append
     }
   }
 
@@ -220,6 +234,27 @@ export class MessagesComponent implements OnInit, OnDestroy {
         this.messages.set([]);
       }
     }
+  }
+
+  // Helper to append new message from subscription
+  private async appendMessage(newMsg: Schema['Message']['type']) {
+    const userId = await this.messageService.getCurrentUserId();
+    const senderUser = await this.messageService.getUserProfile(newMsg.senderCognitoId);
+    const mappedMsg: Message = {
+      id: newMsg.id,
+      text: newMsg.content || '',
+      sender: senderUser.name,
+      senderAvatar: senderUser.avatar,
+      isSelf: newMsg.senderCognitoId === userId,
+      timestamp: new Date(newMsg.timestamp),
+      read: newMsg.readBy?.includes(userId) || false,
+      attachment: newMsg.attachment,
+    };
+    // Check if id already exists to avoid duplicates
+    this.messages.update((msgs) => {
+      if (msgs.some((m) => m.id === mappedMsg.id)) return msgs;
+      return [...msgs, mappedMsg].sort((a, b) => (a.timestamp?.getTime() || 0) - (b.timestamp?.getTime() || 0));
+    });
   }
 
   ngOnDestroy() {

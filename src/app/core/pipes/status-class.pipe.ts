@@ -13,7 +13,7 @@ export class StatusClassPipe implements PipeTransform {
     switch ((value as string).toUpperCase()) {
       case TicketStatus.OPEN:
         return 'bg-red-700 text-white';
-      case TicketStatus.QUEUED:  // Added, map to similar (e.g., pending like open)
+      case TicketStatus.QUEUED:  
         return 'bg-red-500 text-white';
       case TicketStatus.IN_PROGRESS:
       case TicketStatus.REOPENED:
