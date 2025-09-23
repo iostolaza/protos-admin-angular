@@ -1,368 +1,289 @@
-// src/app/core/services/message.service.ts (Full edited script)
+// src/app/core/services/message.service.ts
+
 import { Injectable, signal } from '@angular/core';
 import { generateClient } from 'aws-amplify/data';
-import { fetchAuthSession, getCurrentUser } from 'aws-amplify/auth';
-import { uploadData, getUrl } from 'aws-amplify/storage';
+import { getUrl, uploadData } from 'aws-amplify/storage';
 import type { Schema } from '../../../../amplify/data/resource';
-import { Observable, from, Subject, Subscription } from 'rxjs';
-import { tap, takeUntil, debounceTime } from 'rxjs/operators';
-import { Hub } from 'aws-amplify/utils';
+import { getCurrentUser } from 'aws-amplify/auth';
+import { Observable, Subject, from, of } from 'rxjs';
+import { takeUntil, switchMap, catchError } from 'rxjs/operators';
+import { v4 as uuidv4 } from 'uuid';
+import { ContactService } from './contact.service';
+import { UserService } from './user.service';
+import { ChatItem, Message } from '../models/message.model';
 
-interface ChatItem { id: string; name: string; snippet: string; avatar: string; timestamp?: Date; otherUserId: string; }
-interface Message { id: string; text: string; sender: string; senderAvatar?: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class MessageService {
   private client = generateClient<Schema>();
+  private destroy$ = new Subject<void>();
   private recentChats = signal<ChatItem[]>([]);
   private messages = signal<Message[]>([]);
-  private searchQuery = signal<string>('');
-  private selectedChannel = signal<string | null>(null);
-  private userCache = new Map<string, Schema['User']['type']>();
-  private destroy$ = new Subject<void>();
-  private reloadSubject = new Subject<void>();
-  private subscriptions: Subscription[] = [];
+  private channelMembersCache = new Map<string, string[]>();
 
-  constructor() {
-    this.setupRealTimeSubscriptions();
-    this.monitorConnectionState();
-    this.reloadSubject.pipe(debounceTime(500), takeUntil(this.destroy$)).subscribe(() => this.loadRecentChats());
-  }
-
-  private monitorConnectionState() {
-    Hub.listen('api', (data: any) => {
-      const { payload } = data;
-      if (payload.event === 'CONNECTION_STATE_CHANGE') {
-        console.log('API connection state:', payload.data.connectionState);
-      }
-    });
-  }
-
-  getRecentChats() { return this.recentChats.asReadonly(); }
-  getMessages() { return this.messages.asReadonly(); }
-  getSearchQuery() { return this.searchQuery.asReadonly(); }
-  setSearchQuery(value: string) { this.searchQuery.set(value); }
-  setSelectedChannel(id: string) { this.selectedChannel.set(id); }
-
-  private handleErrors(errors?: { message: string }[], message: string = 'Operation failed'): void {
-    if (errors?.length) {
-      throw new Error(`${message}: ${errors.map(e => e.message).join(', ')}`);
-    }
-  }
+  constructor(private contactService: ContactService, private userService: UserService) {}
 
   async getCurrentUserId(): Promise<string> {
-    const session = await fetchAuthSession();
-    if (!session.tokens) {
-      throw new Error('User not authenticated');
-    }
     const { userId } = await getCurrentUser();
     return userId;
   }
 
-  getUserChannels(userCognitoId: string): Observable<Schema['UserChannel']['type'][]> {
-    const userChannels$ = new Subject<Schema['UserChannel']['type'][]>();
-    const destroyer$ = new Subject<void>();
-
-    this.client.models.UserChannel.observeQuery({
-      filter: { userCognitoId: { eq: userCognitoId } }
-    }).pipe(
-      takeUntil(destroyer$)
-    ).subscribe({
-      next: ({ items }) => userChannels$.next(items),
-      error: (err) => userChannels$.error(err),
-      complete: () => userChannels$.complete()
-    });
-
-    userChannels$.subscribe({ complete: () => destroyer$.next() });
-    return userChannels$.asObservable();
-  }
-
-  async getOtherUserId(channelId: string, currentUserCognitoId: string): Promise<string | null> {
-    const { data: userChannels, errors } = await this.client.models.UserChannel.listUserChannelByChannelId({ channelId });
-    this.handleErrors(errors, 'List user channels failed');
-    const userCognitoIds = userChannels.map(uc => uc.userCognitoId);
-    return userCognitoIds.find(id => id !== currentUserCognitoId) || null;
-  }
-
-  async getUserById(userCognitoId: string): Promise<Schema['User']['type']> {
-    if (!userCognitoId) throw new Error('Invalid user ID');
-    if (this.userCache.has(userCognitoId)) return this.userCache.get(userCognitoId)!;
-    const { data, errors } = await this.client.models.User.get({ cognitoId: userCognitoId });
-    this.handleErrors(errors, 'Get user failed');
-    if (!data) throw new Error('User not found');
-    this.userCache.set(userCognitoId, data);
-    return data;
-  }
-
-  async deleteMessage(id: string): Promise<void> {
-    const { errors } = await this.client.models.Message.delete({ id });
-    this.handleErrors(errors, 'Delete message failed');
-  }
-
-  async getLastMessage(channelId: string): Promise<Schema['Message']['type'] | null> {
-    const { data, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp({ channelId }, { sortDirection: 'DESC', limit: 1 });
-    this.handleErrors(errors, 'List messages failed');
-    return data[0] ?? null;
-  }
-
-  async loadRecentChats() {
+  // CRUD: Read - Load recent chats
+  async loadRecentChats(): Promise<void> {
     try {
-      const userCognitoId = await this.getCurrentUserId();
-      this.getUserChannels(userCognitoId).pipe(takeUntil(this.destroy$)).subscribe(userChannels => {
-        Promise.all(userChannels.map(async uc => {
-          const { data: channel, errors } = await this.client.models.Channel.get({ id: uc.channelId });
-          this.handleErrors(errors);
-          if (!channel) return null;
-          return channel;
-        })).then(async channelResults => {
-          const channels = channelResults.filter((c): c is NonNullable<typeof c> => !!c);
-          const chats = await Promise.all(channels.map(async channel => {
-            const otherUserCognitoId = await this.getOtherUserId(channel.id, userCognitoId);
-            if (!otherUserCognitoId) return null;
-            const otherUser = await this.getUserById(otherUserCognitoId);
-            const lastMsg = await this.getLastMessage(channel.id);
-            return {
-              id: channel.id,
-              name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim(),
-              snippet: lastMsg?.content ?? '',
-              avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
-              timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined,
-              otherUserId: otherUserCognitoId
-            };
-          }));
-          const filteredChats = chats.filter((c) => !!c) as ChatItem[];
-          filteredChats.sort((a, b) => (b?.timestamp?.getTime() || 0) - (a?.timestamp?.getTime() || 0));
-          this.recentChats.set(filteredChats);
-        }).catch(error => console.error('Process channels error:', error));
+      const userId = await this.getCurrentUserId();
+      const { data: userChannels } = await this.client.models.UserChannel.list({
+        filter: { userCognitoId: { eq: userId } },
       });
+
+      const friends = await this.contactService.getContacts();
+      const friendIds = new Set(friends.map((f) => f.cognitoId));
+
+      const chats: (ChatItem | null)[] = await Promise.all(
+        userChannels.map(async (uc: Schema['UserChannel']['type']) => {
+          const channelResponse = await uc.channel();
+          if (channelResponse.errors || !channelResponse.data) return null;
+          const channel = channelResponse.data;
+          if (channel.type !== 'direct') return null;
+
+          const channelId = uc.channelId;
+          const members = await this.getChannelMembers(channelId);
+          const otherUserId = members.find((id) => id !== userId);
+          if (!otherUserId || !friendIds.has(otherUserId)) return null;
+
+          const { data: otherUser } = await this.client.models.User.get({ cognitoId: otherUserId });
+          const name =
+            `${otherUser?.firstName || ''} ${otherUser?.lastName || ''}`.trim() ||
+            otherUser?.email ||
+            'Unknown';
+
+          const avatar = otherUser?.profileImageKey
+            ? (await getUrl({ path: otherUser.profileImageKey })).url.toString()
+            : 'assets/profile/avatar-default.svg';
+
+          const { data: lastMessages } = await this.client.models.Message.list({
+            filter: { channelId: { eq: channelId } },
+            limit: 50,
+          });
+          const sorted = [...lastMessages].sort(
+            (a: Schema['Message']['type'], b: Schema['Message']['type']) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          const lastMsg = sorted[0];
+
+          return {
+            id: channelId,
+            name,
+            snippet: lastMsg?.content || undefined,
+            avatar,
+            timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined,
+            otherUserId,
+          };
+        })
+      );
+
+      const filteredChats = chats.filter((c): c is ChatItem => c !== null);
+      filteredChats.sort((a, b) => (b.timestamp?.getTime() || 0) - (a.timestamp?.getTime() || 0));
+      this.recentChats.set(filteredChats);
     } catch (error) {
       console.error('Load recent chats error:', error);
-      this.recentChats.set([]);
     }
   }
 
-  async loadMessages(channelId: string) {
+  getRecentChats() {
+    return this.recentChats;
+  }
+
+  // CRUD: Create/Read - Get or create direct channel
+  async getOrCreateChannel(otherUserId: string): Promise<Schema['Channel']['type']> {
+    const me = await this.getCurrentUserId();
+    const ids = [me, otherUserId].sort();
+    const directKey = `${ids[0]}_${ids[1]}`;
+    const { data: channels } = await this.client.models.Channel.list({
+      filter: { directKey: { eq: directKey } },
+    });
+    let channel = channels[0];
+    if (!channel) {
+      const now = new Date().toISOString();
+      const { data: newChannel, errors } = await this.client.models.Channel.create({
+        creatorCognitoId: me,
+        type: 'direct',
+        directKey,
+        name: `Chat with ${otherUserId}`,
+        createdAt: now,
+        updatedAt: now,
+      });
+      if (errors) throw new Error(errors.map((e: { message: string }) => e.message).join(', '));
+      if (!newChannel) throw new Error('Channel creation failed');
+      channel = newChannel;
+      await Promise.all([
+        this.client.models.UserChannel.create({ userCognitoId: me, channelId: channel.id, createdAt: now, updatedAt: now }),
+        this.client.models.UserChannel.create({ userCognitoId: otherUserId, channelId: channel.id, createdAt: now, updatedAt: now }),
+      ]);
+      // Refresh recent chats after creation
+      await this.loadRecentChats();
+    }
+    return channel;
+  }
+
+  // CRUD: Update - Update channel (e.g., name)
+  async updateChannel(channelId: string, updates: Partial<Schema['Channel']['type']>): Promise<Schema['Channel']['type']> {
+    const { data: updated, errors } = await this.client.models.Channel.update({
+      id: channelId,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    });
+    if (errors) throw new Error(errors.map((e: { message: string }) => e.message).join(', '));
+    if (!updated) throw new Error('Channel update failed');
+    await this.loadRecentChats(); // Refresh
+    return updated;
+  }
+
+  // CRUD: Read - Load messages for channel
+  async loadMessages(channelId: string): Promise<void> {
     try {
-      const messages = await this.fetchMessages(channelId);
-      const currentUserCognitoId = await this.getCurrentUserId();
-      const mapped = await Promise.all(messages.map(async msg => {
-        const sender = await this.getUserById(msg.senderCognitoId);
-        return {
-          id: msg.id,
-          text: msg.content ?? '',
-          sender: `${sender.firstName || ''} ${sender.lastName || ''}`,
-          senderAvatar: await this.getAvatarUrl(sender.profileImageKey || ''),
-          isSelf: msg.senderCognitoId === currentUserCognitoId,
-          timestamp: new Date(msg.timestamp),
-          read: msg.readBy?.includes(currentUserCognitoId) ?? false,
-        };
-      }));
+      const userId = await this.getCurrentUserId();
+      const members = await this.getChannelMembers(channelId);
+      const otherId = members.find((id) => id !== userId) || '';
+
+      const { data: msgs } = await this.client.models.Message.list({
+        filter: { channelId: { eq: channelId } },
+        limit: 100,
+      });
+      const sorted = [...msgs].sort(
+        (a: Schema['Message']['type'], b: Schema['Message']['type']) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+
+      const unread = sorted.filter(
+        (msg: Schema['Message']['type']) => !msg.readBy?.includes(userId) && msg.senderCognitoId !== userId
+      );
+      await Promise.all(
+        unread.map((msg: Schema['Message']['type']) =>
+          this.client.models.Message.update({
+            id: msg.id,
+            readBy: [...(msg.readBy || []), userId],
+            updatedAt: new Date().toISOString(),
+          })
+        )
+      );
+
+      const mapped: Message[] = await Promise.all(
+        sorted.map(async (msg: Schema['Message']['type']) => {
+          const senderUser = await this.getUserProfile(msg.senderCognitoId);
+          return {
+            id: msg.id,
+            text: msg.content || '',
+            sender: senderUser.name,
+            senderAvatar: senderUser.avatar,
+            isSelf: msg.senderCognitoId === userId,
+            timestamp: new Date(msg.timestamp),
+            read: msg.readBy?.includes(otherId) || false,
+            attachment: msg.attachment,
+          };
+        })
+      );
+
       this.messages.set(mapped);
     } catch (error) {
       console.error('Load messages error:', error);
-      this.messages.set([]);
     }
   }
 
-  async searchChats(query: string): Promise<ChatItem[]> {
+  getMessages() {
+    return this.messages;
+  }
+
+  // CRUD: Create - Send message
+  async sendMessage(channelId: string, text: string, attachment?: string): Promise<void> {
     try {
-      const userCognitoId = await this.getCurrentUserId();
-      const userChannels = await this.getUserChannels(userCognitoId).pipe(takeUntil(this.destroy$)).toPromise() ?? [];
-      const chats = await Promise.all(userChannels.map(async uc => {
-        const otherUserCognitoId = await this.getOtherUserId(uc.channelId, userCognitoId);
-        if (!otherUserCognitoId) return null;
-        const otherUser = await this.getUserById(otherUserCognitoId);
-        const lastMsg = await this.getLastMessage(uc.channelId);
-        return {
-          id: uc.channelId,
-          name: `${otherUser.firstName || ''} ${otherUser.lastName || ''}`.trim(),
-          snippet: lastMsg?.content ?? '',
-          avatar: await this.getAvatarUrl(otherUser.profileImageKey || ''),
-          timestamp: lastMsg?.timestamp ? new Date(lastMsg.timestamp) : undefined,
-          otherUserId: otherUserCognitoId
-        };
-      }));
-      const filteredChats = chats.filter((c) => !!c) as ChatItem[];
-      filteredChats.sort((a, b) => (b?.timestamp?.getTime() || 0) - (a?.timestamp?.getTime() || 0));
-      return filteredChats.filter(chat => 
-        chat.name.toLowerCase().includes(query.toLowerCase()) || chat.snippet.toLowerCase().includes(query.toLowerCase())
-      );
+      const userId = await this.getCurrentUserId();
+      const now = new Date().toISOString();
+      await this.client.models.Message.create({
+        channelId,
+        senderCognitoId: userId,
+        content: text,
+        timestamp: now,
+        attachment,
+        readBy: [userId],
+        createdAt: now,
+        updatedAt: now,
+      });
     } catch (error) {
-      console.error('Search chats error:', error);
-      return [];
+      console.error('Send message error:', error);
     }
   }
 
-  async getContacts(): Promise<Schema['User']['type'][]> {
-    const currentUserCognitoId = await this.getCurrentUserId();
-    const { data, errors } = await this.client.models.User.list();
-    this.handleErrors(errors, 'List users failed');
-    return data.filter(user => user.cognitoId !== currentUserCognitoId);
-  }
-
-  async getOrCreateChannel(contactCognitoId: string): Promise<Schema['Channel']['type']> {
-    const currentUserCognitoId = await this.getCurrentUserId();
-    try {
-      await this.getUserById(contactCognitoId);
-    } catch {
-      throw new Error('Contact not found');
-    }
-    const { data: userChannels, errors } = await this.client.models.UserChannel.list({
-      filter: { or: [{ userCognitoId: { eq: currentUserCognitoId } }, { userCognitoId: { eq: contactCognitoId } }] },
+  // CRUD: Update - Update message (e.g., edit content)
+  async updateMessage(messageId: string, updates: Partial<Schema['Message']['type']>): Promise<Schema['Message']['type']> {
+    const { data: updated, errors } = await this.client.models.Message.update({
+      id: messageId,
+      ...updates,
+      updatedAt: new Date().toISOString(),
     });
-    this.handleErrors(errors);
-    const potentialChannels = userChannels.reduce((acc: Record<string, number>, uc) => {
-      acc[uc.channelId] = (acc[uc.channelId] || 0) + 1;
-      return acc;
-    }, {});
-    const potentialChannelId = Object.keys(potentialChannels).find(id => potentialChannels[id] === 2);
-    if (potentialChannelId) {
-      const { data, errors: getErrors } = await this.client.models.Channel.get({ id: potentialChannelId });
-      this.handleErrors(getErrors);
-      if (!data) throw new Error('Channel not found');
-      return data;
-    }
-    let attempts = 3;
-    while (attempts > 0) {
-      try {
-        const now = new Date().toISOString();
-        const directKey = [currentUserCognitoId, contactCognitoId].sort().join('_');
-        const { data: newChannel, errors: createErrors } = await this.client.models.Channel.create({
-          name: `Chat with ${contactCognitoId}`,
-          creatorCognitoId: currentUserCognitoId,
-          type: 'direct',
-          directKey,
-          createdAt: now,
-          updatedAt: now
-        });
-        this.handleErrors(createErrors);
-        if (!newChannel) throw new Error('Failed to create channel');
-        const { errors: senderErr } = await this.client.models.UserChannel.create({ userCognitoId: currentUserCognitoId, channelId: newChannel.id, createdAt: now, updatedAt: now });
-        this.handleErrors(senderErr);
-        const { errors: receiverErr } = await this.client.models.UserChannel.create({ userCognitoId: contactCognitoId, channelId: newChannel.id, createdAt: now, updatedAt: now });
-        this.handleErrors(receiverErr);
-        const { data: verify } = await this.client.models.UserChannel.list({ filter: { channelId: { eq: newChannel.id } } });
-        if (verify.length === 2) {
-          await this.client.models.Channel.update({ id: newChannel.id, updatedAt: new Date().toISOString() });
-          return newChannel;
-        }
-        throw new Error('Verification failed');
-      } catch (err) {
-        attempts--;
-        if (attempts === 0) throw err;
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-    }
-    throw new Error('Failed after retries');
+    if (errors) throw new Error(errors.map((e: { message: string }) => e.message).join(', '));
+    if (!updated) throw new Error('Message update failed');
+    return updated;
   }
 
-  async fetchMessages(channelId: string): Promise<Schema['Message']['type'][]> {
-    const currentUserCognitoId = await this.getCurrentUserId();
-    const { data: messages, errors } = await this.client.models.Message.listMessageByChannelIdAndTimestamp({ channelId }, { sortDirection: 'ASC' });
-    this.handleErrors(errors);
-    for (const msg of messages) {
-      if (!msg.readBy?.includes(currentUserCognitoId)) {
-        const readBy = [...(msg.readBy || []), currentUserCognitoId];
-        const { errors: updateErrors } = await this.client.models.Message.update({ id: msg.id, readBy, updatedAt: new Date().toISOString() });
-        this.handleErrors(updateErrors);
-      }
-    }
-    return messages;
-  }
-
-  subscribeMessages(channelId: string | null): Observable<{ items: Schema['Message']['type'][], isSynced: boolean }> {
-    const filter = channelId ? { channelId: { eq: channelId } } : undefined;
-    return this.client.models.Message.observeQuery({ filter }).pipe(
-      tap(snapshot => {
-        if (channelId) this.updateMessagesFromSnapshot(snapshot.items);
-      })
-    );
-  }
-
-  private async updateMessagesFromSnapshot(items: Schema['Message']['type'][]) {
-    const currentUserCognitoId = await this.getCurrentUserId();
-    const mapped = await Promise.all(items.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map(async msg => {
-      const sender = await this.getUserById(msg.senderCognitoId);
-      return {
-        id: msg.id,
-        text: msg.content ?? '',
-        sender: `${sender.firstName || ''} ${sender.lastName || ''}`,
-        senderAvatar: await this.getAvatarUrl(sender.profileImageKey || ''),
-        isSelf: msg.senderCognitoId === currentUserCognitoId,
-        timestamp: new Date(msg.timestamp),
-        read: msg.readBy?.includes(currentUserCognitoId) ?? false,
-      };
-    }));
-    this.messages.set(mapped);
-  }
-
-  async sendMessage(channelId: string, content: string, attachment?: string): Promise<Schema['Message']['type']> {
-    const currentUserCognitoId = await this.getCurrentUserId();
-    const now = new Date().toISOString();
-    const { data, errors } = await this.client.models.Message.create({
-      content,
-      senderCognitoId: currentUserCognitoId,
-      channelId,
-      timestamp: now,
-      attachment,
-      readBy: [currentUserCognitoId],
-      createdAt: now,
-      updatedAt: now,
-    });
-    this.handleErrors(errors);
-    return data!;
+  // CRUD: Delete - Delete message
+  async deleteMessage(messageId: string): Promise<void> {
+    await this.client.models.Message.delete({ id: messageId });
   }
 
   async uploadAttachment(file: File): Promise<string> {
-    const path = ({ identityId }: { identityId?: string }) => `profile/${identityId || ''}/attachments/${file.name}`;
-    const result = await uploadData({ path, data: file }).result;
-    return result.path;
+    const key = `attachments/${uuidv4()}-${file.name}`;
+    await uploadData({ path: key, data: file });
+    return key;
   }
 
-  async getAvatarUrl(profileImageKey: string): Promise<string> {
-    if (!profileImageKey) return 'assets/profile/avatar-default.svg';
-    const { url } = await getUrl({ path: profileImageKey });
-    return url.toString();
+  // CRUD: Delete - Delete channel and associated data
+  async deleteChat(channelId: string): Promise<void> {
+    const { data: msgs } = await this.client.models.Message.list({
+      filter: { channelId: { eq: channelId } },
+    });
+    await Promise.all(msgs.map((msg: Schema['Message']['type']) => this.client.models.Message.delete({ id: msg.id })));
+    await this.client.models.Channel.delete({ id: channelId });
+    await this.loadRecentChats(); // Refresh after delete
   }
 
-  async deleteChat(channelId: string) {
-    const userCognitoId = await this.getCurrentUserId();
-    const { data: userChannel, errors } = await this.client.models.UserChannel.get({ userCognitoId, channelId });
-    this.handleErrors(errors);
-    if (userChannel) {
-      const { errors: deleteErrors } = await this.client.models.UserChannel.delete({ userCognitoId, channelId });
-      this.handleErrors(deleteErrors);
-    }
-    this.reloadSubject.next();
-  }
-
-  private async setupRealTimeSubscriptions() {
-    const userCognitoId = await this.getCurrentUserId();
-    this.subscriptions.push(
-      this.client.models.UserChannel.observeQuery({ filter: { userCognitoId: { eq: userCognitoId } } }).pipe(
-        takeUntil(this.destroy$)
-      ).subscribe(snapshot => {
-        if (snapshot.isSynced) this.reloadSubject.next();
+  subscribeMessages(channelId: string | null): Observable<any> {
+    return from(
+      this.client.models.Message.observeQuery(
+        channelId ? { filter: { channelId: { eq: channelId } } } : {}
+      )
+    ).pipe(
+      switchMap((snapshot) => of(snapshot)),
+      takeUntil(this.destroy$),
+      catchError((err: any) => {
+        console.error('Subscribe messages error:', err);
+        return of(null);
       })
     );
+  }
 
-    this.subscriptions.push(
-      this.client.models.Message.onCreate().subscribe({
-        next: async (msg) => {
-          const channelId = msg.channelId;
-          const { data: uc } = await this.client.models.UserChannel.get({ userCognitoId, channelId });
-          if (uc) this.reloadSubject.next();  // Reload recent if user's channel
-        },
-        error: err => console.error('Message onCreate error:', err)
-      })
-    );
+  private async getChannelMembers(channelId: string): Promise<string[]> {
+    if (this.channelMembersCache.has(channelId)) return this.channelMembersCache.get(channelId)!;
+    const { data: userChannels } = await this.client.models.UserChannel.list({
+      filter: { channelId: { eq: channelId } },
+    });
+    const members = userChannels.map((uc: Schema['UserChannel']['type']) => uc.userCognitoId);
+    this.channelMembersCache.set(channelId, members);
+    return members;
+  }
+
+  private async getUserProfile(userId: string): Promise<{ name: string; avatar: string }> {
+    const allUsers = await this.userService.getAllUsers();
+    const user = allUsers.find((u: Schema['User']['type']) => u.cognitoId === userId);
+    const name =
+      `${user?.firstName || ''} ${user?.lastName || ''}`.trim() ||
+      user?.email ||
+      'Unknown';
+    const avatar = user?.profileImageKey
+      ? (await getUrl({ path: user.profileImageKey })).url.toString()
+      : 'assets/profile/avatar-default.svg';
+    return { name, avatar };
   }
 
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 }

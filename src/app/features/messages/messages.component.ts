@@ -1,4 +1,5 @@
 // src/app/features/messages/messages.component.ts
+
 import { Component, ChangeDetectionStrategy, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,19 +16,21 @@ import { ChatHeaderComponent } from './chatlayout/chat-header.component';
 import { ChatMessagesComponent } from './chatlayout/chat-messages.component';
 import { MessageInputComponent } from './chatlayout/message-input.component';
 import { ActivatedRoute } from '@angular/router';
-
-interface ChatItem { id: string; name: string; snippet?: string; avatar?: string; timestamp?: Date; }
-interface Message { id: string; text: string; sender: string; senderAvatar?: string; isSelf?: boolean; timestamp?: Date; read?: boolean; }  // Added id
-interface Conversation {
-  channel: { id: string };
-  otherUser: { id: string; name: string; avatar?: string; email: string };
-  lastMessage?: Schema['Message']['type'];
-}
+import { ChatItem, Message, Conversation } from '../../core/models/message.model'; // Imported
 
 @Component({
   selector: 'app-messages',
   standalone: true,
-  imports: [CommonModule, FormsModule, UserProfileComponent, ChatSearchComponent, ChatListComponent, ChatHeaderComponent, ChatMessagesComponent, MessageInputComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    UserProfileComponent,
+    ChatSearchComponent,
+    ChatListComponent,
+    ChatHeaderComponent,
+    ChatMessagesComponent,
+    MessageInputComponent,
+  ],
   templateUrl: './messages.component.html',
   styleUrls: ['./messages.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,18 +39,27 @@ export class MessagesComponent implements OnInit, OnDestroy {
   private messageService = inject(MessageService);
   private userService = inject(UserService);
   private route = inject(ActivatedRoute);
+
   conversations = signal<Conversation[]>([]);
-  filteredConversations = computed(() => this.conversations().filter((conv: Conversation) =>
-    conv.otherUser.name.toLowerCase().includes(this.searchQuery().toLowerCase()) ||
-    (conv.lastMessage?.content || '').toLowerCase().includes(this.searchQuery().toLowerCase())
-  ));
-  filteredChats = computed(() => this.filteredConversations().map((conv: Conversation) => ({
-    id: conv.channel.id,
-    name: conv.otherUser.name,
-    snippet: conv.lastMessage?.content,
-    avatar: conv.otherUser.avatar,
-    timestamp: conv.lastMessage?.timestamp ? new Date(conv.lastMessage.timestamp) : undefined
-  } as ChatItem)));
+  filteredConversations = computed(() =>
+    this.conversations().filter(
+      (conv: Conversation) =>
+        conv.otherUser.name.toLowerCase().includes(this.searchQuery().toLowerCase()) ||
+        (conv.lastMessage?.content || '').toLowerCase().includes(this.searchQuery().toLowerCase())
+    )
+  );
+  filteredChats = computed(() =>
+    this.filteredConversations().map(
+      (conv: Conversation) =>
+        ({
+          id: conv.channel.id,
+          name: conv.otherUser.name,
+          snippet: conv.lastMessage?.content || undefined,
+          avatar: conv.otherUser.avatar,
+          timestamp: conv.lastMessage?.timestamp ? new Date(conv.lastMessage.timestamp) : undefined,
+        } as ChatItem)
+    )
+  );
   messages = signal<Message[]>([]);
   selectedConversation = signal<Conversation | null>(null);
   searchQuery = signal<string>('');
@@ -64,25 +76,46 @@ export class MessagesComponent implements OnInit, OnDestroy {
     try {
       this.currentUserId = await this.messageService.getCurrentUserId();
       await this.messageService.loadRecentChats();
-      // Map to Conversation
-      this.conversations.set(this.messageService.getRecentChats()().map((chat: ChatItem) => ({
-        channel: { id: chat.id },
-        otherUser: { id: '', name: chat.name, avatar: chat.avatar, email: '' },
-        lastMessage: { content: chat.snippet || '', timestamp: chat.timestamp?.toISOString() || '' } as Schema['Message']['type']
-      })));
-      
-      const channelId = this.route.snapshot.paramMap.get('channelId');
+
+      this.conversations.set(
+        this.messageService.getRecentChats()().map(
+          (chat: ChatItem) =>
+            ({
+              channel: { id: chat.id },
+              otherUser: {
+                id: chat.otherUserId || '',
+                name: chat.name,
+                avatar: chat.avatar,
+                email: '',
+              },
+              lastMessage: {
+                content: chat.snippet || '',
+                timestamp: chat.timestamp?.toISOString() || '',
+              } as Schema['Message']['type'],
+            } as Conversation)
+        )
+      );
+
+      const channelId = this.route.snapshot.paramMap.get('channelId') || '';
       if (channelId) {
-        let chat = this.messageService.getRecentChats()().find(c => c.id === channelId);
+        const chat = this.messageService.getRecentChats()().find((c) => c.id === channelId);
         if (chat) {
           await this.selectConversation(chat);
         } else {
           console.error('Channel not found:', channelId);
         }
       }
-      
-      // Global sub only for recent chats updates
-      this.subscriptions.push(this.messageService.subscribeMessages(null).pipe(takeUntil(this.destroy$)).subscribe());
+
+      this.subscriptions.push(
+        this.messageService.subscribeMessages(null).subscribe((newMsg: Schema['Message']['type']) => {
+          if (newMsg) {
+            this.updateConversationsOnNewMessage(newMsg);
+            if (this.selectedConversation()?.channel.id === newMsg.channelId) {
+              this.messageService.loadMessages(newMsg.channelId);
+            }
+          }
+        })
+      );
     } catch (error) {
       console.error('Init error:', error);
     }
@@ -103,7 +136,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
       this.loadingMessages.set(true);
       try {
         const channelId = conv.channel.id;
-        if (this.messageCache.has(channelId)) {
+        if (this.messageCache.has(channelId) ) {
           this.messages.set(this.messageCache.get(channelId)!);
         } else {
           await this.messageService.loadMessages(channelId);
@@ -111,7 +144,6 @@ export class MessagesComponent implements OnInit, OnDestroy {
           this.messages.set(loadedMessages);
           this.messageCache.set(channelId, loadedMessages);
         }
-        // Channel-specific sub sets full messages from snapshot
         this.chatSub = this.messageService.subscribeMessages(channelId).pipe(takeUntil(this.destroy$)).subscribe();
       } catch (error) {
         console.error('Load messages error:', error);
@@ -129,7 +161,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
     }
   }
 
-  async sendWithFile(data: {text: string; file: File}) {
+  async sendWithFile(data: { text: string; file: File }) {
     this.newMessage.set(data.text);
     this.file.set(data.file);
     if (this.file() && this.selectedConversation()?.channel.id) {
@@ -165,8 +197,16 @@ export class MessagesComponent implements OnInit, OnDestroy {
   updateConversationsOnNewMessage(newMsg: Schema['Message']['type']) {
     const conv = this.conversations().find((c: Conversation) => c.channel.id === newMsg.channelId);
     if (conv) {
-      const updated = {...conv, lastMessage: newMsg};
-      this.conversations.update((convs: Conversation[]) => convs.map((c: Conversation) => c.channel.id === newMsg.channelId ? updated : c).sort((a: Conversation, b: Conversation) => new Date(b.lastMessage?.timestamp || '0').getTime() - new Date(a.lastMessage?.timestamp || '0').getTime()));
+      const updated = { ...conv, lastMessage: newMsg };
+      this.conversations.update((convs: Conversation[]) =>
+        convs
+          .map((c: Conversation) => (c.channel.id === newMsg.channelId ? updated : c))
+          .sort(
+            (a: Conversation, b: Conversation) =>
+              new Date(b.lastMessage?.timestamp || '0').getTime() -
+              new Date(a.lastMessage?.timestamp || '0').getTime()
+          )
+      );
     }
   }
 
@@ -185,7 +225,7 @@ export class MessagesComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach((sub) => sub.unsubscribe());
     if (this.chatSub) this.chatSub.unsubscribe();
   }
 }
