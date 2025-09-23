@@ -15,7 +15,7 @@ export class ContactsTableItemComponent {
 
   @Input() contact!: InputContact;
   @Output() deleted = new EventEmitter<string>();
-  @Output() messaged = new EventEmitter<string>(); // NEW: For message initiation
+  @Output() messaged = new EventEmitter<string>(); 
 
   deleteContact(): void {
     if (confirm('Delete this contact?')) {
@@ -23,7 +23,7 @@ export class ContactsTableItemComponent {
     }
   }
 
-  startMessage(): void { // NEW: Emit for parent to handle navigation
+  startMessage(): void { 
     this.messaged.emit(this.contact.cognitoId);
   }
 }

@@ -52,45 +52,15 @@ export class ContactsComponent implements OnInit, OnDestroy {
     this.contactsService.observeContacts().pipe(takeUntil(this.destroy$)).subscribe(() => this.loadContacts());
   }
 
-  private async loadContacts(): Promise<void> {
-    try {
-      const { friends } = await this.contactsService.getContacts();
-      const extendedFriends = await Promise.all(
-        friends.map(async (f: UserType & { addedAt: string }) => {
-          let imageUrl: string | undefined;
-          if (f.profileImageKey) {
-            try {
-              const { url } = await getUrl({
-                path: f.profileImageKey,
-                options: { expiresIn: 3600 },
-              });
-              imageUrl = url.toString();
-            } catch (err) {
-              console.error('Error getting image URL:', err);
-              imageUrl = 'assets/profile/avatar-default.svg';
-            }
-          } else {
-            imageUrl = 'assets/profile/avatar-default.svg';
-          }
-          return {
-            ...f,
-            imageUrl,
-            firstName: f.firstName ?? '',
-            lastName: f.lastName ?? '',
-            username: f.username ?? '',
-            createdAt: f.createdAt ?? null,
-            dateAdded: f.addedAt ?? new Date().toISOString(),
-          } as InputContact;
-        })
-      );
-      this.contacts.set(extendedFriends);
-      console.log('Contacts loaded:', this.contacts());
-      this.updateSummary();
-      this.updatedAgo = this.computeUpdatedAgo();
-    } catch (err) {
-      console.error('Load contacts error:', err);
-    }
+private async loadContacts(): Promise<void> {
+  try {
+    const contacts = await this.contactsService.getContacts();
+    this.contacts.set(contacts);
+    this.updateSummary();
+  } catch (err) {
+    console.error('Load contacts error:', err);
   }
+}
 
   onSearchChange(query: string) {
     this.searchQuery = query;
