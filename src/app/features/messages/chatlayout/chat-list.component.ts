@@ -1,6 +1,6 @@
 // src/app/features/messages/chatlayout/chat-list.component.ts
 import { Component, input, Output, EventEmitter } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common'; 
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
 
