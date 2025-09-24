@@ -32,7 +32,7 @@ export const routes: Routes = [
     children: [
       
       // Home dashboard lazy-loaded
-      { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.Home) },
+      { path: 'home', loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent) },
       
       // Profile page lazy-loaded
       { path: 'profile', loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent) },
