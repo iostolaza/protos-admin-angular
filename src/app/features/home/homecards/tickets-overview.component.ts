@@ -1,6 +1,4 @@
-// src/app/features/home/homecards/tickets-overview.component.ts
-
-import { Component, inject, OnInit, signal, afterNextRender, AfterViewInit, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, afterNextRender, effect, OnDestroy } from '@angular/core';
 import { TicketService } from '../../../core/services/ticket.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { getIconPath } from '../../../core/services/icon-preloader.service';
@@ -13,7 +11,7 @@ declare var p5: any;
 declare global {
   interface Window {
     p5: {
-      new (sketch: (p: any) => void, node?: string | HTMLElement): any; // Updated constructor signature for instance mode with container
+      new (sketch: (p: any) => void, node?: string | HTMLElement): any;
       prototype: {
         setup: () => void;
         draw: () => void;
@@ -22,7 +20,7 @@ declare global {
         resizeCanvas: (width: number, height: number) => void;
         noLoop: () => void;
         redraw: () => void;
-        fill: (color: string) => void;
+        fill: (v1: number, v2?: number, v3?: number) => void; // Support RGB
         arc: (x: number, y: number, w: number, h: number, start: number, stop: number) => void;
         ellipse: (x: number, y: number, w: number, h: number) => void;
         textAlign: (hAlign: string, vAlign: string) => void;
@@ -30,7 +28,11 @@ declare global {
         text: (str: string, x: number, y: number) => void;
         TWO_PI: number;
         CENTER: string;
-        background: (color: number) => void;
+        clear: () => void;
+        noStroke: () => void;
+        erase: () => void;
+        noErase: () => void;
+        canvas: any; // To access style
       };
     };
   }
@@ -41,19 +43,19 @@ declare global {
   standalone: true,
   imports: [AngularSvgIconModule, CommonModule, StatusClassPipe],
   template: `
-    <div class="rounded-lg bg-card w-full h-full px-4 py-6 flex flex-col justify-between">
+    <div class="rounded-lg bg-card w-full h-full px-3 py-4 flex flex-col justify-between">
       <div>
         <h3 class="text-lg font-bold uppercase text-left text-blue-500 dark:text-blue-300">Tickets</h3>
-        <div class="mt-6 flex items-center">
-          <div id="ticketsPieChart" class="w-full h-48"></div>
+        <div class="mt-4 flex items-center">
+          <div id="ticketsPieChart" class="w-50 h-40"></div>
           <div class="ml-4">
             <div *ngFor="let label of pieLabels(); let i = index" class="flex items-center mb-1">
               <div class="w-3 h-3 rounded-full" [style.background-color]="colors()[i]"></div>
-              <p class="ml-2 text-sm text-gray-200">{{ label }}</p>
+              <p class="ml-2 text-sm text-gray-600 dark:text-gray-200">{{ label }}</p>
             </div>
           </div>
         </div>
-        <div class="mt-6">
+        <div class="mt-4">
           <div *ngFor="let ticket of ticketsPreview()" class="bg-gray-600 p-2 rounded-lg flex items-center space-x-2 w-full mt-2">
             <span [ngClass]="ticket.status | statusClass" class="rounded-full px-2 py-1 text-white">{{ ticket.status }}</span>
             <div class="flex-1">
@@ -63,7 +65,7 @@ declare global {
           </div>
         </div>
       </div>
-      <div class="flex justify-end mt-4">
+      <div class="flex justify-end mt-2">
         <button (click)="navigateToTickets()">
           <svg-icon [src]="getIconPath('arrow-right')" class="h-5 w-5 text-gray-500"></svg-icon>
         </button>
@@ -71,7 +73,7 @@ declare global {
     </div>
   `,
 })
-export class TicketsOverviewComponent implements OnInit {
+export class TicketsOverviewComponent implements OnInit, OnDestroy {
   private ticketService = inject(TicketService);
   private router = inject(Router);
 
@@ -84,7 +86,8 @@ export class TicketsOverviewComponent implements OnInit {
 
   getIconPath = getIconPath;
 
-  private p5Instance: any; // Reference to p5 instance for cleanup/redraw
+  private p5Instance: any;
+  private observer: MutationObserver;
 
   constructor() {
     afterNextRender(() => {
@@ -98,6 +101,15 @@ export class TicketsOverviewComponent implements OnInit {
         this.p5Instance.redraw();
       }
     });
+
+    // Observe theme changes
+    const html = document.documentElement;
+    this.observer = new MutationObserver(() => {
+      if (this.p5Instance) {
+        this.p5Instance.redraw();
+      }
+    });
+    this.observer.observe(html, { attributes: true, attributeFilter: ['class'] });
   }
 
   async ngOnInit() {
@@ -105,6 +117,12 @@ export class TicketsOverviewComponent implements OnInit {
     const { tickets } = await this.ticketService.getTickets();
     this.tickets.set(tickets);
     this.updatePreviewAndChart();
+  }
+
+  ngOnDestroy() {
+    if (this.observer) {
+      this.observer.disconnect();
+    }
   }
 
   private initP5Chart() {
@@ -115,19 +133,25 @@ export class TicketsOverviewComponent implements OnInit {
           const width = container.clientWidth;
           const height = container.clientHeight;
           sketch.createCanvas(width, height);
+          sketch.canvas.style.backgroundColor = 'transparent';
         } else {
-          sketch.createCanvas(200, 200); // Fallback
+          sketch.createCanvas(200, 200);
+          sketch.canvas.style.backgroundColor = 'transparent';
         }
         sketch.noLoop();
       };
 
       sketch.draw = () => {
+        sketch.clear(); // Make background transparent
         const width = sketch.width;
         const height = sketch.height;
         const centerX = width / 2;
         const centerY = height / 2;
-        const diameter = Math.min(width, height) * 0.8;
-        sketch.background(255);
+        const diameter = Math.min(width, height) * 0.75; // Reduced for better fit/margin
+        // Detect dark mode for text
+        const isDark = document.documentElement.classList.contains('dark');
+        // Draw pie sectors without stroke
+        sketch.noStroke();
         let lastAngle = 0;
         const colors = this.colors();
         this.pieData().forEach((value, i) => {
@@ -138,9 +162,12 @@ export class TicketsOverviewComponent implements OnInit {
             lastAngle += angle;
           }
         });
-        sketch.fill(255);
+        // Erase the center to create transparent hole
+        sketch.erase();
         sketch.ellipse(centerX, centerY, diameter * 0.6, diameter * 0.6);
-        sketch.fill(0);
+        sketch.noErase();
+        // Text color adaptive
+        sketch.fill(isDark ? 255 : 0);
         sketch.textAlign(sketch.CENTER, sketch.CENTER);
         sketch.textSize(32);
         sketch.text(this.total(), centerX, centerY - 10);
